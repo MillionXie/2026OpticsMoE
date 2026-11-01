@@ -1,0 +1,116 @@
+{
+  "source_commit": "7059c80d4a1d6fd439625cf8f44d850802fc27b4",
+  "parent_warmup_checkpoint_sha256": "6f228e5ebef35ead9623a74b7a9d04b5fb47c04441f83dbd0edb4764535cfd3c",
+  "warmup_E_G_head_bitwise_698_578_parent": true,
+  "full_original_split_router_audit": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/f_router_load_pretrain_audit_s17_20261101/audit.json",
+  "warmup_route_replay_exact": true,
+  "real_TRAIN20_and_TEST_soft20": {
+    "train": {
+      "loss": 30.231658935546875,
+      "selection_counts": [
+        9,
+        12,
+        8,
+        11
+      ],
+      "classification_raw_expert_gradient_L2": [
+        0.40305274724960327,
+        0.4355602264404297,
+        0.5041792988777161,
+        0.15972262620925903
+      ],
+      "expert_phase_raw_update_L2": [
+        0.03787161037325859,
+        0.03791172429919243,
+        0.037933673709630966,
+        0.03703787177801132
+      ],
+      "router_bitwise_frozen": true,
+      "TEST_hard_GT_received": null
+    },
+    "test": {
+      "loss": 0.00044241492287255824,
+      "selection_counts": [
+        10,
+        11,
+        10,
+        9
+      ],
+      "classification_raw_expert_gradient_L2": [
+        0.004120891913771629,
+        0.002000323496758938,
+        0.008182184770703316,
+        0.0008118589757941663
+      ],
+      "expert_phase_raw_update_L2": [
+        0.025146465748548508,
+        0.025322919711470604,
+        0.02518632262945175,
+        0.02476334758102894
+      ],
+      "router_bitwise_frozen": true,
+      "TEST_hard_GT_received": false
+    }
+  },
+  "all_original_samples_once_and_errors_twice_verified": true,
+  "error_replay": {
+    "parent": {
+      "run": "runs/simulation/f_matched_canonical_phase_s17_20261101/student",
+      "checkpoint_sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc",
+      "predictions_sha256": {
+        "train": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e",
+        "test": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+      }
+    },
+    "evidence": {
+      "train": {
+        "original_images": 6000,
+        "baseline_errors": 1906,
+        "extra_replay_presentations": 3812,
+        "parent_prediction_sha256": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e"
+      },
+      "test": {
+        "original_images": 2000,
+        "baseline_errors": 724,
+        "extra_replay_presentations": 1448,
+        "parent_prediction_sha256": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+      }
+    },
+    "all_original_samples_once_plus_errors_twice": true,
+    "TEST_GT_used_for_sampling_not_student_CE": true
+  },
+  "head_bootstrap_phase_frozen": true,
+  "head_bootstrap_admission": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 40,
+    "numerical_ridge": 0.0026120367489500815,
+    "uncentred_Gram_eigen_min": -8.091513345315309e-14,
+    "uncentred_Gram_eigen_max": 1022.0067513177954,
+    "Gram_regularized_condition": 391269.1365452667,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 28.380971711099082,
+    "objective_after": 4.7926534724686,
+    "internal_steps": 2,
+    "closure_calls": 8,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": true,
+    "hard_label_samples": 40
+  },
+  "parameters": 487204,
+  "state_tensors": 4,
+  "inference_Linear": 1,
+  "CNN": 0,
+  "router_frozen_after_load_pretraining": true,
+  "pid": 3246507,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_f_matched_optical_teacher",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_error_router_recovery_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101"
+  ],
+  "time": 1793505711.3877933
+}

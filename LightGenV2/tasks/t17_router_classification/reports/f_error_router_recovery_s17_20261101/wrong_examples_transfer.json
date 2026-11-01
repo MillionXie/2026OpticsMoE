@@ -1,0 +1,7 @@
+{
+  "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_error_curriculum_s17_20261101/wrong_examples.json",
+  "sha256": "7cf051327b0fb131be09850d2c9c83334974b3dccd0040a32446665969543cd5",
+  "size": 550614,
+  "remote_local_SHA_exact": true,
+  "non_Git": true
+}

@@ -1,0 +1,75 @@
+{
+  "all_original_ID_labels_domains": true,
+  "actual_top_k": 2,
+  "parts": {
+    "train": {
+      "RGB": {
+        "correct": 1561,
+        "n": 3000,
+        "slot_share": [
+          0.196,
+          0.18133333333333335,
+          0.2886666666666667,
+          0.334
+        ]
+      },
+      "SAR": {
+        "correct": 1427,
+        "n": 3000,
+        "slot_share": [
+          0.24333333333333335,
+          0.336,
+          0.19433333333333333,
+          0.22633333333333333
+        ]
+      }
+    },
+    "val": {
+      "RGB": {
+        "correct": 415,
+        "n": 1000,
+        "slot_share": [
+          0.1885,
+          0.1785,
+          0.2775,
+          0.3555
+        ]
+      },
+      "SAR": {
+        "correct": 354,
+        "n": 1000,
+        "slot_share": [
+          0.236,
+          0.34,
+          0.185,
+          0.239
+        ]
+      }
+    },
+    "test": {
+      "RGB": {
+        "correct": 776,
+        "n": 1000,
+        "slot_share": [
+          0.23,
+          0.21,
+          0.2765,
+          0.2835
+        ]
+      },
+      "SAR": {
+        "correct": 718,
+        "n": 1000,
+        "slot_share": [
+          0.2515,
+          0.32,
+          0.2305,
+          0.198
+        ]
+      }
+    }
+  },
+  "teacher_TEST_hard_GT": true,
+  "student_inherits_TEST_hard_teacher_PT": false,
+  "actual_internal_steps": 150
+}

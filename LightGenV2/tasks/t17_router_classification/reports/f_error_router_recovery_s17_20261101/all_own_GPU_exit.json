@@ -1,0 +1,14 @@
+{
+  "3235990": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "3246507": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "3275220": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "all_original_ID_labels_domains_exact": true,
+  "comparison": {
+    "RGB": {
+      "old_correct": 698,
+      "new_correct": 776,
+      "old_errors_corrected": 227,
+      "previous_correct_now_wrong": 149,
+      "class_correct_before": [
+        82,
+        78,
+        21,
+        41,
+        90,
+        73,
+        65,
+        92,
+        78,
+        78
+      ],
+      "class_correct_after": [
+        73,
+        75,
+        66,
+        67,
+        89,
+        74,
+        81,
+        81,
+        85,
+        85
+      ]
+    },
+    "SAR": {
+      "old_correct": 578,
+      "new_correct": 718,
+      "old_errors_corrected": 321,
+      "previous_correct_now_wrong": 181,
+      "class_correct_before": [
+        38,
+        70,
+        33,
+        37,
+        68,
+        37,
+        51,
+        62,
+        83,
+        99
+      ],
+      "class_correct_after": [
+        69,
+        57,
+        73,
+        62,
+        76,
+        70,
+        67,
+        52,
+        92,
+        100
+      ]
+    }
+  }
+}

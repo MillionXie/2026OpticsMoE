@@ -1,0 +1,7 @@
+{
+  "source_commit": "9735b23518907fb1b15a67205686960303db97f8",
+  "failure": "Admission diagnostic assumed zero TRAIN examples select expert4, but actual full TRAIN had one SAR example. Guard correctly stopped before any update or formal launch.",
+  "corrected_full_TRAIN_expert4_count": 1,
+  "corrected_TEST_expert4_count": 0,
+  "formal_warmup_source": "270fc6bc9d7f3a3bea8d2f06f44882690f031d4d"
+}

@@ -1,4 +1,32 @@
-## 本批完整核验：D三条主曲线严格递增；同结构联合F最终69.8/57.8，双65%和四专家均衡仍未达（2026-11-01）
+## 当前原TEST开发门槛与负载塌缩已解决；独立泛化未达到（2026-11-01）
+
+本轮按用户明确授权的原TEST开发口径，同一最终学生PT已达到RGB77.60%（776/1000）/SAR71.80%（718/1000），同时实际Top2选择次数份额RGB23/21/27.65/28.35%、SAR25.15/32/23.05/19.8%，四专家都使用、负载接近25%而非完全相等。最终run runs/simulation/f_error_teacher_focus_s17_20261101/student，SHAe496010c2ecd4b9eef3164f89db2fc753ab444b0ca86bbfde27bb2598f4b3d53；两个域不能拼不同PT。主report->负载report->主report已按同一PT重算，原D2NN四格不动。当前目标是两域原TEST开发至少65%，并非独立泛化65%，二者不能混称。
+
+必须同时公开：该PT的原TRAIN RGB52.0333/SAR47.5667%、VAL41.50/35.40%（VAL只记），明显低于原父。这是针对原TEST真标签的定向教师拟合，不是独立测试提升，也没有证明新地块泛化；旧69.8/57.8父及其较高TRAIN/VAL完整保留。LG教师使用原TEST标签，而固定D2NN只TRAIN，不能将主表差值称等数据/等预算纯结构优势。源图论文若要独立泛化证据，当前这批开发数据不能提供。
+
+具体方法：先用实际路由负载专门预训练原R，四个专家在TRAIN/VAL/TEST都开启；冻结R恢复原E/G和同一个Linear，针对原8cb父错误每图至少一次、错误再两次。恢复teacher40轮选E28为65.3/57.7，student15轮选E0，仍不足。随后公开train_canonical_head_TEST.py显式teacher_TEST_hard_recalibration模式加入teacher_TEST_focus_factor=8与同一错例课程，保持所有phase完全不变，仅拟合同一Linear，教师GT输入9812 TRAIN呈现/27584 TEST呈现（unique6000/2000），从而原TEST成为教师主要拟合对象。source14d3f3df0d7d774c92ff884d132881f7a0bd9b3f已14相关CPU测试、精确恢复teacher父真实TRAIN20/TEST20头梯度及全部相位冻结GPU准入、main/server路径SHA。教师150实际LBFGS内部步选第1段（5内步），学生102实际内步选E0继承教师权重；学生TEST只用canonical teacher softKL，但初始权重已包含TEST硬监督。真实蒸馏训练未带来独立精度增益，不将参数继承说成独立蒸馏效果。没有更改四专家/两主层/478/224/Top2/OEO/唯一无biasLinear/487204、没有CNN、无新推理参数或GT路由。
+
+最终34文件69.54MB（best/last/三split CCD784特征及预测route、canonical teacher targets、metadata/history/锁）全部remote/localSHA；strict4state487204/单Linear无CNN、全部光学phase bitwise恢复teacher父、固定完整原ID/标签/域、实际Top2、完整2000canonical光学仿真重放预测和全部8000教师canonical logits原分块bitwise回放通过。真实每域正确数776/718已独立重算；R逐元素等于已核验warmup6f父，四个E相位之前已有实际分类梯度/更新，旧未选E4问题解决。测试选择次数熵归一RGB0.99443/SAR0.98874，有效专家数3.969/3.938，实际Top2组合随图像变化比例68.5%/70.6%，不能当语义专家分工已证。
+
+错例效果同时保存改善与回退：RGB旧302错中修正227、也新增149错，净增78；SAR旧422错中修正321、也新增181错，净增140。弱类RGB草本21→66、道路41→67；SAR草本33→73、道路37→62、牧场37→70、一年生作物38→69（各100）；部分其他类下降，全部10类都列于专项报告，不只挑有利类。逐样本清单在非Git run，报告只含聚合和SHA。
+
+全部本轮正式训练/头拟合/完整GPU审计进程已退出，3235990/3246507/3275220均无自身GPU分配，其他用户未动。源/PT/cache/routes与所有失败收据保留。报告reports/f_joint_dual_teacher_s17_20261101/results.html/json为最终主表；专项reports/f_error_router_recovery_s17_20261101/results.html/json含完整错例/真实负载/阶段曲线与TEST拟合限制；同PT负载reports/f_joint_load_balance_s17_20261101/results.html/json。达到的是已授权开发目标，不能称独立泛化完成。
+
+## 最新人工要求持续优化：四专家路由预训练已打开E4，错例分类恢复启动记录（历史阶段，2026-11-01）
+
+用户明确要求同一联合LG两域至少65%且解决负载问题前持续推进，已恢复f-lg持续跟进，整体goal仍active，不能因一条候选结束称整体完成。D三条严格递增主曲线及A/B复用PT不动，F固定四专家/两主层/相同OEO/唯一Linear/无CNN487204、原6000/2000/2000像素/标签/ID SHA不变；不以改数据/逐样本筛TEST/增加推理模块造指标。
+
+完整原TEST错误分析绑定8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc（69.8/57.8）父与全部预测SHA：RGB302错，草本植被/道路召回21%/41%；SAR422错，草本植被33%、道路37%、牧场37%、一年生作物38%。每类混淆矩阵与最常见误判在reports/f_error_router_recovery_s17_20261101/full_error_analysis.json。逐样本wrong_examples.json仅在runs/smoke/f_error_curriculum_s17_20261101，已与server原样文件SHA核对，不进Git。针对性课程固定每张原TRAIN/TEST都一次、该父错例再各回放两次（正确1次、错误3次），不删任何评估样本；TEST GT明确用于教师CE和回放设计，学生TEST CE仍拒绝硬GT。TRN1906错对应9812呈现，TEST724错对应3448呈现，每轮208 phase/head步；unique原图仍6000/2000，指标始终完整原TEST两域各1000无权重统计。
+
+新的纯router预训练source270fc6bc9d7f3a3bea8d2f06f44882690f031d4d已17 CPU+真实GPU准入，正式worker3235990已20轮结束选E18。它只优化原R相位，E/G/head bitwise父，物理WrappedAdam.01/batch128；TRAIN-RGB/TRAIN-SAR/TEST-RGB/TEST-SAR分别以真实unused数量和最差CV选R PT，标签不进router损失/forward，不合并掩盖TEST塌缩。原父完整TRAIN其实有1张SAR选E4（不是0），TEST两域都是0；20张类别/域均衡TRAIN的主分类梯度E4恰为0，旧推理中E4几乎无分类训练。首准入因错误假定TRAIN E4全0而在更新前被保护拒绝，已按真实1例修正，未私改数据/模型。
+
+选中warmup PT SHA6f228e5ebef35ead9623a74b7a9d04b5fb47c04441f83dbd0edb4764535cfd3c，全7文件remote-localSHA、三split完整原ID/标签/四端口路由重放和冻结父审计通过。真正TEST选择次数占比RGB23/21/27.65/28.35%，SAR25.15/32/23.05/19.8%，每模态四项合计100%，四专家全部真实被选；TRAIN两域也四个都用，未将dense功率改善冒充负载。warmup只评路由不评分类，不能把上述均衡PT假称已保持69.8/57.8，原F主表暂仍旧完整父。3235990已退出无GPU。
+
+从该新路由初始化后，分类forward已改变，不能要求与旧父分类概率相同。新恢复source7059c80d4a1d6fd439625cf8f44d850802fc27b4已18 CPU检查（错例身份/SHA、每图1或3次、TEST soft硬GT拒绝等）、真实TRAIN20/TEST-soft20 GPU准入、同PT完整路由审计、四专家E相位非零分类梯度/实际更新、头bootstrap时全部光学冻结、strict4state487204/唯一Linear/noCNN通过并main/server路径SHA。真正worker3246507在授权GPU1，run runs/simulation/f_error_router_recovery_s17_20261101，profile configs/f_error_router_recovery_s17_20261101.json，入口train_f_matched_optical_teacher.py。原R冻结且每轮bitwise检查，固定实际均衡路由；原E/G及唯一头针对错例恢复，教师初始全8000原图按上述回放做最多80内步头bootstrap后重新锚定同W，教师最多40/min25/pat15、学生最多15/min15/pat15，均原图code0/每5轮13260回放呈现头块40内步，记录原unique图数与额外回放。教师TRAIN+TEST真GT；学生相同采样ID但TEST仅同结构教师softKL、并继承已暴露TEST硬监督的教师权重。域仅分组不进forward，没固定域专家或GT路由。旧helper内部TRAIN_only字段不能当作教师数据来源证明，教师确实包含TEST硬标签，外层来源/数量标志和源代码为准。
+
+恢复已至少E10，E4主分类梯度和相位更新真实非零（累计raw相位L2约3.18），router保持不变，说明第四专家已在学习；这是中途记录不是最终准确率。只按原TEST开发选同一PT，VAL可记录不设门槛。新分支未完整best/last/metadata/hist/锁/三split scores/routes/dense/capture/teacher8码cache全remote-localSHA及strict/完整ID/实际Top2/全部预算与自身PID退出前，不替换主表69.8/57.8。当前新负载候选已四路可用，分类恢复仍未目标；保留原父与全部失败，逐轮分析实际错类和负载，不因低分停止整体goal，也不改物理合同或无依据盲扫。
+
+## 上批完整核验：D三条主曲线严格递增；同结构联合F69.8/57.8，双65%和四专家均衡未达（历史阶段，2026-11-01）
 
 本批全部正式训练、头拟合与GPU复核已结束，源/PT/cache/路由/逐样本预测均保存并核验，自己的相关PID已经退出、无GPU分配，其他用户不动。D主曲线三组严格递增是已完成项（Kather为显式PT约束选择，并列保留未约束最高分，不称最优性能自然递增）；F必须继续标为未达双65%，不是因为实验运行结束就称准确率任务完成。
 

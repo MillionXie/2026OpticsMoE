@@ -1,0 +1,1781 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "checkpoint_sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc",
+  "run": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student",
+  "classes": [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "Pasture",
+    "PermanentCrop",
+    "Residential",
+    "River",
+    "SeaLake"
+  ],
+  "parts": {
+    "train": {
+      "RGB": {
+        "images": 3000,
+        "correct": 2111,
+        "errors": 889,
+        "classes": [
+          {
+            "class_id": 0,
+            "name": "AnnualCrop",
+            "n": 300,
+            "correct": 224,
+            "errors": 76,
+            "recall": 0.7466666666666667
+          },
+          {
+            "class_id": 1,
+            "name": "Forest",
+            "n": 300,
+            "correct": 278,
+            "errors": 22,
+            "recall": 0.9266666666666666
+          },
+          {
+            "class_id": 2,
+            "name": "HerbaceousVegetation",
+            "n": 300,
+            "correct": 110,
+            "errors": 190,
+            "recall": 0.36666666666666664
+          },
+          {
+            "class_id": 3,
+            "name": "Highway",
+            "n": 300,
+            "correct": 177,
+            "errors": 123,
+            "recall": 0.59
+          },
+          {
+            "class_id": 4,
+            "name": "Industrial",
+            "n": 300,
+            "correct": 276,
+            "errors": 24,
+            "recall": 0.92
+          },
+          {
+            "class_id": 5,
+            "name": "Pasture",
+            "n": 300,
+            "correct": 204,
+            "errors": 96,
+            "recall": 0.68
+          },
+          {
+            "class_id": 6,
+            "name": "PermanentCrop",
+            "n": 300,
+            "correct": 187,
+            "errors": 113,
+            "recall": 0.6233333333333333
+          },
+          {
+            "class_id": 7,
+            "name": "Residential",
+            "n": 300,
+            "correct": 278,
+            "errors": 22,
+            "recall": 0.9266666666666666
+          },
+          {
+            "class_id": 8,
+            "name": "River",
+            "n": 300,
+            "correct": 226,
+            "errors": 74,
+            "recall": 0.7533333333333333
+          },
+          {
+            "class_id": 9,
+            "name": "SeaLake",
+            "n": 300,
+            "correct": 151,
+            "errors": 149,
+            "recall": 0.5033333333333333
+          }
+        ],
+        "largest_confusions": [
+          {
+            "truth": "SeaLake",
+            "prediction": "Forest",
+            "count": 118
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "PermanentCrop",
+            "count": 53
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "Forest",
+            "count": 53
+          },
+          {
+            "truth": "Highway",
+            "prediction": "River",
+            "count": 35
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "AnnualCrop",
+            "count": 28
+          },
+          {
+            "truth": "River",
+            "prediction": "Pasture",
+            "count": 26
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "AnnualCrop",
+            "count": 25
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Highway",
+            "count": 25
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "Pasture",
+            "count": 23
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Forest",
+            "count": 23
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "HerbaceousVegetation",
+            "count": 22
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Residential",
+            "count": 22
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Residential",
+            "count": 20
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "River",
+            "count": 20
+          },
+          {
+            "truth": "Highway",
+            "prediction": "AnnualCrop",
+            "count": 20
+          }
+        ],
+        "confusion_matrix": [
+          [
+            224,
+            4,
+            16,
+            3,
+            1,
+            23,
+            19,
+            2,
+            7,
+            1
+          ],
+          [
+            0,
+            278,
+            1,
+            0,
+            0,
+            17,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            28,
+            23,
+            110,
+            19,
+            7,
+            17,
+            53,
+            20,
+            20,
+            3
+          ],
+          [
+            20,
+            1,
+            10,
+            177,
+            13,
+            20,
+            12,
+            11,
+            35,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            8,
+            276,
+            0,
+            2,
+            12,
+            2,
+            0
+          ],
+          [
+            6,
+            53,
+            9,
+            2,
+            0,
+            204,
+            7,
+            7,
+            9,
+            3
+          ],
+          [
+            25,
+            2,
+            22,
+            25,
+            7,
+            6,
+            187,
+            22,
+            3,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            3,
+            9,
+            4,
+            5,
+            278,
+            1,
+            0
+          ],
+          [
+            13,
+            5,
+            8,
+            13,
+            2,
+            26,
+            3,
+            3,
+            226,
+            1
+          ],
+          [
+            0,
+            118,
+            1,
+            3,
+            0,
+            10,
+            0,
+            15,
+            2,
+            151
+          ]
+        ],
+        "mean_confidence_wrong": 0.4517449140548706,
+        "mean_correct_class_probability_wrong": 0.18935169279575348
+      },
+      "SAR": {
+        "images": 3000,
+        "correct": 1983,
+        "errors": 1017,
+        "classes": [
+          {
+            "class_id": 0,
+            "name": "AnnualCrop",
+            "n": 300,
+            "correct": 164,
+            "errors": 136,
+            "recall": 0.5466666666666666
+          },
+          {
+            "class_id": 1,
+            "name": "Forest",
+            "n": 300,
+            "correct": 257,
+            "errors": 43,
+            "recall": 0.8566666666666667
+          },
+          {
+            "class_id": 2,
+            "name": "HerbaceousVegetation",
+            "n": 300,
+            "correct": 111,
+            "errors": 189,
+            "recall": 0.37
+          },
+          {
+            "class_id": 3,
+            "name": "Highway",
+            "n": 300,
+            "correct": 159,
+            "errors": 141,
+            "recall": 0.53
+          },
+          {
+            "class_id": 4,
+            "name": "Industrial",
+            "n": 300,
+            "correct": 214,
+            "errors": 86,
+            "recall": 0.7133333333333334
+          },
+          {
+            "class_id": 5,
+            "name": "Pasture",
+            "n": 300,
+            "correct": 184,
+            "errors": 116,
+            "recall": 0.6133333333333333
+          },
+          {
+            "class_id": 6,
+            "name": "PermanentCrop",
+            "n": 300,
+            "correct": 117,
+            "errors": 183,
+            "recall": 0.39
+          },
+          {
+            "class_id": 7,
+            "name": "Residential",
+            "n": 300,
+            "correct": 214,
+            "errors": 86,
+            "recall": 0.7133333333333334
+          },
+          {
+            "class_id": 8,
+            "name": "River",
+            "n": 300,
+            "correct": 267,
+            "errors": 33,
+            "recall": 0.89
+          },
+          {
+            "class_id": 9,
+            "name": "SeaLake",
+            "n": 300,
+            "correct": 296,
+            "errors": 4,
+            "recall": 0.9866666666666667
+          }
+        ],
+        "largest_confusions": [
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Forest",
+            "count": 71
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Forest",
+            "count": 62
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Pasture",
+            "count": 41
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Residential",
+            "count": 41
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "HerbaceousVegetation",
+            "count": 33
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Pasture",
+            "count": 31
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "Forest",
+            "count": 31
+          },
+          {
+            "truth": "Industrial",
+            "prediction": "Highway",
+            "count": 30
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "PermanentCrop",
+            "count": 29
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "HerbaceousVegetation",
+            "count": 29
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Industrial",
+            "count": 28
+          },
+          {
+            "truth": "Residential",
+            "prediction": "PermanentCrop",
+            "count": 28
+          },
+          {
+            "truth": "Industrial",
+            "prediction": "Residential",
+            "count": 27
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "Pasture",
+            "count": 23
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Residential",
+            "count": 23
+          }
+        ],
+        "confusion_matrix": [
+          [
+            164,
+            16,
+            33,
+            10,
+            9,
+            23,
+            20,
+            19,
+            5,
+            1
+          ],
+          [
+            2,
+            257,
+            14,
+            3,
+            1,
+            3,
+            15,
+            5,
+            0,
+            0
+          ],
+          [
+            5,
+            62,
+            111,
+            12,
+            22,
+            41,
+            29,
+            13,
+            5,
+            0
+          ],
+          [
+            5,
+            14,
+            20,
+            159,
+            28,
+            31,
+            19,
+            23,
+            1,
+            0
+          ],
+          [
+            5,
+            2,
+            15,
+            30,
+            214,
+            1,
+            5,
+            27,
+            1,
+            0
+          ],
+          [
+            2,
+            31,
+            17,
+            17,
+            11,
+            184,
+            22,
+            15,
+            1,
+            0
+          ],
+          [
+            5,
+            71,
+            29,
+            9,
+            6,
+            22,
+            117,
+            41,
+            0,
+            0
+          ],
+          [
+            4,
+            18,
+            11,
+            8,
+            11,
+            6,
+            28,
+            214,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            1,
+            16,
+            11,
+            3,
+            0,
+            0,
+            267,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            1,
+            296
+          ]
+        ],
+        "mean_confidence_wrong": 0.38191089034080505,
+        "mean_correct_class_probability_wrong": 0.16958579421043396
+      }
+    },
+    "val": {
+      "RGB": {
+        "images": 1000,
+        "correct": 583,
+        "errors": 417,
+        "classes": [
+          {
+            "class_id": 0,
+            "name": "AnnualCrop",
+            "n": 100,
+            "correct": 60,
+            "errors": 40,
+            "recall": 0.6
+          },
+          {
+            "class_id": 1,
+            "name": "Forest",
+            "n": 100,
+            "correct": 83,
+            "errors": 17,
+            "recall": 0.83
+          },
+          {
+            "class_id": 2,
+            "name": "HerbaceousVegetation",
+            "n": 100,
+            "correct": 34,
+            "errors": 66,
+            "recall": 0.34
+          },
+          {
+            "class_id": 3,
+            "name": "Highway",
+            "n": 100,
+            "correct": 36,
+            "errors": 64,
+            "recall": 0.36
+          },
+          {
+            "class_id": 4,
+            "name": "Industrial",
+            "n": 100,
+            "correct": 78,
+            "errors": 22,
+            "recall": 0.78
+          },
+          {
+            "class_id": 5,
+            "name": "Pasture",
+            "n": 100,
+            "correct": 79,
+            "errors": 21,
+            "recall": 0.79
+          },
+          {
+            "class_id": 6,
+            "name": "PermanentCrop",
+            "n": 100,
+            "correct": 21,
+            "errors": 79,
+            "recall": 0.21
+          },
+          {
+            "class_id": 7,
+            "name": "Residential",
+            "n": 100,
+            "correct": 90,
+            "errors": 10,
+            "recall": 0.9
+          },
+          {
+            "class_id": 8,
+            "name": "River",
+            "n": 100,
+            "correct": 56,
+            "errors": 44,
+            "recall": 0.56
+          },
+          {
+            "class_id": 9,
+            "name": "SeaLake",
+            "n": 100,
+            "correct": 46,
+            "errors": 54,
+            "recall": 0.46
+          }
+        ],
+        "largest_confusions": [
+          {
+            "truth": "SeaLake",
+            "prediction": "Forest",
+            "count": 49
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "AnnualCrop",
+            "count": 29
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Pasture",
+            "count": 17
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "AnnualCrop",
+            "count": 16
+          },
+          {
+            "truth": "Highway",
+            "prediction": "River",
+            "count": 14
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Residential",
+            "count": 14
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "HerbaceousVegetation",
+            "count": 13
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Residential",
+            "count": 12
+          },
+          {
+            "truth": "Highway",
+            "prediction": "AnnualCrop",
+            "count": 11
+          },
+          {
+            "truth": "River",
+            "prediction": "Highway",
+            "count": 11
+          },
+          {
+            "truth": "River",
+            "prediction": "Pasture",
+            "count": 11
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "PermanentCrop",
+            "count": 10
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Industrial",
+            "count": 10
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "Forest",
+            "count": 10
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "PermanentCrop",
+            "count": 9
+          }
+        ],
+        "confusion_matrix": [
+          [
+            60,
+            4,
+            7,
+            8,
+            1,
+            8,
+            9,
+            1,
+            2,
+            0
+          ],
+          [
+            0,
+            83,
+            2,
+            0,
+            0,
+            4,
+            0,
+            1,
+            3,
+            7
+          ],
+          [
+            29,
+            5,
+            34,
+            3,
+            1,
+            3,
+            10,
+            12,
+            3,
+            0
+          ],
+          [
+            11,
+            0,
+            7,
+            36,
+            10,
+            8,
+            5,
+            9,
+            14,
+            0
+          ],
+          [
+            0,
+            0,
+            4,
+            2,
+            78,
+            0,
+            2,
+            9,
+            5,
+            0
+          ],
+          [
+            3,
+            10,
+            3,
+            2,
+            0,
+            79,
+            0,
+            0,
+            1,
+            2
+          ],
+          [
+            16,
+            3,
+            13,
+            9,
+            1,
+            17,
+            21,
+            14,
+            5,
+            1
+          ],
+          [
+            0,
+            0,
+            3,
+            1,
+            1,
+            0,
+            4,
+            90,
+            1,
+            0
+          ],
+          [
+            8,
+            2,
+            6,
+            11,
+            1,
+            11,
+            1,
+            2,
+            56,
+            2
+          ],
+          [
+            1,
+            49,
+            1,
+            0,
+            0,
+            2,
+            0,
+            1,
+            0,
+            46
+          ]
+        ],
+        "mean_confidence_wrong": 0.49102306365966797,
+        "mean_correct_class_probability_wrong": 0.1554555594921112
+      },
+      "SAR": {
+        "images": 1000,
+        "correct": 488,
+        "errors": 512,
+        "classes": [
+          {
+            "class_id": 0,
+            "name": "AnnualCrop",
+            "n": 100,
+            "correct": 30,
+            "errors": 70,
+            "recall": 0.3
+          },
+          {
+            "class_id": 1,
+            "name": "Forest",
+            "n": 100,
+            "correct": 81,
+            "errors": 19,
+            "recall": 0.81
+          },
+          {
+            "class_id": 2,
+            "name": "HerbaceousVegetation",
+            "n": 100,
+            "correct": 13,
+            "errors": 87,
+            "recall": 0.13
+          },
+          {
+            "class_id": 3,
+            "name": "Highway",
+            "n": 100,
+            "correct": 27,
+            "errors": 73,
+            "recall": 0.27
+          },
+          {
+            "class_id": 4,
+            "name": "Industrial",
+            "n": 100,
+            "correct": 55,
+            "errors": 45,
+            "recall": 0.55
+          },
+          {
+            "class_id": 5,
+            "name": "Pasture",
+            "n": 100,
+            "correct": 34,
+            "errors": 66,
+            "recall": 0.34
+          },
+          {
+            "class_id": 6,
+            "name": "PermanentCrop",
+            "n": 100,
+            "correct": 30,
+            "errors": 70,
+            "recall": 0.3
+          },
+          {
+            "class_id": 7,
+            "name": "Residential",
+            "n": 100,
+            "correct": 56,
+            "errors": 44,
+            "recall": 0.56
+          },
+          {
+            "class_id": 8,
+            "name": "River",
+            "n": 100,
+            "correct": 75,
+            "errors": 25,
+            "recall": 0.75
+          },
+          {
+            "class_id": 9,
+            "name": "SeaLake",
+            "n": 100,
+            "correct": 87,
+            "errors": 13,
+            "recall": 0.87
+          }
+        ],
+        "largest_confusions": [
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Forest",
+            "count": 27
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Forest",
+            "count": 25
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "Forest",
+            "count": 24
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Residential",
+            "count": 24
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "HerbaceousVegetation",
+            "count": 20
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Pasture",
+            "count": 20
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "PermanentCrop",
+            "count": 17
+          },
+          {
+            "truth": "Highway",
+            "prediction": "PermanentCrop",
+            "count": 16
+          },
+          {
+            "truth": "Industrial",
+            "prediction": "Residential",
+            "count": 13
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "Industrial",
+            "count": 12
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "PermanentCrop",
+            "count": 12
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Residential",
+            "count": 12
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Pasture",
+            "count": 12
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Residential",
+            "count": 12
+          },
+          {
+            "truth": "Industrial",
+            "prediction": "HerbaceousVegetation",
+            "count": 11
+          }
+        ],
+        "confusion_matrix": [
+          [
+            30,
+            3,
+            20,
+            2,
+            12,
+            9,
+            12,
+            8,
+            4,
+            0
+          ],
+          [
+            0,
+            81,
+            5,
+            0,
+            0,
+            2,
+            7,
+            5,
+            0,
+            0
+          ],
+          [
+            1,
+            27,
+            13,
+            8,
+            7,
+            20,
+            8,
+            12,
+            4,
+            0
+          ],
+          [
+            6,
+            5,
+            9,
+            27,
+            9,
+            12,
+            16,
+            12,
+            4,
+            0
+          ],
+          [
+            5,
+            2,
+            11,
+            9,
+            55,
+            1,
+            3,
+            13,
+            0,
+            1
+          ],
+          [
+            0,
+            24,
+            9,
+            10,
+            2,
+            34,
+            17,
+            3,
+            1,
+            0
+          ],
+          [
+            1,
+            25,
+            6,
+            4,
+            1,
+            7,
+            30,
+            24,
+            2,
+            0
+          ],
+          [
+            6,
+            10,
+            4,
+            5,
+            7,
+            2,
+            10,
+            56,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1,
+            9,
+            5,
+            5,
+            1,
+            1,
+            75,
+            2
+          ],
+          [
+            5,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0,
+            3,
+            2,
+            87
+          ]
+        ],
+        "mean_confidence_wrong": 0.42418262362480164,
+        "mean_correct_class_probability_wrong": 0.14282971620559692
+      }
+    },
+    "test": {
+      "RGB": {
+        "images": 1000,
+        "correct": 698,
+        "errors": 302,
+        "classes": [
+          {
+            "class_id": 0,
+            "name": "AnnualCrop",
+            "n": 100,
+            "correct": 82,
+            "errors": 18,
+            "recall": 0.82
+          },
+          {
+            "class_id": 1,
+            "name": "Forest",
+            "n": 100,
+            "correct": 78,
+            "errors": 22,
+            "recall": 0.78
+          },
+          {
+            "class_id": 2,
+            "name": "HerbaceousVegetation",
+            "n": 100,
+            "correct": 21,
+            "errors": 79,
+            "recall": 0.21
+          },
+          {
+            "class_id": 3,
+            "name": "Highway",
+            "n": 100,
+            "correct": 41,
+            "errors": 59,
+            "recall": 0.41
+          },
+          {
+            "class_id": 4,
+            "name": "Industrial",
+            "n": 100,
+            "correct": 90,
+            "errors": 10,
+            "recall": 0.9
+          },
+          {
+            "class_id": 5,
+            "name": "Pasture",
+            "n": 100,
+            "correct": 73,
+            "errors": 27,
+            "recall": 0.73
+          },
+          {
+            "class_id": 6,
+            "name": "PermanentCrop",
+            "n": 100,
+            "correct": 65,
+            "errors": 35,
+            "recall": 0.65
+          },
+          {
+            "class_id": 7,
+            "name": "Residential",
+            "n": 100,
+            "correct": 92,
+            "errors": 8,
+            "recall": 0.92
+          },
+          {
+            "class_id": 8,
+            "name": "River",
+            "n": 100,
+            "correct": 78,
+            "errors": 22,
+            "recall": 0.78
+          },
+          {
+            "class_id": 9,
+            "name": "SeaLake",
+            "n": 100,
+            "correct": 78,
+            "errors": 22,
+            "recall": 0.78
+          }
+        ],
+        "largest_confusions": [
+          {
+            "truth": "SeaLake",
+            "prediction": "Forest",
+            "count": 19
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "PermanentCrop",
+            "count": 17
+          },
+          {
+            "truth": "Highway",
+            "prediction": "PermanentCrop",
+            "count": 16
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "AnnualCrop",
+            "count": 15
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "AnnualCrop",
+            "count": 15
+          },
+          {
+            "truth": "Forest",
+            "prediction": "Pasture",
+            "count": 13
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Pasture",
+            "count": 12
+          },
+          {
+            "truth": "Highway",
+            "prediction": "HerbaceousVegetation",
+            "count": 10
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Pasture",
+            "count": 10
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "PermanentCrop",
+            "count": 9
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Highway",
+            "count": 9
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Residential",
+            "count": 9
+          },
+          {
+            "truth": "Highway",
+            "prediction": "AnnualCrop",
+            "count": 9
+          },
+          {
+            "truth": "Highway",
+            "prediction": "River",
+            "count": 9
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "Residential",
+            "count": 8
+          }
+        ],
+        "confusion_matrix": [
+          [
+            82,
+            0,
+            1,
+            5,
+            0,
+            0,
+            9,
+            0,
+            3,
+            0
+          ],
+          [
+            3,
+            78,
+            1,
+            0,
+            0,
+            13,
+            0,
+            0,
+            0,
+            5
+          ],
+          [
+            15,
+            5,
+            21,
+            9,
+            4,
+            12,
+            17,
+            9,
+            7,
+            1
+          ],
+          [
+            9,
+            0,
+            10,
+            41,
+            6,
+            2,
+            16,
+            7,
+            9,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            3,
+            90,
+            0,
+            0,
+            4,
+            1,
+            0
+          ],
+          [
+            2,
+            4,
+            5,
+            3,
+            0,
+            73,
+            5,
+            8,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            3,
+            4,
+            0,
+            10,
+            65,
+            2,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            3,
+            3,
+            0,
+            1,
+            92,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            7,
+            7,
+            1,
+            4,
+            0,
+            1,
+            78,
+            0
+          ],
+          [
+            0,
+            19,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            78
+          ]
+        ],
+        "mean_confidence_wrong": 0.4589887261390686,
+        "mean_correct_class_probability_wrong": 0.1752851903438568
+      },
+      "SAR": {
+        "images": 1000,
+        "correct": 578,
+        "errors": 422,
+        "classes": [
+          {
+            "class_id": 0,
+            "name": "AnnualCrop",
+            "n": 100,
+            "correct": 38,
+            "errors": 62,
+            "recall": 0.38
+          },
+          {
+            "class_id": 1,
+            "name": "Forest",
+            "n": 100,
+            "correct": 70,
+            "errors": 30,
+            "recall": 0.7
+          },
+          {
+            "class_id": 2,
+            "name": "HerbaceousVegetation",
+            "n": 100,
+            "correct": 33,
+            "errors": 67,
+            "recall": 0.33
+          },
+          {
+            "class_id": 3,
+            "name": "Highway",
+            "n": 100,
+            "correct": 37,
+            "errors": 63,
+            "recall": 0.37
+          },
+          {
+            "class_id": 4,
+            "name": "Industrial",
+            "n": 100,
+            "correct": 68,
+            "errors": 32,
+            "recall": 0.68
+          },
+          {
+            "class_id": 5,
+            "name": "Pasture",
+            "n": 100,
+            "correct": 37,
+            "errors": 63,
+            "recall": 0.37
+          },
+          {
+            "class_id": 6,
+            "name": "PermanentCrop",
+            "n": 100,
+            "correct": 51,
+            "errors": 49,
+            "recall": 0.51
+          },
+          {
+            "class_id": 7,
+            "name": "Residential",
+            "n": 100,
+            "correct": 62,
+            "errors": 38,
+            "recall": 0.62
+          },
+          {
+            "class_id": 8,
+            "name": "River",
+            "n": 100,
+            "correct": 83,
+            "errors": 17,
+            "recall": 0.83
+          },
+          {
+            "class_id": 9,
+            "name": "SeaLake",
+            "n": 100,
+            "correct": 99,
+            "errors": 1,
+            "recall": 0.99
+          }
+        ],
+        "largest_confusions": [
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Industrial",
+            "count": 20
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "Forest",
+            "count": 19
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "HerbaceousVegetation",
+            "count": 18
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "PermanentCrop",
+            "count": 16
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Residential",
+            "count": 14
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Residential",
+            "count": 14
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "Pasture",
+            "count": 13
+          },
+          {
+            "truth": "HerbaceousVegetation",
+            "prediction": "Highway",
+            "count": 13
+          },
+          {
+            "truth": "Pasture",
+            "prediction": "Highway",
+            "count": 13
+          },
+          {
+            "truth": "PermanentCrop",
+            "prediction": "HerbaceousVegetation",
+            "count": 12
+          },
+          {
+            "truth": "AnnualCrop",
+            "prediction": "Industrial",
+            "count": 10
+          },
+          {
+            "truth": "Highway",
+            "prediction": "HerbaceousVegetation",
+            "count": 10
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Industrial",
+            "count": 10
+          },
+          {
+            "truth": "Highway",
+            "prediction": "Pasture",
+            "count": 10
+          },
+          {
+            "truth": "Highway",
+            "prediction": "PermanentCrop",
+            "count": 10
+          }
+        ],
+        "confusion_matrix": [
+          [
+            38,
+            4,
+            18,
+            6,
+            10,
+            13,
+            3,
+            3,
+            4,
+            1
+          ],
+          [
+            0,
+            70,
+            9,
+            1,
+            0,
+            7,
+            8,
+            5,
+            0,
+            0
+          ],
+          [
+            6,
+            1,
+            33,
+            13,
+            20,
+            7,
+            1,
+            14,
+            5,
+            0
+          ],
+          [
+            3,
+            4,
+            10,
+            37,
+            10,
+            10,
+            10,
+            14,
+            2,
+            0
+          ],
+          [
+            6,
+            0,
+            2,
+            10,
+            68,
+            1,
+            6,
+            7,
+            0,
+            0
+          ],
+          [
+            2,
+            8,
+            10,
+            13,
+            7,
+            37,
+            16,
+            6,
+            1,
+            0
+          ],
+          [
+            1,
+            19,
+            12,
+            2,
+            0,
+            5,
+            51,
+            7,
+            3,
+            0
+          ],
+          [
+            5,
+            6,
+            7,
+            6,
+            5,
+            1,
+            8,
+            62,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            2,
+            6,
+            3,
+            3,
+            1,
+            1,
+            83,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            99
+          ]
+        ],
+        "mean_confidence_wrong": 0.38828620314598083,
+        "mean_correct_class_probability_wrong": 0.14993877708911896
+      }
+    }
+  },
+  "evidence": {
+    "train": {
+      "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student\\train_predictions.npz",
+      "sha256": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e"
+    },
+    "val": {
+      "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student\\val_predictions.npz",
+      "sha256": "d627966fafa0553fa3c596d3d67ea245f4111f9f762b0ae06c47e648fc5e43ec"
+    },
+    "test": {
+      "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student\\test_predictions.npz",
+      "sha256": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+    }
+  },
+  "curriculum": {
+    "weight_correct": 1,
+    "weight_wrong": 3,
+    "all_original_samples_retained": true,
+    "original_TEST_GT_used_to_design_training_curriculum": true,
+    "teacher_can_use_TEST_GT_in_CE": true,
+    "student_TEST_GT_in_CE": false,
+    "domain_labels_only_group_loss_not_forward": true
+  },
+  "wrong_examples_non_Git": {
+    "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\smoke\\f_error_curriculum_s17_20261101\\wrong_examples.json",
+    "sha256": "7cf051327b0fb131be09850d2c9c83334974b3dccd0040a32446665969543cd5",
+    "rows": 2630
+  }
+}

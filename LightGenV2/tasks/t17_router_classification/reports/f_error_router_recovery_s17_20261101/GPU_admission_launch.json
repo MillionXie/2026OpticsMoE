@@ -1,0 +1,36 @@
+{
+  "source_commit": "270fc6bc9d7f3a3bea8d2f06f44882690f031d4d",
+  "parent_checkpoint_sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc",
+  "parent_canonical_TRAIN_expert4_selected_count": 1,
+  "class_balanced_TRAIN20_main_classification_expert_gradient_L2": [
+    0.04882526397705078,
+    0.0967569500207901,
+    0.4209536612033844,
+    0.0
+  ],
+  "class_balanced_TRAIN20_expert_selection_counts": [
+    10,
+    10,
+    20,
+    0
+  ],
+  "original_dense_router_forward_bitwise": true,
+  "load_only_router_update_finite": true,
+  "E_G_head_frozen_bitwise": true,
+  "GT_labels_in_load_update": false,
+  "shared_GPU_free_MiB_before_admission": 24200,
+  "inference_parameters": 487204,
+  "state_tensors": 4,
+  "pid": 3235990,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.f_router_load_recovery",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_router_load_pretrain_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_router_load_pretrain_s17_20261101/warmup"
+  ],
+  "time": 1793505313.5968595
+}

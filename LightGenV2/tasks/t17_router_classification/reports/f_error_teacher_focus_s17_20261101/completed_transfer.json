@@ -1,0 +1,175 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student_runtime_profile.json",
+      "size": 277,
+      "sha256": "3f47838609b08236475cc8c281762c19bca24bdf5dc78cea869ef69935eb9266"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/val_predictions.npz",
+      "size": 135966,
+      "sha256": "b36c669350a91315d9c272fcac5ad273d26ad0d9f56db0e2cb938250d9cbd30e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/last_checkpoint.pt",
+      "size": 1960272,
+      "sha256": "f07c966753cbed986b5a5570f6ab4871ffc5ed3186e651134b9e18478f94d208"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/metadata.json",
+      "size": 11371,
+      "sha256": "6fad455eda3c7d96f330ae5b7b4f1e06085837f0623891f00cb83db950347a28"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/test_features.npz",
+      "size": 5959097,
+      "sha256": "edaf7adad4867cf4bac3269b8055e6b6613af3d0dc5998174e673b0e846f0d29"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/exit_receipt.json",
+      "size": 51,
+      "sha256": "2fd4260b59e242e553a4de1518bc59877a123e55847d77f80c734dc8b1691cc7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/selection_lock.json",
+      "size": 221,
+      "sha256": "5a18a5ced43a93816ca0f3344dd7a6d24e4fa7d1d17282b6d5dc1e5ee74d22e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/status.json",
+      "size": 5951,
+      "sha256": "213c61ebcf82340169c5c35406f54c5bb895c2b0c9712799b5d4aca4de897eec"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/test_predictions.npz",
+      "size": 135947,
+      "sha256": "42f5d713733c27fd94f89d6fd8e01c272cb59986083f7e62d227599ba60d8ac7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/train_features.npz",
+      "size": 17867222,
+      "sha256": "d1264e3db97935fb0af781446c31dd568d1dca86ac98d2b1c25bfa08b2222845"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/result.json",
+      "size": 5910,
+      "sha256": "e0fb28eb9b58358d03efa8a88a2f985afd20b79713134f76b0e98ecef99ec1af"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/train_predictions.npz",
+      "size": 401854,
+      "sha256": "d54f96a19d62fd10c407b276e9abeba8f2ef646ad3fd418d906ecb2146d88cb4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/history.json",
+      "size": 186191,
+      "sha256": "2593569e1cb36ec4790c0f9a97ecc4272b4993e23c3811bef758e740a7ae5448"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/val_features.npz",
+      "size": 5956760,
+      "sha256": "66c4e92356a26696bcd19a1458e5da76a93d228dda925c5920f5f9e4a51c902e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/cache_manifest.json",
+      "size": 876,
+      "sha256": "784e4bfdd321864224d993dd67109e6edca38b1d3f81bcf5e4c2f018451f917d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/teacher/best_checkpoint.pt",
+      "size": 1960272,
+      "sha256": "1e0ba37686e8c8c5cd6777611305553c7dfc3c258390f5d86a7c42eb2bdb602b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/exit_receipt.json",
+      "size": 44,
+      "sha256": "85047c26ee6cd9324df6f9a41a17624b8b683b7fee63a3cde8d0363266124b62"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/status.json",
+      "size": 98,
+      "sha256": "cadfa72480bdfadc3a67d2838c5a3315b21b8badea774f14d8ddb7aea466f8ec"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/val_predictions.npz",
+      "size": 135966,
+      "sha256": "b36c669350a91315d9c272fcac5ad273d26ad0d9f56db0e2cb938250d9cbd30e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/last_checkpoint.pt",
+      "size": 1959120,
+      "sha256": "19d779d3aff0084c56ddfbd7482429155f126e25361452c1451842859800d8d4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/metadata.json",
+      "size": 9707,
+      "sha256": "97d292f6314ac52ea44726c541b3948fadd070209e26e41b818a0d289eb88466"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/test_features.npz",
+      "size": 5959097,
+      "sha256": "edaf7adad4867cf4bac3269b8055e6b6613af3d0dc5998174e673b0e846f0d29"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/canonical_teacher_targets.npz",
+      "size": 366186,
+      "sha256": "290084b5a1b1fd48b1e1b4ebb21ee33408280770d1242cf6dbaa9e6e96b07599"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/exit_receipt.json",
+      "size": 51,
+      "sha256": "d328eefa2b359439d1de98a4f14865dd014aed4285e1623d90af0b669ffaa7a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/selection_lock.json",
+      "size": 221,
+      "sha256": "52052ba17ca0242c68d7caf086de75957042d07dbe851d643069d9b33e111d56"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/status.json",
+      "size": 5955,
+      "sha256": "e5a6306b3fad4f415ff217671a8f519ca842d32bbcb4ead583198a10421aee6d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/test_predictions.npz",
+      "size": 135947,
+      "sha256": "42f5d713733c27fd94f89d6fd8e01c272cb59986083f7e62d227599ba60d8ac7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/train_features.npz",
+      "size": 17867222,
+      "sha256": "d1264e3db97935fb0af781446c31dd568d1dca86ac98d2b1c25bfa08b2222845"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/result.json",
+      "size": 5914,
+      "sha256": "87d695ee676524f47318c88ac64599e9d33ef879e7cafa4950433fbba6f52378"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/train_predictions.npz",
+      "size": 401854,
+      "sha256": "d54f96a19d62fd10c407b276e9abeba8f2ef646ad3fd418d906ecb2146d88cb4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/history.json",
+      "size": 186026,
+      "sha256": "8010c0483635235ec41c386e7c0811516d20d7ec9b0206567e009674580c68a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/val_features.npz",
+      "size": 5956760,
+      "sha256": "66c4e92356a26696bcd19a1458e5da76a93d228dda925c5920f5f9e4a51c902e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/cache_manifest.json",
+      "size": 876,
+      "sha256": "349c15632b629a8cdea12bf6c61552e77eda63aca340e9d1dca416172e398c88"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_teacher_focus_s17_20261101/student/best_checkpoint.pt",
+      "size": 1959120,
+      "sha256": "e496010c2ecd4b9eef3164f89db2fc753ab444b0ca86bbfde27bb2598f4b3d53"
+    }
+  ]
+}

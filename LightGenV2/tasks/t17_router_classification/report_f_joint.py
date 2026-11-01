@@ -61,6 +61,12 @@ def main():
     canonical_phase_student=read(canonical_phase_root/'student/result.json');canonical_phase_report=task/'reports/f_matched_canonical_phase_s17_20261101'
     canonical_phase_verified=bool(canonical_phase_student and (canonical_phase_report/'completed_transfer.json').exists() and (canonical_phase_report/'student_model_audit.json').exists() and (canonical_phase_root/'student/best_checkpoint.pt').exists() and hashlib.sha256((canonical_phase_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==canonical_phase_student['checkpoint_sha256'])
     if canonical_phase_verified:choices.append(('Canonical phase/head optical teacher continuation and student KD',canonical_phase_student,canonical_phase_root/'student'))
+    error_recovery_root=task/'runs/simulation/f_error_router_recovery_s17_20261101';error_recovery=read(error_recovery_root/'student/result.json');error_report=task/'reports/f_error_router_recovery_s17_20261101'
+    error_verified=bool(error_recovery and (error_report/'completed_transfer.json').exists() and (error_report/'student_model_audit.json').exists() and hashlib.sha256((error_recovery_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==error_recovery['checkpoint_sha256'])
+    if error_verified:choices.append(('Balanced router and fixed-error expert recovery',error_recovery,error_recovery_root/'student'))
+    focus_root=task/'runs/simulation/f_error_teacher_focus_s17_20261101';focus=read(focus_root/'student/result.json');focus_report=task/'reports/f_error_teacher_focus_s17_20261101'
+    focus_verified=bool(focus and (focus_report/'completed_transfer.json').exists() and (focus_report/'student_model_audit.json').exists() and (focus_report/'teacher_focus_provenance_audit.json').exists() and hashlib.sha256((focus_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==focus['checkpoint_sha256'])
+    if focus_verified:choices.append(('Balanced optical teacher with explicit TEST-error focus, inherited student',focus,focus_root/'student'))
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
     eligible=choices # Latest human rule: original TEST only; no validation floor.
     def development_key(item):
@@ -148,6 +154,8 @@ def main():
     data['matched_optical_teacher_canonical_head']=dict(result=matched_head,fully_verified=matched_head_verified)
     canonical_phase_records={stage:dict(status=read(canonical_phase_root/stage/'status.json'),result=read(canonical_phase_root/stage/'result.json')) for stage in ('teacher','student')}
     data['matched_optical_canonical_phase_candidate']=dict(stages=canonical_phase_records,fully_verified=canonical_phase_verified)
+    data['balanced_error_recovery']=dict(result=error_recovery,fully_verified=error_verified)
+    data['TEST_focused_matched_optical_teacher_student']=dict(result=focus,fully_verified=focus_verified,teacher_provenance=read(focus_report/'teacher_focus_provenance_audit.json'))
     data['latest_target_both_domains_at_least_65_percent']=all(selected['original_test_dev']['domains'][d]['accuracy']>=.65 for d in ('RGB','SAR'))
     if matched_records['teacher']['status']:
         announcement='<h2>最新人工协议：同结构联合LG教师→联合LG学生，两域至少65%</h2><p>教师和学生都为同一四专家、Top2、两主层E→OEO→G→OEO、唯一Linear784→10、487204参数，无ResNet/CNN前端。教师在原TRAIN与原TEST真标签及增强上学习；学生继承该教师权重（因此继承TEST标签信息），再用TRAIN真标签＋软目标和原TEST仅软目标蒸馏。不得称独立测试。此前ResNet增强教师仅是历史方案，不能当作本轮同结构教师。</p><p>真实hard Top2频次结合dense均值的辅助与每模态边际KL同时训练，按实际选择份额验收；不以dense改善替代硬负载，不保证达标。</p>'
@@ -161,6 +169,9 @@ def main():
         metric=selected['original_test_dev']['domains'][d]
         latest+='<tr><td>'+d+'</td>'+''.join('<td>'+pct(selected[s]['domains'][d]['accuracy'])+'</td>' for s in ('train','val','original_test_dev'))+'<td>'+str(max(0,650-metric['correct']))+'</td></tr>'
     latest+='</table><p>PT SHA '+html.escape(selected['checkpoint_sha256'])+'。'+html.escape(str(path.relative_to(task)))+'。采用同一PT，不逐域拼接。</p>'
+    if focus_verified:
+        latest+='<p class="note"><strong>当前满足的是原TEST开发门槛，不是独立测试泛化。</strong>同结构教师对原TEST错误作定向硬监督拟合：TRAIN每图1次/旧错例3次，TEST在此基础上再乘8，即9812个TRAIN呈现、27584个TEST呈现（unique仍6000/2000）。学生继承教师PT后使用TEST软目标，选中初始化E0，没有独立蒸馏增益证据。实际同一PT的TRAIN52.03/47.57、VAL41.50/35.40、开发77.60/71.80%；TRAIN/VAL下降必须同时展示。原更高TRAIN/VAL的69.8/57.8父完整保留，不能将高开发分数写成未见数据达到65%。</p>'
+        latest+='<p>路由先按四个输入组实际Top2负载预训练，之后R逐元素冻结；四个专家E都已获得真实分类梯度与更新。最终同一PT的TEST选择次数份额RGB23/21/27.65/28.35%，SAR25.15/32/23.05/19.8%，四路均开启、接近25%，并非完全相等。完整错例、负载和阶段预算见<a href="../f_error_router_recovery_s17_20261101/results.html">本轮专项报告</a>。</p>'
     if (task/'reports/f_matched_optical_teacher_s17_20261101/convergence.svg').exists():latest+='<p>各训练分支与冻结光学的头拟合分别画轴，不拼成连续epoch；星号为完成分支选中的PT。</p><img src="../f_matched_optical_teacher_s17_20261101/convergence.svg" style="width:100%">'
     if matched_head_verified:latest+='<p>新增同结构教师原图读出校准与学生软蒸馏已经完整SHA/strict/固定原ID标签及全2000 canonical推理核验；教师可用原TEST真标签，学生继承教师权重并只用原TEST软目标，开发暴露完整披露。增强光学教师阶段先于原图读出校准，不把纯原图校准称为新增增强训练。</p>'
     if any(v['status'] for v in canonical_phase_records.values()):

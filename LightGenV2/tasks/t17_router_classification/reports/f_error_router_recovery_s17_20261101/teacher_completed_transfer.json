@@ -1,0 +1,71 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "stage": "teacher",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/val_predictions.npz",
+      "size": 135708,
+      "sha256": "6f6111c47c515e2bb997d45caae11e04422191159462c0d8209aa6d0f2e093a9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/last_checkpoint.pt",
+      "size": 5397800,
+      "sha256": "9c8227e200bae23b8195960e8095fc1b0473a886035208b5a1fa3bde8974f8ef"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/test_teacher_logits.npz",
+      "size": 585559,
+      "sha256": "b53ef8f54d965bb14ebe44bede3fe884fdf576f49e749f796da437fe6b988c19"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/metadata.json",
+      "size": 14031,
+      "sha256": "ba1fed79d8f1f68d0033ca6471d431ce6dc92fee49af77c6617fb18c874656b9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/train_teacher_logits.npz",
+      "size": 1748992,
+      "sha256": "5f4390d173171c539039c7f15100e794d3ea1a9e23a315fe2bf5342aee1c4884"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/selection_lock.json",
+      "size": 228,
+      "sha256": "9fcfd70e44fcb0cb7b875e40aec8042c4cf821771aab3cefbca55c7e23a631e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/status.json",
+      "size": 14099,
+      "sha256": "6a76e497f63980c9f23caa58cbe1fa991cac78914549b90f79509aa8f29091eb"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/test_predictions.npz",
+      "size": 135781,
+      "sha256": "2ffcbe0c47f564375caa21d88c3170708dd33c4cca1f8df8be368718350a73dd"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/result.json",
+      "size": 14058,
+      "sha256": "4ea9457ab03a889ae93331d3f960841d0de66ca3d7e5dbba093624a51d5745e1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/train_predictions.npz",
+      "size": 400965,
+      "sha256": "4c86b4f56841cd5bb2a5bdf7f020ceb63ee2e9d07f6b81d9497c5e1002eb573a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/history.json",
+      "size": 404278,
+      "sha256": "bb5bd2b49be1801ffb41b7bac587c2ec926f4a685eef8a57da5d6697ea424818"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/best_checkpoint.pt",
+      "size": 5461431,
+      "sha256": "24787a8c0bafc54a2f3750c20364a12268b93c889239cd5b3f030f5cbef5352c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/teacher_cache_manifest.json",
+      "size": 835,
+      "sha256": "d5d25ffe4690dcb7f1db61495e4c99f8143fa168b68192d8d7cf8d0329763e43"
+    }
+  ]
+}

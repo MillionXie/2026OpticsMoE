@@ -1,0 +1,26 @@
+{
+  "snapshot_only": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_router_load_pretrain_s17_20261101/warmup/metadata.json",
+      "sha256": "ecad0be6a104dc30fa9c08ceccde240bff369faab74af022a1bdd7ecc0bde4c7",
+      "size": 6442
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_router_load_pretrain_s17_20261101/warmup/status.json",
+      "sha256": "b87d037d94192e8264875a9dfeffe290ef0522628f64176c741fb587a39cd140",
+      "size": 68
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_router_load_pretrain_s17_20261101/warmup/history.json",
+      "sha256": "094e23d63158d5fd28da4b67a8d8baea54f5a85063cb941868c0c8acb95e0aa3",
+      "size": 144354
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_router_load_pretrain_s17_20261101/warmup/result.json",
+      "sha256": "511e9a55bd150abe7e1a8b082901904ee5b86cd8c59803fd1c467892724aac12",
+      "size": 6792
+    }
+  ],
+  "final_PT_not_included": true
+}

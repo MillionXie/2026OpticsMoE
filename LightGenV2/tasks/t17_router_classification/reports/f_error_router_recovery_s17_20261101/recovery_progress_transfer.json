@@ -1,0 +1,51 @@
+{
+  "snapshot_only": true,
+  "final_PT_not_included": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/metadata.json",
+      "sha256": "ba1fed79d8f1f68d0033ca6471d431ce6dc92fee49af77c6617fb18c874656b9",
+      "size": 14031
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/status.json",
+      "sha256": "6a76e497f63980c9f23caa58cbe1fa991cac78914549b90f79509aa8f29091eb",
+      "size": 14099
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/history.json",
+      "sha256": "bb5bd2b49be1801ffb41b7bac587c2ec926f4a685eef8a57da5d6697ea424818",
+      "size": 404278
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/result.json",
+      "sha256": "4ea9457ab03a889ae93331d3f960841d0de66ca3d7e5dbba093624a51d5745e1",
+      "size": 14058
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/teacher/teacher_cache_manifest.json",
+      "sha256": "d5d25ffe4690dcb7f1db61495e4c99f8143fa168b68192d8d7cf8d0329763e43",
+      "size": 835
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/student/metadata.json",
+      "sha256": "f028d6ea681308d077a5fa3e177d2d33f544e1375f2be7f2fd24e82613bebc2c",
+      "size": 13230
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/student/status.json",
+      "sha256": "c18666d8a4c46551e19588e3e43806690fc50da28b06991fa8a7b28e2fcda6d9",
+      "size": 14098
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/student/history.json",
+      "sha256": "aa7c90779329b63616656fa54f0d247d94122bffc5bc9f2f3f2015f6268fc4da",
+      "size": 151612
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_error_router_recovery_s17_20261101/student/result.json",
+      "sha256": "f37ae633e1167206ce5b192fc828759c376e569e9bef44cca4d6e24e0b0358fe",
+      "size": 14057
+    }
+  ]
+}

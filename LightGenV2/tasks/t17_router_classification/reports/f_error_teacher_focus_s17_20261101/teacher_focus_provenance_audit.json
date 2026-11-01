@@ -1,0 +1,21 @@
+{
+  "teacher_GT_TRAIN_presentations": 9812,
+  "teacher_GT_original_TEST_presentations": 27584,
+  "unique_TRAIN": 6000,
+  "unique_TEST": 2000,
+  "TEST_focus_factor": 8,
+  "wrong_case_multiplicity": 3,
+  "original_evaluation_unweighted_and_complete": true,
+  "student_original_TEST_hard_images": 0,
+  "student_original_TEST_soft_images": 2000,
+  "student_selected_initial_teacher_weight": true,
+  "independent_distillation_gain_claim": false,
+  "student_TEST_labels_not_used_in_CE": true,
+  "student_inherits_TEST_hard_supervised_teacher_weight": true,
+  "teacher_head_inner_iterations": 150,
+  "teacher_head_closure_calls": 184,
+  "teacher_actual_optimization_presentations": 6880864,
+  "student_head_inner_iterations": 102,
+  "strict_development_only": true,
+  "train_and_validation_drop_must_be_reported": true
+}

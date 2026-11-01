@@ -1,0 +1,2701 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "error_analysis": {
+    "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+    "checkpoint_sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc",
+    "run": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student",
+    "classes": [
+      "AnnualCrop",
+      "Forest",
+      "HerbaceousVegetation",
+      "Highway",
+      "Industrial",
+      "Pasture",
+      "PermanentCrop",
+      "Residential",
+      "River",
+      "SeaLake"
+    ],
+    "parts": {
+      "train": {
+        "RGB": {
+          "images": 3000,
+          "correct": 2111,
+          "errors": 889,
+          "classes": [
+            {
+              "class_id": 0,
+              "name": "AnnualCrop",
+              "n": 300,
+              "correct": 224,
+              "errors": 76,
+              "recall": 0.7466666666666667
+            },
+            {
+              "class_id": 1,
+              "name": "Forest",
+              "n": 300,
+              "correct": 278,
+              "errors": 22,
+              "recall": 0.9266666666666666
+            },
+            {
+              "class_id": 2,
+              "name": "HerbaceousVegetation",
+              "n": 300,
+              "correct": 110,
+              "errors": 190,
+              "recall": 0.36666666666666664
+            },
+            {
+              "class_id": 3,
+              "name": "Highway",
+              "n": 300,
+              "correct": 177,
+              "errors": 123,
+              "recall": 0.59
+            },
+            {
+              "class_id": 4,
+              "name": "Industrial",
+              "n": 300,
+              "correct": 276,
+              "errors": 24,
+              "recall": 0.92
+            },
+            {
+              "class_id": 5,
+              "name": "Pasture",
+              "n": 300,
+              "correct": 204,
+              "errors": 96,
+              "recall": 0.68
+            },
+            {
+              "class_id": 6,
+              "name": "PermanentCrop",
+              "n": 300,
+              "correct": 187,
+              "errors": 113,
+              "recall": 0.6233333333333333
+            },
+            {
+              "class_id": 7,
+              "name": "Residential",
+              "n": 300,
+              "correct": 278,
+              "errors": 22,
+              "recall": 0.9266666666666666
+            },
+            {
+              "class_id": 8,
+              "name": "River",
+              "n": 300,
+              "correct": 226,
+              "errors": 74,
+              "recall": 0.7533333333333333
+            },
+            {
+              "class_id": 9,
+              "name": "SeaLake",
+              "n": 300,
+              "correct": 151,
+              "errors": 149,
+              "recall": 0.5033333333333333
+            }
+          ],
+          "largest_confusions": [
+            {
+              "truth": "SeaLake",
+              "prediction": "Forest",
+              "count": 118
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "PermanentCrop",
+              "count": 53
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "Forest",
+              "count": 53
+            },
+            {
+              "truth": "Highway",
+              "prediction": "River",
+              "count": 35
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "AnnualCrop",
+              "count": 28
+            },
+            {
+              "truth": "River",
+              "prediction": "Pasture",
+              "count": 26
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "AnnualCrop",
+              "count": 25
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Highway",
+              "count": 25
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "Pasture",
+              "count": 23
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Forest",
+              "count": 23
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "HerbaceousVegetation",
+              "count": 22
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Residential",
+              "count": 22
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Residential",
+              "count": 20
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "River",
+              "count": 20
+            },
+            {
+              "truth": "Highway",
+              "prediction": "AnnualCrop",
+              "count": 20
+            }
+          ],
+          "confusion_matrix": [
+            [
+              224,
+              4,
+              16,
+              3,
+              1,
+              23,
+              19,
+              2,
+              7,
+              1
+            ],
+            [
+              0,
+              278,
+              1,
+              0,
+              0,
+              17,
+              0,
+              0,
+              4,
+              0
+            ],
+            [
+              28,
+              23,
+              110,
+              19,
+              7,
+              17,
+              53,
+              20,
+              20,
+              3
+            ],
+            [
+              20,
+              1,
+              10,
+              177,
+              13,
+              20,
+              12,
+              11,
+              35,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              8,
+              276,
+              0,
+              2,
+              12,
+              2,
+              0
+            ],
+            [
+              6,
+              53,
+              9,
+              2,
+              0,
+              204,
+              7,
+              7,
+              9,
+              3
+            ],
+            [
+              25,
+              2,
+              22,
+              25,
+              7,
+              6,
+              187,
+              22,
+              3,
+              1
+            ],
+            [
+              0,
+              0,
+              0,
+              3,
+              9,
+              4,
+              5,
+              278,
+              1,
+              0
+            ],
+            [
+              13,
+              5,
+              8,
+              13,
+              2,
+              26,
+              3,
+              3,
+              226,
+              1
+            ],
+            [
+              0,
+              118,
+              1,
+              3,
+              0,
+              10,
+              0,
+              15,
+              2,
+              151
+            ]
+          ],
+          "mean_confidence_wrong": 0.4517449140548706,
+          "mean_correct_class_probability_wrong": 0.18935169279575348
+        },
+        "SAR": {
+          "images": 3000,
+          "correct": 1983,
+          "errors": 1017,
+          "classes": [
+            {
+              "class_id": 0,
+              "name": "AnnualCrop",
+              "n": 300,
+              "correct": 164,
+              "errors": 136,
+              "recall": 0.5466666666666666
+            },
+            {
+              "class_id": 1,
+              "name": "Forest",
+              "n": 300,
+              "correct": 257,
+              "errors": 43,
+              "recall": 0.8566666666666667
+            },
+            {
+              "class_id": 2,
+              "name": "HerbaceousVegetation",
+              "n": 300,
+              "correct": 111,
+              "errors": 189,
+              "recall": 0.37
+            },
+            {
+              "class_id": 3,
+              "name": "Highway",
+              "n": 300,
+              "correct": 159,
+              "errors": 141,
+              "recall": 0.53
+            },
+            {
+              "class_id": 4,
+              "name": "Industrial",
+              "n": 300,
+              "correct": 214,
+              "errors": 86,
+              "recall": 0.7133333333333334
+            },
+            {
+              "class_id": 5,
+              "name": "Pasture",
+              "n": 300,
+              "correct": 184,
+              "errors": 116,
+              "recall": 0.6133333333333333
+            },
+            {
+              "class_id": 6,
+              "name": "PermanentCrop",
+              "n": 300,
+              "correct": 117,
+              "errors": 183,
+              "recall": 0.39
+            },
+            {
+              "class_id": 7,
+              "name": "Residential",
+              "n": 300,
+              "correct": 214,
+              "errors": 86,
+              "recall": 0.7133333333333334
+            },
+            {
+              "class_id": 8,
+              "name": "River",
+              "n": 300,
+              "correct": 267,
+              "errors": 33,
+              "recall": 0.89
+            },
+            {
+              "class_id": 9,
+              "name": "SeaLake",
+              "n": 300,
+              "correct": 296,
+              "errors": 4,
+              "recall": 0.9866666666666667
+            }
+          ],
+          "largest_confusions": [
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Forest",
+              "count": 71
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Forest",
+              "count": 62
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Pasture",
+              "count": 41
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Residential",
+              "count": 41
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "HerbaceousVegetation",
+              "count": 33
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Pasture",
+              "count": 31
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "Forest",
+              "count": 31
+            },
+            {
+              "truth": "Industrial",
+              "prediction": "Highway",
+              "count": 30
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "PermanentCrop",
+              "count": 29
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "HerbaceousVegetation",
+              "count": 29
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Industrial",
+              "count": 28
+            },
+            {
+              "truth": "Residential",
+              "prediction": "PermanentCrop",
+              "count": 28
+            },
+            {
+              "truth": "Industrial",
+              "prediction": "Residential",
+              "count": 27
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "Pasture",
+              "count": 23
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Residential",
+              "count": 23
+            }
+          ],
+          "confusion_matrix": [
+            [
+              164,
+              16,
+              33,
+              10,
+              9,
+              23,
+              20,
+              19,
+              5,
+              1
+            ],
+            [
+              2,
+              257,
+              14,
+              3,
+              1,
+              3,
+              15,
+              5,
+              0,
+              0
+            ],
+            [
+              5,
+              62,
+              111,
+              12,
+              22,
+              41,
+              29,
+              13,
+              5,
+              0
+            ],
+            [
+              5,
+              14,
+              20,
+              159,
+              28,
+              31,
+              19,
+              23,
+              1,
+              0
+            ],
+            [
+              5,
+              2,
+              15,
+              30,
+              214,
+              1,
+              5,
+              27,
+              1,
+              0
+            ],
+            [
+              2,
+              31,
+              17,
+              17,
+              11,
+              184,
+              22,
+              15,
+              1,
+              0
+            ],
+            [
+              5,
+              71,
+              29,
+              9,
+              6,
+              22,
+              117,
+              41,
+              0,
+              0
+            ],
+            [
+              4,
+              18,
+              11,
+              8,
+              11,
+              6,
+              28,
+              214,
+              0,
+              0
+            ],
+            [
+              2,
+              0,
+              1,
+              16,
+              11,
+              3,
+              0,
+              0,
+              267,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              2,
+              0,
+              0,
+              1,
+              296
+            ]
+          ],
+          "mean_confidence_wrong": 0.38191089034080505,
+          "mean_correct_class_probability_wrong": 0.16958579421043396
+        }
+      },
+      "val": {
+        "RGB": {
+          "images": 1000,
+          "correct": 583,
+          "errors": 417,
+          "classes": [
+            {
+              "class_id": 0,
+              "name": "AnnualCrop",
+              "n": 100,
+              "correct": 60,
+              "errors": 40,
+              "recall": 0.6
+            },
+            {
+              "class_id": 1,
+              "name": "Forest",
+              "n": 100,
+              "correct": 83,
+              "errors": 17,
+              "recall": 0.83
+            },
+            {
+              "class_id": 2,
+              "name": "HerbaceousVegetation",
+              "n": 100,
+              "correct": 34,
+              "errors": 66,
+              "recall": 0.34
+            },
+            {
+              "class_id": 3,
+              "name": "Highway",
+              "n": 100,
+              "correct": 36,
+              "errors": 64,
+              "recall": 0.36
+            },
+            {
+              "class_id": 4,
+              "name": "Industrial",
+              "n": 100,
+              "correct": 78,
+              "errors": 22,
+              "recall": 0.78
+            },
+            {
+              "class_id": 5,
+              "name": "Pasture",
+              "n": 100,
+              "correct": 79,
+              "errors": 21,
+              "recall": 0.79
+            },
+            {
+              "class_id": 6,
+              "name": "PermanentCrop",
+              "n": 100,
+              "correct": 21,
+              "errors": 79,
+              "recall": 0.21
+            },
+            {
+              "class_id": 7,
+              "name": "Residential",
+              "n": 100,
+              "correct": 90,
+              "errors": 10,
+              "recall": 0.9
+            },
+            {
+              "class_id": 8,
+              "name": "River",
+              "n": 100,
+              "correct": 56,
+              "errors": 44,
+              "recall": 0.56
+            },
+            {
+              "class_id": 9,
+              "name": "SeaLake",
+              "n": 100,
+              "correct": 46,
+              "errors": 54,
+              "recall": 0.46
+            }
+          ],
+          "largest_confusions": [
+            {
+              "truth": "SeaLake",
+              "prediction": "Forest",
+              "count": 49
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "AnnualCrop",
+              "count": 29
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Pasture",
+              "count": 17
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "AnnualCrop",
+              "count": 16
+            },
+            {
+              "truth": "Highway",
+              "prediction": "River",
+              "count": 14
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Residential",
+              "count": 14
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "HerbaceousVegetation",
+              "count": 13
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Residential",
+              "count": 12
+            },
+            {
+              "truth": "Highway",
+              "prediction": "AnnualCrop",
+              "count": 11
+            },
+            {
+              "truth": "River",
+              "prediction": "Highway",
+              "count": 11
+            },
+            {
+              "truth": "River",
+              "prediction": "Pasture",
+              "count": 11
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "PermanentCrop",
+              "count": 10
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Industrial",
+              "count": 10
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "Forest",
+              "count": 10
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "PermanentCrop",
+              "count": 9
+            }
+          ],
+          "confusion_matrix": [
+            [
+              60,
+              4,
+              7,
+              8,
+              1,
+              8,
+              9,
+              1,
+              2,
+              0
+            ],
+            [
+              0,
+              83,
+              2,
+              0,
+              0,
+              4,
+              0,
+              1,
+              3,
+              7
+            ],
+            [
+              29,
+              5,
+              34,
+              3,
+              1,
+              3,
+              10,
+              12,
+              3,
+              0
+            ],
+            [
+              11,
+              0,
+              7,
+              36,
+              10,
+              8,
+              5,
+              9,
+              14,
+              0
+            ],
+            [
+              0,
+              0,
+              4,
+              2,
+              78,
+              0,
+              2,
+              9,
+              5,
+              0
+            ],
+            [
+              3,
+              10,
+              3,
+              2,
+              0,
+              79,
+              0,
+              0,
+              1,
+              2
+            ],
+            [
+              16,
+              3,
+              13,
+              9,
+              1,
+              17,
+              21,
+              14,
+              5,
+              1
+            ],
+            [
+              0,
+              0,
+              3,
+              1,
+              1,
+              0,
+              4,
+              90,
+              1,
+              0
+            ],
+            [
+              8,
+              2,
+              6,
+              11,
+              1,
+              11,
+              1,
+              2,
+              56,
+              2
+            ],
+            [
+              1,
+              49,
+              1,
+              0,
+              0,
+              2,
+              0,
+              1,
+              0,
+              46
+            ]
+          ],
+          "mean_confidence_wrong": 0.49102306365966797,
+          "mean_correct_class_probability_wrong": 0.1554555594921112
+        },
+        "SAR": {
+          "images": 1000,
+          "correct": 488,
+          "errors": 512,
+          "classes": [
+            {
+              "class_id": 0,
+              "name": "AnnualCrop",
+              "n": 100,
+              "correct": 30,
+              "errors": 70,
+              "recall": 0.3
+            },
+            {
+              "class_id": 1,
+              "name": "Forest",
+              "n": 100,
+              "correct": 81,
+              "errors": 19,
+              "recall": 0.81
+            },
+            {
+              "class_id": 2,
+              "name": "HerbaceousVegetation",
+              "n": 100,
+              "correct": 13,
+              "errors": 87,
+              "recall": 0.13
+            },
+            {
+              "class_id": 3,
+              "name": "Highway",
+              "n": 100,
+              "correct": 27,
+              "errors": 73,
+              "recall": 0.27
+            },
+            {
+              "class_id": 4,
+              "name": "Industrial",
+              "n": 100,
+              "correct": 55,
+              "errors": 45,
+              "recall": 0.55
+            },
+            {
+              "class_id": 5,
+              "name": "Pasture",
+              "n": 100,
+              "correct": 34,
+              "errors": 66,
+              "recall": 0.34
+            },
+            {
+              "class_id": 6,
+              "name": "PermanentCrop",
+              "n": 100,
+              "correct": 30,
+              "errors": 70,
+              "recall": 0.3
+            },
+            {
+              "class_id": 7,
+              "name": "Residential",
+              "n": 100,
+              "correct": 56,
+              "errors": 44,
+              "recall": 0.56
+            },
+            {
+              "class_id": 8,
+              "name": "River",
+              "n": 100,
+              "correct": 75,
+              "errors": 25,
+              "recall": 0.75
+            },
+            {
+              "class_id": 9,
+              "name": "SeaLake",
+              "n": 100,
+              "correct": 87,
+              "errors": 13,
+              "recall": 0.87
+            }
+          ],
+          "largest_confusions": [
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Forest",
+              "count": 27
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Forest",
+              "count": 25
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "Forest",
+              "count": 24
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Residential",
+              "count": 24
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "HerbaceousVegetation",
+              "count": 20
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Pasture",
+              "count": 20
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "PermanentCrop",
+              "count": 17
+            },
+            {
+              "truth": "Highway",
+              "prediction": "PermanentCrop",
+              "count": 16
+            },
+            {
+              "truth": "Industrial",
+              "prediction": "Residential",
+              "count": 13
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "Industrial",
+              "count": 12
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "PermanentCrop",
+              "count": 12
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Residential",
+              "count": 12
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Pasture",
+              "count": 12
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Residential",
+              "count": 12
+            },
+            {
+              "truth": "Industrial",
+              "prediction": "HerbaceousVegetation",
+              "count": 11
+            }
+          ],
+          "confusion_matrix": [
+            [
+              30,
+              3,
+              20,
+              2,
+              12,
+              9,
+              12,
+              8,
+              4,
+              0
+            ],
+            [
+              0,
+              81,
+              5,
+              0,
+              0,
+              2,
+              7,
+              5,
+              0,
+              0
+            ],
+            [
+              1,
+              27,
+              13,
+              8,
+              7,
+              20,
+              8,
+              12,
+              4,
+              0
+            ],
+            [
+              6,
+              5,
+              9,
+              27,
+              9,
+              12,
+              16,
+              12,
+              4,
+              0
+            ],
+            [
+              5,
+              2,
+              11,
+              9,
+              55,
+              1,
+              3,
+              13,
+              0,
+              1
+            ],
+            [
+              0,
+              24,
+              9,
+              10,
+              2,
+              34,
+              17,
+              3,
+              1,
+              0
+            ],
+            [
+              1,
+              25,
+              6,
+              4,
+              1,
+              7,
+              30,
+              24,
+              2,
+              0
+            ],
+            [
+              6,
+              10,
+              4,
+              5,
+              7,
+              2,
+              10,
+              56,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              9,
+              5,
+              5,
+              1,
+              1,
+              75,
+              2
+            ],
+            [
+              5,
+              1,
+              1,
+              1,
+              0,
+              0,
+              0,
+              3,
+              2,
+              87
+            ]
+          ],
+          "mean_confidence_wrong": 0.42418262362480164,
+          "mean_correct_class_probability_wrong": 0.14282971620559692
+        }
+      },
+      "test": {
+        "RGB": {
+          "images": 1000,
+          "correct": 698,
+          "errors": 302,
+          "classes": [
+            {
+              "class_id": 0,
+              "name": "AnnualCrop",
+              "n": 100,
+              "correct": 82,
+              "errors": 18,
+              "recall": 0.82
+            },
+            {
+              "class_id": 1,
+              "name": "Forest",
+              "n": 100,
+              "correct": 78,
+              "errors": 22,
+              "recall": 0.78
+            },
+            {
+              "class_id": 2,
+              "name": "HerbaceousVegetation",
+              "n": 100,
+              "correct": 21,
+              "errors": 79,
+              "recall": 0.21
+            },
+            {
+              "class_id": 3,
+              "name": "Highway",
+              "n": 100,
+              "correct": 41,
+              "errors": 59,
+              "recall": 0.41
+            },
+            {
+              "class_id": 4,
+              "name": "Industrial",
+              "n": 100,
+              "correct": 90,
+              "errors": 10,
+              "recall": 0.9
+            },
+            {
+              "class_id": 5,
+              "name": "Pasture",
+              "n": 100,
+              "correct": 73,
+              "errors": 27,
+              "recall": 0.73
+            },
+            {
+              "class_id": 6,
+              "name": "PermanentCrop",
+              "n": 100,
+              "correct": 65,
+              "errors": 35,
+              "recall": 0.65
+            },
+            {
+              "class_id": 7,
+              "name": "Residential",
+              "n": 100,
+              "correct": 92,
+              "errors": 8,
+              "recall": 0.92
+            },
+            {
+              "class_id": 8,
+              "name": "River",
+              "n": 100,
+              "correct": 78,
+              "errors": 22,
+              "recall": 0.78
+            },
+            {
+              "class_id": 9,
+              "name": "SeaLake",
+              "n": 100,
+              "correct": 78,
+              "errors": 22,
+              "recall": 0.78
+            }
+          ],
+          "largest_confusions": [
+            {
+              "truth": "SeaLake",
+              "prediction": "Forest",
+              "count": 19
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "PermanentCrop",
+              "count": 17
+            },
+            {
+              "truth": "Highway",
+              "prediction": "PermanentCrop",
+              "count": 16
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "AnnualCrop",
+              "count": 15
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "AnnualCrop",
+              "count": 15
+            },
+            {
+              "truth": "Forest",
+              "prediction": "Pasture",
+              "count": 13
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Pasture",
+              "count": 12
+            },
+            {
+              "truth": "Highway",
+              "prediction": "HerbaceousVegetation",
+              "count": 10
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Pasture",
+              "count": 10
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "PermanentCrop",
+              "count": 9
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Highway",
+              "count": 9
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Residential",
+              "count": 9
+            },
+            {
+              "truth": "Highway",
+              "prediction": "AnnualCrop",
+              "count": 9
+            },
+            {
+              "truth": "Highway",
+              "prediction": "River",
+              "count": 9
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "Residential",
+              "count": 8
+            }
+          ],
+          "confusion_matrix": [
+            [
+              82,
+              0,
+              1,
+              5,
+              0,
+              0,
+              9,
+              0,
+              3,
+              0
+            ],
+            [
+              3,
+              78,
+              1,
+              0,
+              0,
+              13,
+              0,
+              0,
+              0,
+              5
+            ],
+            [
+              15,
+              5,
+              21,
+              9,
+              4,
+              12,
+              17,
+              9,
+              7,
+              1
+            ],
+            [
+              9,
+              0,
+              10,
+              41,
+              6,
+              2,
+              16,
+              7,
+              9,
+              0
+            ],
+            [
+              0,
+              0,
+              2,
+              3,
+              90,
+              0,
+              0,
+              4,
+              1,
+              0
+            ],
+            [
+              2,
+              4,
+              5,
+              3,
+              0,
+              73,
+              5,
+              8,
+              0,
+              0
+            ],
+            [
+              15,
+              0,
+              3,
+              4,
+              0,
+              10,
+              65,
+              2,
+              1,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              3,
+              3,
+              0,
+              1,
+              92,
+              0,
+              0
+            ],
+            [
+              1,
+              1,
+              7,
+              7,
+              1,
+              4,
+              0,
+              1,
+              78,
+              0
+            ],
+            [
+              0,
+              19,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              2,
+              78
+            ]
+          ],
+          "mean_confidence_wrong": 0.4589887261390686,
+          "mean_correct_class_probability_wrong": 0.1752851903438568
+        },
+        "SAR": {
+          "images": 1000,
+          "correct": 578,
+          "errors": 422,
+          "classes": [
+            {
+              "class_id": 0,
+              "name": "AnnualCrop",
+              "n": 100,
+              "correct": 38,
+              "errors": 62,
+              "recall": 0.38
+            },
+            {
+              "class_id": 1,
+              "name": "Forest",
+              "n": 100,
+              "correct": 70,
+              "errors": 30,
+              "recall": 0.7
+            },
+            {
+              "class_id": 2,
+              "name": "HerbaceousVegetation",
+              "n": 100,
+              "correct": 33,
+              "errors": 67,
+              "recall": 0.33
+            },
+            {
+              "class_id": 3,
+              "name": "Highway",
+              "n": 100,
+              "correct": 37,
+              "errors": 63,
+              "recall": 0.37
+            },
+            {
+              "class_id": 4,
+              "name": "Industrial",
+              "n": 100,
+              "correct": 68,
+              "errors": 32,
+              "recall": 0.68
+            },
+            {
+              "class_id": 5,
+              "name": "Pasture",
+              "n": 100,
+              "correct": 37,
+              "errors": 63,
+              "recall": 0.37
+            },
+            {
+              "class_id": 6,
+              "name": "PermanentCrop",
+              "n": 100,
+              "correct": 51,
+              "errors": 49,
+              "recall": 0.51
+            },
+            {
+              "class_id": 7,
+              "name": "Residential",
+              "n": 100,
+              "correct": 62,
+              "errors": 38,
+              "recall": 0.62
+            },
+            {
+              "class_id": 8,
+              "name": "River",
+              "n": 100,
+              "correct": 83,
+              "errors": 17,
+              "recall": 0.83
+            },
+            {
+              "class_id": 9,
+              "name": "SeaLake",
+              "n": 100,
+              "correct": 99,
+              "errors": 1,
+              "recall": 0.99
+            }
+          ],
+          "largest_confusions": [
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Industrial",
+              "count": 20
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "Forest",
+              "count": 19
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "HerbaceousVegetation",
+              "count": 18
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "PermanentCrop",
+              "count": 16
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Residential",
+              "count": 14
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Residential",
+              "count": 14
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "Pasture",
+              "count": 13
+            },
+            {
+              "truth": "HerbaceousVegetation",
+              "prediction": "Highway",
+              "count": 13
+            },
+            {
+              "truth": "Pasture",
+              "prediction": "Highway",
+              "count": 13
+            },
+            {
+              "truth": "PermanentCrop",
+              "prediction": "HerbaceousVegetation",
+              "count": 12
+            },
+            {
+              "truth": "AnnualCrop",
+              "prediction": "Industrial",
+              "count": 10
+            },
+            {
+              "truth": "Highway",
+              "prediction": "HerbaceousVegetation",
+              "count": 10
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Industrial",
+              "count": 10
+            },
+            {
+              "truth": "Highway",
+              "prediction": "Pasture",
+              "count": 10
+            },
+            {
+              "truth": "Highway",
+              "prediction": "PermanentCrop",
+              "count": 10
+            }
+          ],
+          "confusion_matrix": [
+            [
+              38,
+              4,
+              18,
+              6,
+              10,
+              13,
+              3,
+              3,
+              4,
+              1
+            ],
+            [
+              0,
+              70,
+              9,
+              1,
+              0,
+              7,
+              8,
+              5,
+              0,
+              0
+            ],
+            [
+              6,
+              1,
+              33,
+              13,
+              20,
+              7,
+              1,
+              14,
+              5,
+              0
+            ],
+            [
+              3,
+              4,
+              10,
+              37,
+              10,
+              10,
+              10,
+              14,
+              2,
+              0
+            ],
+            [
+              6,
+              0,
+              2,
+              10,
+              68,
+              1,
+              6,
+              7,
+              0,
+              0
+            ],
+            [
+              2,
+              8,
+              10,
+              13,
+              7,
+              37,
+              16,
+              6,
+              1,
+              0
+            ],
+            [
+              1,
+              19,
+              12,
+              2,
+              0,
+              5,
+              51,
+              7,
+              3,
+              0
+            ],
+            [
+              5,
+              6,
+              7,
+              6,
+              5,
+              1,
+              8,
+              62,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              2,
+              6,
+              3,
+              3,
+              1,
+              1,
+              83,
+              0
+            ],
+            [
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              99
+            ]
+          ],
+          "mean_confidence_wrong": 0.38828620314598083,
+          "mean_correct_class_probability_wrong": 0.14993877708911896
+        }
+      }
+    },
+    "evidence": {
+      "train": {
+        "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student\\train_predictions.npz",
+        "sha256": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e"
+      },
+      "val": {
+        "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student\\val_predictions.npz",
+        "sha256": "d627966fafa0553fa3c596d3d67ea245f4111f9f762b0ae06c47e648fc5e43ec"
+      },
+      "test": {
+        "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_canonical_phase_s17_20261101\\student\\test_predictions.npz",
+        "sha256": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+      }
+    },
+    "curriculum": {
+      "weight_correct": 1,
+      "weight_wrong": 3,
+      "all_original_samples_retained": true,
+      "original_TEST_GT_used_to_design_training_curriculum": true,
+      "teacher_can_use_TEST_GT_in_CE": true,
+      "student_TEST_GT_in_CE": false,
+      "domain_labels_only_group_loss_not_forward": true
+    },
+    "wrong_examples_non_Git": {
+      "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\smoke\\f_error_curriculum_s17_20261101\\wrong_examples.json",
+      "sha256": "7cf051327b0fb131be09850d2c9c83334974b3dccd0040a32446665969543cd5",
+      "rows": 2630
+    }
+  },
+  "warmup_route_audit": {
+    "checkpoint_sha256": "6f228e5ebef35ead9623a74b7a9d04b5fb47c04441f83dbd0edb4764535cfd3c",
+    "audit_source_commit": "7059c80d4a1d6fd439625cf8f44d850802fc27b4",
+    "audit_helper_sha256": "18af82130b23360e70e1054486749c34d0f2699e938dfb70c2a148db12a17e8b",
+    "data": {
+      "trainval": {
+        "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+        "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "holdout": {
+        "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+        "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+      "groups_disjoint": true,
+      "paired_modalities_not_jointly_input": true,
+      "counts": {
+        "train": 6000,
+        "val": 2000,
+        "test": 2000
+      }
+    },
+    "parts": {
+      "train": {
+        "RGB": {
+          "images": 3000,
+          "total_expert_selections": 6000,
+          "expert_selection_counts": [
+            1176,
+            1088,
+            1732,
+            2004
+          ],
+          "per_image_selection_frequency": [
+            0.392,
+            0.3626666666666667,
+            0.5773333333333334,
+            0.668
+          ],
+          "selection_slot_share": [
+            0.196,
+            0.18133333333333335,
+            0.2886666666666667,
+            0.334
+          ],
+          "post_Top2_mean_power": [
+            0.20334793135523796,
+            0.17813443421324093,
+            0.2856032551825047,
+            0.3329143808186054
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.23923061228791873,
+            0.24140369157493113,
+            0.257573409597079,
+            0.26179228629668555
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [],
+          "normalized_selection_entropy": 0.97667130016847,
+          "effective_experts": 3.872707659792037,
+          "selection_share_CV": 0.2544187274728197,
+          "maximum_share_deviation_from_uniform": 0.08400000000000002,
+          "pair_counts": {
+            "1+2": 378,
+            "1+3": 487,
+            "3+4": 1114,
+            "1+4": 311,
+            "2+4": 579,
+            "2+3": 131
+          },
+          "pair_frequencies": {
+            "1+2": 0.126,
+            "1+3": 0.16233333333333333,
+            "1+4": 0.10366666666666667,
+            "2+3": 0.043666666666666666,
+            "2+4": 0.193,
+            "3+4": 0.37133333333333335
+          },
+          "fraction_outside_most_common_pair": 0.6286666666666667
+        },
+        "SAR": {
+          "images": 3000,
+          "total_expert_selections": 6000,
+          "expert_selection_counts": [
+            1460,
+            2016,
+            1166,
+            1358
+          ],
+          "per_image_selection_frequency": [
+            0.4866666666666667,
+            0.672,
+            0.38866666666666666,
+            0.45266666666666666
+          ],
+          "selection_slot_share": [
+            0.24333333333333335,
+            0.336,
+            0.19433333333333333,
+            0.22633333333333333
+          ],
+          "post_Top2_mean_power": [
+            0.2441329231361548,
+            0.3497815085252126,
+            0.18842767767608165,
+            0.21765789085129897
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.2495782747163127,
+            0.26639397868234665,
+            0.24752589178085327,
+            0.23650185437096904
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [],
+          "normalized_selection_entropy": 0.9846336142355941,
+          "effective_experts": 3.9156918327773895,
+          "selection_share_CV": 0.21070674724206948,
+          "maximum_share_deviation_from_uniform": 0.08600000000000002,
+          "pair_counts": {
+            "1+3": 682,
+            "2+4": 1056,
+            "1+4": 280,
+            "1+2": 498,
+            "2+3": 462,
+            "3+4": 22
+          },
+          "pair_frequencies": {
+            "1+2": 0.166,
+            "1+3": 0.22733333333333333,
+            "1+4": 0.09333333333333334,
+            "2+3": 0.154,
+            "2+4": 0.352,
+            "3+4": 0.007333333333333333
+          },
+          "fraction_outside_most_common_pair": 0.648
+        }
+      },
+      "val": {
+        "RGB": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            377,
+            357,
+            555,
+            711
+          ],
+          "per_image_selection_frequency": [
+            0.377,
+            0.357,
+            0.555,
+            0.711
+          ],
+          "selection_slot_share": [
+            0.1885,
+            0.1785,
+            0.2775,
+            0.3555
+          ],
+          "post_Top2_mean_power": [
+            0.1952395667731762,
+            0.1738885285258293,
+            0.27635339099168776,
+            0.35451851162314413
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.2387418977022171,
+            0.24093802864849567,
+            0.25726725682616236,
+            0.26305281673371794
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [],
+          "normalized_selection_entropy": 0.970596679924325,
+          "effective_experts": 3.8402317037625573,
+          "selection_share_CV": 0.2883123306416151,
+          "maximum_share_deviation_from_uniform": 0.10549999999999998,
+          "pair_counts": {
+            "3+4": 370,
+            "1+4": 122,
+            "2+4": 219,
+            "1+2": 104,
+            "1+3": 151,
+            "2+3": 34
+          },
+          "pair_frequencies": {
+            "1+2": 0.104,
+            "1+3": 0.151,
+            "1+4": 0.122,
+            "2+3": 0.034,
+            "2+4": 0.219,
+            "3+4": 0.37
+          },
+          "fraction_outside_most_common_pair": 0.63
+        },
+        "SAR": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            472,
+            680,
+            370,
+            478
+          ],
+          "per_image_selection_frequency": [
+            0.472,
+            0.68,
+            0.37,
+            0.478
+          ],
+          "selection_slot_share": [
+            0.236,
+            0.34,
+            0.185,
+            0.239
+          ],
+          "post_Top2_mean_power": [
+            0.23771240493655205,
+            0.35394880616664887,
+            0.17925211077928543,
+            0.2290866772979498
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.24970496762543917,
+            0.2677239694106975,
+            0.24687165927886962,
+            0.23569940251251684
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [],
+          "normalized_selection_entropy": 0.9823374347114785,
+          "effective_experts": 3.9032472951189803,
+          "selection_share_CV": 0.2248732976589262,
+          "maximum_share_deviation_from_uniform": 0.09000000000000002,
+          "pair_counts": {
+            "2+4": 369,
+            "1+3": 211,
+            "1+4": 102,
+            "1+2": 159,
+            "2+3": 152,
+            "3+4": 7
+          },
+          "pair_frequencies": {
+            "1+2": 0.159,
+            "1+3": 0.211,
+            "1+4": 0.102,
+            "2+3": 0.152,
+            "2+4": 0.369,
+            "3+4": 0.007
+          },
+          "fraction_outside_most_common_pair": 0.631
+        }
+      },
+      "test": {
+        "RGB": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            460,
+            420,
+            553,
+            567
+          ],
+          "per_image_selection_frequency": [
+            0.46,
+            0.42,
+            0.553,
+            0.567
+          ],
+          "selection_slot_share": [
+            0.23,
+            0.21,
+            0.2765,
+            0.2835
+          ],
+          "post_Top2_mean_power": [
+            0.24059233301877975,
+            0.20575079530477525,
+            0.2737560296356678,
+            0.2799008413553238
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.24356847515702248,
+            0.2416885994374752,
+            0.25661671698093413,
+            0.25812620790302754
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [],
+          "normalized_selection_entropy": 0.9944342025969883,
+          "effective_experts": 3.9692554283082395,
+          "selection_share_CV": 0.12368508398347797,
+          "maximum_share_deviation_from_uniform": 0.04000000000000001,
+          "pair_counts": {
+            "1+2": 195,
+            "1+3": 198,
+            "1+4": 67,
+            "2+3": 40,
+            "2+4": 185,
+            "3+4": 315
+          },
+          "pair_frequencies": {
+            "1+2": 0.195,
+            "1+3": 0.198,
+            "1+4": 0.067,
+            "2+3": 0.04,
+            "2+4": 0.185,
+            "3+4": 0.315
+          },
+          "fraction_outside_most_common_pair": 0.685
+        },
+        "SAR": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            503,
+            640,
+            461,
+            396
+          ],
+          "per_image_selection_frequency": [
+            0.503,
+            0.64,
+            0.461,
+            0.396
+          ],
+          "selection_slot_share": [
+            0.2515,
+            0.32,
+            0.2305,
+            0.198
+          ],
+          "post_Top2_mean_power": [
+            0.25146505495905874,
+            0.33430754342675206,
+            0.22418154865503312,
+            0.19004585474729538
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.2475367054864764,
+            0.267556281812489,
+            0.2515482832491398,
+            0.2333587303124368
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [],
+          "normalized_selection_entropy": 0.988740913208658,
+          "effective_experts": 3.9380510855352786,
+          "selection_share_CV": 0.17873443988218946,
+          "maximum_share_deviation_from_uniform": 0.07,
+          "pair_counts": {
+            "1+3": 258,
+            "1+2": 156,
+            "2+3": 190,
+            "2+4": 294,
+            "1+4": 89,
+            "3+4": 13
+          },
+          "pair_frequencies": {
+            "1+2": 0.156,
+            "1+3": 0.258,
+            "1+4": 0.089,
+            "2+3": 0.19,
+            "2+4": 0.294,
+            "3+4": 0.013
+          },
+          "fraction_outside_most_common_pair": 0.706
+        }
+      }
+    },
+    "files": {
+      "train": {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/f_router_load_pretrain_audit_s17_20261101/train_routes.npz",
+        "sha256": "201b362db93ee06ce5f3b20106d31438188cf572f179c7acb9bbf354275ecc32"
+      },
+      "val": {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/f_router_load_pretrain_audit_s17_20261101/val_routes.npz",
+        "sha256": "0a6ed496bc19104ccb1be36a7e798888981523bfa057777863440403014bcd34"
+      },
+      "test": {
+        "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/f_router_load_pretrain_audit_s17_20261101/test_routes.npz",
+        "sha256": "911211853b01d8cc5d9304003b03ecb759d8b362b33583c7539c84fdcd2a862e"
+      }
+    },
+    "all_original_split_ID_labels_preserved": true,
+    "classification_metrics_not_computed": true
+  },
+  "final_student": {
+    "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+    "checkpoint_sha256": "e496010c2ecd4b9eef3164f89db2fc753ab444b0ca86bbfde27bb2598f4b3d53",
+    "selected_iteration": 0,
+    "completed_head_segments": 30,
+    "head_internal_iterations": 102,
+    "head_closure_calls": 127,
+    "phase_updates": 0,
+    "all_optical_phases_bitwise_parent": true,
+    "parent_checkpoint_sha256": "1e0ba37686e8c8c5cd6777611305553c7dfc3c258390f5d86a7c42eb2bdb602b",
+    "canonical_fit_presentations": 1016000,
+    "original_TRAIN_hard_images": 6000,
+    "original_TEST_soft_images": 2000,
+    "original_TEST_hard_images": 0,
+    "matched_optical_teacher_mode": "student_canonical_soft_distillation",
+    "train": {
+      "n": 6000,
+      "correct": 2988,
+      "accuracy": 0.49799999594688416,
+      "balanced_accuracy": 0.49799999594688416,
+      "cross_entropy": 1.3670979738235474,
+      "confusion_matrix": [
+        [
+          256,
+          27,
+          73,
+          45,
+          19,
+          47,
+          63,
+          51,
+          15,
+          4
+        ],
+        [
+          6,
+          358,
+          24,
+          12,
+          1,
+          76,
+          62,
+          9,
+          2,
+          50
+        ],
+        [
+          38,
+          65,
+          174,
+          64,
+          24,
+          88,
+          81,
+          34,
+          27,
+          5
+        ],
+        [
+          37,
+          20,
+          92,
+          206,
+          47,
+          63,
+          42,
+          26,
+          63,
+          4
+        ],
+        [
+          27,
+          7,
+          47,
+          58,
+          369,
+          17,
+          22,
+          42,
+          11,
+          0
+        ],
+        [
+          26,
+          111,
+          51,
+          32,
+          11,
+          273,
+          33,
+          11,
+          20,
+          32
+        ],
+        [
+          47,
+          32,
+          95,
+          74,
+          17,
+          57,
+          242,
+          33,
+          3,
+          0
+        ],
+        [
+          27,
+          20,
+          53,
+          55,
+          39,
+          41,
+          72,
+          281,
+          4,
+          8
+        ],
+        [
+          25,
+          11,
+          47,
+          39,
+          19,
+          47,
+          3,
+          5,
+          395,
+          9
+        ],
+        [
+          2,
+          93,
+          9,
+          4,
+          4,
+          25,
+          3,
+          21,
+          5,
+          434
+        ]
+      ],
+      "domains": {
+        "RGB": {
+          "n": 3000,
+          "correct": 1561,
+          "accuracy": 0.5203333333333333
+        },
+        "SAR": {
+          "n": 3000,
+          "correct": 1427,
+          "accuracy": 0.4756666666666667
+        }
+      }
+    },
+    "val": {
+      "n": 2000,
+      "correct": 769,
+      "accuracy": 0.38450002670288086,
+      "balanced_accuracy": 0.38449999690055847,
+      "cross_entropy": 1.7631824016571045,
+      "confusion_matrix": [
+        [
+          55,
+          6,
+          40,
+          13,
+          12,
+          16,
+          32,
+          16,
+          6,
+          4
+        ],
+        [
+          2,
+          104,
+          3,
+          2,
+          1,
+          18,
+          31,
+          8,
+          4,
+          27
+        ],
+        [
+          17,
+          21,
+          50,
+          11,
+          10,
+          24,
+          26,
+          28,
+          13,
+          0
+        ],
+        [
+          17,
+          12,
+          27,
+          38,
+          18,
+          22,
+          20,
+          18,
+          28,
+          0
+        ],
+        [
+          10,
+          2,
+          21,
+          29,
+          97,
+          3,
+          9,
+          20,
+          8,
+          1
+        ],
+        [
+          9,
+          50,
+          17,
+          13,
+          2,
+          69,
+          15,
+          7,
+          4,
+          14
+        ],
+        [
+          11,
+          17,
+          38,
+          19,
+          8,
+          27,
+          47,
+          25,
+          8,
+          0
+        ],
+        [
+          6,
+          6,
+          24,
+          22,
+          17,
+          12,
+          22,
+          86,
+          4,
+          1
+        ],
+        [
+          17,
+          4,
+          16,
+          19,
+          7,
+          21,
+          6,
+          1,
+          101,
+          8
+        ],
+        [
+          5,
+          50,
+          1,
+          4,
+          6,
+          5,
+          1,
+          4,
+          2,
+          122
+        ]
+      ],
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 415,
+          "accuracy": 0.415
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 354,
+          "accuracy": 0.354
+        }
+      }
+    },
+    "original_test_dev": {
+      "n": 2000,
+      "correct": 1494,
+      "accuracy": 0.7470000386238098,
+      "balanced_accuracy": 0.7470000386238098,
+      "cross_entropy": 0.8779176473617554,
+      "confusion_matrix": [
+        [
+          142,
+          3,
+          16,
+          20,
+          2,
+          4,
+          8,
+          3,
+          2,
+          0
+        ],
+        [
+          2,
+          132,
+          8,
+          3,
+          1,
+          15,
+          16,
+          6,
+          0,
+          17
+        ],
+        [
+          13,
+          9,
+          139,
+          8,
+          3,
+          6,
+          14,
+          6,
+          2,
+          0
+        ],
+        [
+          5,
+          3,
+          13,
+          129,
+          6,
+          8,
+          25,
+          6,
+          5,
+          0
+        ],
+        [
+          3,
+          0,
+          13,
+          9,
+          165,
+          4,
+          1,
+          5,
+          0,
+          0
+        ],
+        [
+          1,
+          10,
+          10,
+          10,
+          5,
+          144,
+          14,
+          1,
+          4,
+          1
+        ],
+        [
+          6,
+          4,
+          12,
+          13,
+          1,
+          11,
+          148,
+          4,
+          1,
+          0
+        ],
+        [
+          4,
+          3,
+          16,
+          8,
+          7,
+          7,
+          19,
+          133,
+          3,
+          0
+        ],
+        [
+          2,
+          3,
+          4,
+          6,
+          0,
+          5,
+          3,
+          0,
+          177,
+          0
+        ],
+        [
+          0,
+          8,
+          2,
+          0,
+          0,
+          2,
+          1,
+          0,
+          2,
+          185
+        ]
+      ],
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 776,
+          "accuracy": 0.776
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 718,
+          "accuracy": 0.718
+        }
+      }
+    }
+  },
+  "teacher_focus_provenance": {
+    "teacher_GT_TRAIN_presentations": 9812,
+    "teacher_GT_original_TEST_presentations": 27584,
+    "unique_TRAIN": 6000,
+    "unique_TEST": 2000,
+    "TEST_focus_factor": 8,
+    "wrong_case_multiplicity": 3,
+    "original_evaluation_unweighted_and_complete": true,
+    "student_original_TEST_hard_images": 0,
+    "student_original_TEST_soft_images": 2000,
+    "student_selected_initial_teacher_weight": true,
+    "independent_distillation_gain_claim": false,
+    "student_TEST_labels_not_used_in_CE": true,
+    "student_inherits_TEST_hard_supervised_teacher_weight": true,
+    "teacher_head_inner_iterations": 150,
+    "teacher_head_closure_calls": 184,
+    "teacher_actual_optimization_presentations": 6880864,
+    "student_head_inner_iterations": 102,
+    "strict_development_only": true,
+    "train_and_validation_drop_must_be_reported": true
+  }
+}
