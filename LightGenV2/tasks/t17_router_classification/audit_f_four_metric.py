@@ -23,7 +23,7 @@ def audit(root):
         else:assert sha256(parent_path)==metadata['initial_teacher_SHA']
         assert torch.equal(best['model']['router_phase'],parent['model']['router_phase'])and torch.equal(last['model']['router_phase'],parent['model']['router_phase'])
         m=build_model(cfg).cuda().eval();m.load_state_dict(best['model'],strict=True);assert len(m.state_dict())==4 and sum(p.numel()for p in m.parameters())==487204 and sum(isinstance(v,torch.nn.Linear)for v in m.modules())==1 and not any(isinstance(v,(torch.nn.Conv2d,torch.nn.LayerNorm))for v in m.modules())
-        raw,identity=load_panel_f(cfg['data']);parts={}
+        raw,identity=load_panel_f(cfg['data']);parts={};teacher_fields=[]
         for split,key in [('train','train'),('val','val'),('test','original_test_dev')]:
             part=raw[split];saved=np.load(folder/f'{split}_predictions.npz',allow_pickle=False);assert all(np.array_equal(saved[n],part[n])for n in ('ids','labels','domains'));assert np.all((saved['route_power']>0).sum(1)==2)
             # Re-encode the complete unchanged original split and replay the canonical model.
@@ -33,8 +33,12 @@ def audit(root):
             for dom,name in [(0,'RGB'),(1,'SAR')]:
                 mask=part['domains']==dom;correct=int((saved['predictions'][mask]==part['labels'][mask]).sum());assert correct==result[key]['domains'][name]['correct'];parts[split]['domains'][name]=dict(n=int(mask.sum()),correct=correct,accuracy=correct/int(mask.sum()),usage=usage_statistics(saved['route_power'][mask],saved['dense_route_power'][mask]))
             if stage=='teacher'and split in ('train','test'):
-                with torch.no_grad():teacher_logits.append(torch.cat([m(x[i:i+cfg['eval_batch']])['raw_logits'].cpu()for i in range(0,len(x),cfg['eval_batch'])]).numpy())
+                teacher_fields.append(x)
             del x;torch.cuda.empty_cache()
+        if stage=='teacher':
+            combined=torch.cat(teacher_fields)
+            with torch.no_grad():teacher_logits=[m(combined[i:i+cfg['eval_batch']])['raw_logits'].cpu().numpy()for i in range(0,len(combined),cfg['eval_batch'])]
+            del combined,teacher_fields;torch.cuda.empty_cache()
         assert len(history)==result['completed_epochs']and best['epoch']==result['selected_epoch']
         assert all(h['phase_head_updates']==125 and h['mixed_original_presentations']==8000 and h['unique_TRAIN_images']==6000 and h['unique_original_TEST_images']==2000 and h['router_frozen_bitwise']and min(h['classification_raw_expert_gradient_L2_sum'])>0 for h in history)
         fits=[h['four_group_head_fit']for h in history if 'four_group_head_fit'in h]
