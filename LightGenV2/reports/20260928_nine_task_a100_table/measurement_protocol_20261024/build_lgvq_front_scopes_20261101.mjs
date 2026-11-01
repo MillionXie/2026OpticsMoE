@@ -91,7 +91,7 @@ for(const r of d.rounds.filter(r=>r.variant!==0))for(const p of ['decode','RGB',
   put(raw,rr,[[r.variant,r.repeat,p,x.mean_active_ms_per_video,x.mean_worker_elapsed_ms_per_video,null,null,'按512视频汇总；非16线程并行wall，含计时开销']]);
   f(raw,'F'+rr,`=E${rr}-D${rr}`);f(raw,'G'+rr,`=F${rr}/E${rr}`);rr++;
 }
-put(raw,57,[['本次原始收据SHA256',d.raw_receipt_sha256],['本次CPU审计SHA256',sha(input)],['原36条baseline来源SHA256',sha(baseline)],['实测范围说明','FFT软件运行不等于固定光路部署；LG J是固定组件估算，不是插座/CPU实测。']]);
+put(raw,57,[['原始收据SHA',d.raw_receipt_sha256],['CPU核验SHA',sha(input)],['Baseline源SHA',sha(baseline)],['实测范围说明','FFT软件运行不等于固定光路部署；LG J是固定组件估算，不是插座/CPU实测。']]);
 raw.getRange('A1:B60').format.columnWidth=18;raw.getRange('C1:J60').format.columnWidth=26;raw.getRange('K1:K60').format.columnWidth=73;raw.getRange('H28:H54').format.columnWidth=57;raw.getRange('C6:J17').setNumberFormat('0.000000');raw.getRange('D28:F54').setNumberFormat('0.000000');raw.getRange('G28:G54').setNumberFormat('0.00%');raw.freezePanes.freezeRows(5);
 
 put(trials,1,[['配置','模型','MPS/%','GPU','轮次','视频数','16视频组数','E2E总秒','自身tokens','GPU实测J','GPU＋固定主机J','Report SHA256']]);header(trials,1,12);

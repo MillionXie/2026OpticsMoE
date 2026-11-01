@@ -606,7 +606,7 @@ async function buildLGVQLabReference(){
         detail.getRange('H'+r).values=[[i<5?'工作量实测非零；在本场图像CPU准备期间完成':stages[i][2]==='固定光周期'?'固定1886Hz光周期；只摊销平均末场收尾':'实测kernel并集均值；只摊销平均末场收尾']];
       }
     }
-    put(detail,30,[['V0均值流水总时间',null,...lg.source_rounds.map(x=>x.time16_s*1000),null,null,'CPU均值P＋平均图像就绪后端Q÷32；是估算，不是物理E2E实测']]);
+    put(detail,30,[['V0均值流水总时间',null,...lg.source_rounds.map(x=>x.time16_s*1000),null,null,'CPU均值P＋平均后段Q÷32（估算）']]);
     f(detail,'F30','=AVERAGE(C30:E30)');f(detail,'G30','=SUM(G6:G29)');
     put(detail,33,[['CPU三项均值直接相加；不把16个线程工作量之和当并行延迟，也不另加任务分配不均衡。']]);
     put(detail,35,[['不计文件读取/解码、RGB、中心65%裁剪、quality准备、H2D、返回、CPU调度、FFT、残差和纯fusion/layout。']]);
