@@ -23,6 +23,7 @@ ENTRY=Path(__file__).resolve();HERE=ENTRY.parent;REPO=HERE.parents[3]
 TASK=REPO/'LightGenV2/tasks/t06_video_quality_assessment';SIM=TASK/'runs/simulation'
 GPU='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
 PYTHON='/home/guest3/miniconda3/envs/xml/bin/python'
+SCHEDULING_POLICY=None  # Optional published policy; legacy runs remain unchanged.
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
 
 def sha(path):
@@ -162,8 +163,9 @@ def execute(args,guard):
     def field_run(index,warm,pool):
         guard.fast();meter.field=-index-1 if warm else index;meter.pass_count=0;meter.phase='adapter_visual'
         start=time.perf_counter();lo=len(meter.events)
-        futures=[pool.submit(scope.patch_video,p,meter.field,slot,patch_fn)
-                 for slot,p in enumerate(prepared[index*16:(index+1)*16])]
+        futures=(SCHEDULING_POLICY.futures(index) if SCHEDULING_POLICY is not None and not warm else
+                 [pool.submit(scope.patch_video,p,meter.field,slot,patch_fn)
+                  for slot,p in enumerate(prepared[index*16:(index+1)*16])])
         a=time.perf_counter();ca=time.thread_time()
         rendered=text.render_prompt(front.tokenizer,target_name='temporal',prompt=text.TARGET_PROMPTS['temporal'])
         tok=front.tokenizer([rendered],padding=True,return_tensors='pt',add_special_tokens=False)
@@ -204,10 +206,12 @@ def execute(args,guard):
             mono_start=time.monotonic();host_start=time.perf_counter()
             with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU,torch.profiler.ProfilerActivity.CUDA],
                     record_shapes=False,profile_memory=False,with_stack=False) as profiler:
+                if SCHEDULING_POLICY is not None:SCHEDULING_POLICY.start(pool,prepared,patch_fn)
                 for field in range(32):sampler.check();field_run(field,False,pool)
             host_end=time.perf_counter();mono_end=time.monotonic()
         # Retain all scored outputs and raw timing before numerical admission.
         np.savez_compressed(output/'outputs.npz',prediction=np.concatenate(outputs),warm_prediction=np.concatenate(warm_outputs))
+        if SCHEDULING_POLICY is not None:SCHEDULING_POLICY.validate(output)
         events=[{k:v for k,v in e.items() if k not in ('start','end')}|dict(cuda_elapsed_ms=e['start'].elapsed_time(e['end'])) for e in meter.events]
         write(output/'raw_operator_records.json',dict(host_records=hosts,patch=patch_rows,tokenizer=token_rows,
             enclosing_event_spans_diagnostic_not_pure_kernel_time=events,formal_host_start=host_start,
