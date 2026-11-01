@@ -1,0 +1,10 @@
+{
+  "complete8000_canonical_logits_bitwise": true,
+  "shape": [
+    8000,
+    10
+  ],
+  "IDs_labels_domains_original": true,
+  "TRAIN_and_TEST_view_code": 0,
+  "teacher_targets_detached_by_tested_loss": true
+}

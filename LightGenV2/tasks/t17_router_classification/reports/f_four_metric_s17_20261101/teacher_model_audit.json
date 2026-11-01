@@ -1,0 +1,489 @@
+{
+  "checkpoint_sha256": "ab5441fecb716c5b301e7f0e683199c28feae36548624188ab72709e6381eddb",
+  "source_commit": "ddf192128f8ca98d27ce0379cb70717a6652ad0e",
+  "strict_four_state": true,
+  "parameters": 487204,
+  "Linear": 1,
+  "CNN": 0,
+  "router_bitwise_parent": true,
+  "parts": {
+    "train": {
+      "full_original_ID_label_domain_match": true,
+      "canonical_predictions_exact": true,
+      "max_probability_difference": 0.0,
+      "domains": {
+        "RGB": {
+          "n": 3000,
+          "correct": 1965,
+          "accuracy": 0.655,
+          "usage": {
+            "images": 3000,
+            "total_expert_selections": 6000,
+            "expert_selection_counts": [
+              1176,
+              1088,
+              1732,
+              2004
+            ],
+            "per_image_selection_frequency": [
+              0.392,
+              0.3626666666666667,
+              0.5773333333333334,
+              0.668
+            ],
+            "selection_slot_share": [
+              0.196,
+              0.18133333333333335,
+              0.2886666666666667,
+              0.334
+            ],
+            "post_Top2_mean_power": [
+              0.20334793135523796,
+              0.17813443421324093,
+              0.2856032551825047,
+              0.3329143808186054
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.23923061228791873,
+              0.24140369157493113,
+              0.257573409597079,
+              0.26179228629668555
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.97667130016847,
+            "effective_experts": 3.872707659792037,
+            "selection_share_CV": 0.2544187274728197,
+            "maximum_share_deviation_from_uniform": 0.08400000000000002,
+            "pair_counts": {
+              "1+2": 378,
+              "1+3": 487,
+              "3+4": 1114,
+              "1+4": 311,
+              "2+4": 579,
+              "2+3": 131
+            },
+            "pair_frequencies": {
+              "1+2": 0.126,
+              "1+3": 0.16233333333333333,
+              "1+4": 0.10366666666666667,
+              "2+3": 0.043666666666666666,
+              "2+4": 0.193,
+              "3+4": 0.37133333333333335
+            },
+            "fraction_outside_most_common_pair": 0.6286666666666667
+          }
+        },
+        "SAR": {
+          "n": 3000,
+          "correct": 1962,
+          "accuracy": 0.654,
+          "usage": {
+            "images": 3000,
+            "total_expert_selections": 6000,
+            "expert_selection_counts": [
+              1460,
+              2016,
+              1166,
+              1358
+            ],
+            "per_image_selection_frequency": [
+              0.4866666666666667,
+              0.672,
+              0.38866666666666666,
+              0.45266666666666666
+            ],
+            "selection_slot_share": [
+              0.24333333333333335,
+              0.336,
+              0.19433333333333333,
+              0.22633333333333333
+            ],
+            "post_Top2_mean_power": [
+              0.2441329231361548,
+              0.3497815085252126,
+              0.18842767767608165,
+              0.21765789085129897
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.2495782747163127,
+              0.26639397868234665,
+              0.24752589178085327,
+              0.23650185437096904
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.9846336142355941,
+            "effective_experts": 3.9156918327773895,
+            "selection_share_CV": 0.21070674724206948,
+            "maximum_share_deviation_from_uniform": 0.08600000000000002,
+            "pair_counts": {
+              "1+3": 682,
+              "2+4": 1056,
+              "1+4": 280,
+              "1+2": 498,
+              "2+3": 462,
+              "3+4": 22
+            },
+            "pair_frequencies": {
+              "1+2": 0.166,
+              "1+3": 0.22733333333333333,
+              "1+4": 0.09333333333333334,
+              "2+3": 0.154,
+              "2+4": 0.352,
+              "3+4": 0.007333333333333333
+            },
+            "fraction_outside_most_common_pair": 0.648
+          }
+        }
+      }
+    },
+    "val": {
+      "full_original_ID_label_domain_match": true,
+      "canonical_predictions_exact": true,
+      "max_probability_difference": 0.0,
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 463,
+          "accuracy": 0.463,
+          "usage": {
+            "images": 1000,
+            "total_expert_selections": 2000,
+            "expert_selection_counts": [
+              377,
+              357,
+              555,
+              711
+            ],
+            "per_image_selection_frequency": [
+              0.377,
+              0.357,
+              0.555,
+              0.711
+            ],
+            "selection_slot_share": [
+              0.1885,
+              0.1785,
+              0.2775,
+              0.3555
+            ],
+            "post_Top2_mean_power": [
+              0.1952395667731762,
+              0.1738885285258293,
+              0.27635339099168776,
+              0.35451851162314413
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.2387418977022171,
+              0.24093802864849567,
+              0.25726725682616236,
+              0.26305281673371794
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.970596679924325,
+            "effective_experts": 3.8402317037625573,
+            "selection_share_CV": 0.2883123306416151,
+            "maximum_share_deviation_from_uniform": 0.10549999999999998,
+            "pair_counts": {
+              "3+4": 370,
+              "1+4": 122,
+              "2+4": 219,
+              "1+2": 104,
+              "1+3": 151,
+              "2+3": 34
+            },
+            "pair_frequencies": {
+              "1+2": 0.104,
+              "1+3": 0.151,
+              "1+4": 0.122,
+              "2+3": 0.034,
+              "2+4": 0.219,
+              "3+4": 0.37
+            },
+            "fraction_outside_most_common_pair": 0.63
+          }
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 412,
+          "accuracy": 0.412,
+          "usage": {
+            "images": 1000,
+            "total_expert_selections": 2000,
+            "expert_selection_counts": [
+              472,
+              680,
+              370,
+              478
+            ],
+            "per_image_selection_frequency": [
+              0.472,
+              0.68,
+              0.37,
+              0.478
+            ],
+            "selection_slot_share": [
+              0.236,
+              0.34,
+              0.185,
+              0.239
+            ],
+            "post_Top2_mean_power": [
+              0.23771240493655205,
+              0.35394880616664887,
+              0.17925211077928543,
+              0.2290866772979498
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.24970496762543917,
+              0.2677239694106975,
+              0.24687165927886962,
+              0.23569940251251684
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.9823374347114785,
+            "effective_experts": 3.9032472951189803,
+            "selection_share_CV": 0.2248732976589262,
+            "maximum_share_deviation_from_uniform": 0.09000000000000002,
+            "pair_counts": {
+              "2+4": 369,
+              "1+3": 211,
+              "1+4": 102,
+              "1+2": 159,
+              "2+3": 152,
+              "3+4": 7
+            },
+            "pair_frequencies": {
+              "1+2": 0.159,
+              "1+3": 0.211,
+              "1+4": 0.102,
+              "2+3": 0.152,
+              "2+4": 0.369,
+              "3+4": 0.007
+            },
+            "fraction_outside_most_common_pair": 0.631
+          }
+        }
+      }
+    },
+    "test": {
+      "full_original_ID_label_domain_match": true,
+      "canonical_predictions_exact": true,
+      "max_probability_difference": 0.0,
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 771,
+          "accuracy": 0.771,
+          "usage": {
+            "images": 1000,
+            "total_expert_selections": 2000,
+            "expert_selection_counts": [
+              460,
+              420,
+              553,
+              567
+            ],
+            "per_image_selection_frequency": [
+              0.46,
+              0.42,
+              0.553,
+              0.567
+            ],
+            "selection_slot_share": [
+              0.23,
+              0.21,
+              0.2765,
+              0.2835
+            ],
+            "post_Top2_mean_power": [
+              0.24059233301877975,
+              0.20575079530477525,
+              0.2737560296356678,
+              0.2799008413553238
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.24356847515702248,
+              0.2416885994374752,
+              0.25661671698093413,
+              0.25812620790302754
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.9944342025969883,
+            "effective_experts": 3.9692554283082395,
+            "selection_share_CV": 0.12368508398347797,
+            "maximum_share_deviation_from_uniform": 0.04000000000000001,
+            "pair_counts": {
+              "1+2": 195,
+              "1+3": 198,
+              "1+4": 67,
+              "2+3": 40,
+              "2+4": 185,
+              "3+4": 315
+            },
+            "pair_frequencies": {
+              "1+2": 0.195,
+              "1+3": 0.198,
+              "1+4": 0.067,
+              "2+3": 0.04,
+              "2+4": 0.185,
+              "3+4": 0.315
+            },
+            "fraction_outside_most_common_pair": 0.685
+          }
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 781,
+          "accuracy": 0.781,
+          "usage": {
+            "images": 1000,
+            "total_expert_selections": 2000,
+            "expert_selection_counts": [
+              503,
+              640,
+              461,
+              396
+            ],
+            "per_image_selection_frequency": [
+              0.503,
+              0.64,
+              0.461,
+              0.396
+            ],
+            "selection_slot_share": [
+              0.2515,
+              0.32,
+              0.2305,
+              0.198
+            ],
+            "post_Top2_mean_power": [
+              0.25146505495905874,
+              0.33430754342675206,
+              0.22418154865503312,
+              0.19004585474729538
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.2475367054864764,
+              0.267556281812489,
+              0.2515482832491398,
+              0.2333587303124368
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.988740913208658,
+            "effective_experts": 3.9380510855352786,
+            "selection_share_CV": 0.17873443988218946,
+            "maximum_share_deviation_from_uniform": 0.07,
+            "pair_counts": {
+              "1+3": 258,
+              "1+2": 156,
+              "2+3": 190,
+              "2+4": 294,
+              "1+4": 89,
+              "3+4": 13
+            },
+            "pair_frequencies": {
+              "1+2": 0.156,
+              "1+3": 0.258,
+              "1+4": 0.089,
+              "2+3": 0.19,
+              "2+4": 0.294,
+              "3+4": 0.013
+            },
+            "fraction_outside_most_common_pair": 0.706
+          }
+        }
+      }
+    }
+  },
+  "minimum_four_accuracy": 0.654,
+  "all_four_at_least_65": true,
+  "last_actual_parameter_change_L2": {
+    "first_phase": 27.761974334716797,
+    "global_phase": 27.42186737060547,
+    "router_phase": 0.0,
+    "shared_head.weight": 7.534968852996826
+  },
+  "budget": {
+    "optical_epochs": 60,
+    "phase_head_updates": 7500,
+    "original_TRAIN_presentations": 360000,
+    "original_TEST_presentations": 120000,
+    "periodic_head_original_presentations": 96000,
+    "periodic_head_inner_steps": 480,
+    "initial_head_inner_steps": 80
+  },
+  "TEST_hard_GT_in_current_student_loss": true,
+  "student_inherited_TEST_hard_GT_teacher": false
+}

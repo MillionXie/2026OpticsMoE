@@ -9,13 +9,53 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/status.json",
-      "sha256": "2c4572f6b2a3e01f036d823892eb5dcc944590a61b4c6dbc68d008716501b33b",
-      "size": 128
+      "sha256": "5d7636cd8e3f8b938d22040049fd2bc32391407c246de7bcadfe49ce36fd0693",
+      "size": 14088
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/history.json",
-      "sha256": "cc3317210a52d1c9cdd54a1597cbae2be125bbcc83626f9ab738dad774db90e8",
-      "size": 57266
+      "sha256": "24b0a47a98e43c263bfe3760882b29f7007b312eaf21b86a9a7077f5f0bf9b55",
+      "size": 868741
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/result.json",
+      "sha256": "a09478d51d142ab380ce2799cb7e927ccd722dd8a501395e61b24338d6770f31",
+      "size": 14047
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/selection_lock.json",
+      "sha256": "4aaf9772a12af41819edc3510d03bbcd42afd710ee1155c0eea5516846ff4b9d",
+      "size": 292
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/teacher_target_manifest.json",
+      "sha256": "67c02d63811b220e1137135079c9a6e9b23bafb56a22b62b8d442d444ff24be6",
+      "size": 335
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/metadata.json",
+      "sha256": "48ae8bd9c26ef293b65c4fb89c6c64104e934167f23c1bb04e247384640e4da6",
+      "size": 17844
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/status.json",
+      "sha256": "b9c4752982450c5ad89f4c27d03dd33a5360d50d6ccefb1eeaed16937cd2e268",
+      "size": 14159
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/history.json",
+      "sha256": "366c7a68e4cc9d7937458bda05617c52bc42b7c59a301645cf774fe60b27cdfd",
+      "size": 217149
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/result.json",
+      "sha256": "b5bcb0e1bd82dfd688b8a1ed6f948010bf2411a79c18ea80829da5d821e2727e",
+      "size": 14118
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/selection_lock.json",
+      "sha256": "34cb17f5c43ec75cfdec237463b262e9a42ea72dfb66f2388c9aa44b4195ed1f",
+      "size": 292
     }
   ]
 }

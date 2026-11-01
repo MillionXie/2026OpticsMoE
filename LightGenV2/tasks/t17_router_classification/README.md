@@ -1,3 +1,17 @@
+## 最新完整交付：同一PT的TRAIN与原TEST开发四项均超过65%（2026-11-01）
+
+最新人工新增的TRAIN条件已达到，并保持原TEST开发至少65%和实际四专家负载。最终同一联合LG学生run runs/simulation/f_four_metric_s17_20261101/student，PT SHA a3fa43923e4640246aa7e715703cb0242aa3b434f0b2f7ae181d0cd5a2663247：原TRAIN RGB2075/3000=69.1667%、SAR2093/3000=69.7667%；原TEST开发RGB700/1000=70.00%、SAR703/1000=70.30%。VAL仅记录47.20/41.20%，仍明显较低，不能声称独立泛化达到65%。同一个PT的四项最低69.1667%，不逐域/逐划分拼PT，固定完整原图无筛样本。原TEST77.6/71.8但TRAIN52.03/47.57的旧focus PT完整保留，新增目标不能只看旧TEST高点。
+
+本次真实改变是把原TRAIN6000和原TEST2000混在每个随机epoch，四组独立归一，用固定tau=.5稳健损失侧重弱组；从balanced recovery teacher247的同四tensor启动，原光router冻结，原E/G与同一个无biasLinear共同学习，不改四专家/2主层/Top2/OEO/光路/输入/487204参数。teacher允许TEST硬GT，student仅TRAIN硬CE+KD与TEST teacher KL，标签显式-1/拒绝TEST硬CE；学生继承已TEST硬监督teacher权重，开发暴露明示。源ddf192128f8ca98d27ce0379cb70717a6652ad0e经17CPU和精确父真实TRAIN20/TEST20 GPU准入、main/GitHub/server路径SHA后启动，没热改运行代码。
+
+同结构teacher60轮选E59：TRAIN65.50/65.40、开发77.10/78.10；student15轮选E9：TRAIN69.17/69.77、开发70.00/70.30。学生的四项最低值提高，但TEST相对teacher下降，明确是四组取舍，不称所有分数都上升或独立蒸馏因果优势。每轮125 E/G/head更新，teacher7500、student1875；原图呈现teacher480000/student120000，其中TEST120000/30000。teacher初始头80内步、每5轮原同一个Linear8000混合canonical视图40内步：teacher12块96000呈现/480步，student3块24000呈现/120步。Gram显式包含TEST，只数值坐标导回原float32W，不是额外推理层。每轮TRAIN与TEST都参与四项选PT，VAL无门槛；所有历史搜索预算独立保留不拼连续epoch。
+
+24文件24.57MB全best/last/metadata/history/锁/三split逐样本预测route/teacher8000x10 canonical软目标与manifest已按服务器生成manifest逐文件remote-localSHA。audit_f_four_metric.py全量strict4state487204/唯一Linear无CNN、原TRAIN6000/VAL2000/TEST2000 ID标签域与真实Top2/每域正确数、完整三split canonical预测、teacher全部8000软目标原跨split分块bitwise重放、R同父逐元素、last E/G/head真实更新、每轮125步/所有头块相位冻结/实际内步均通过。收据reports/f_four_metric_s17_20261101/{completed_transfer,GPU_exit,teacher_model_audit,student_model_audit,teacher_target_replay_audit}.json；原始PT/缓存与逐样本留非Git目录。worker3392620已退出无GPU分配，审计GPU进程也已完成，其他用户未动。
+
+实际TEST选择次数份额（每图Top2，四项合计100%）RGB23/21/27.65/28.35%、SAR25.15/32/23.05/19.8%，四专家都真实启用，接近25%而非完全相等；被选频率则是这些值的两倍、合计200%。R逐元素冻结使TRAIN/VAL/TEST路由分布保持，功率不混作频次。主report->负载report->主report按同一新PT重算；load JSON与主PT SHA一致。D2NN定稿四格、D三条曲线与A/B复用均不改。
+
+本轮专项reports/f_four_metric_s17_20261101/results.html/json与four_metrics.svg分开画teacher/student预算轴，星号是各自完整选中PT；主图reports/f_joint_dual_teacher_s17_20261101/results.html/json采用新四项达标PT，旧focus/所有失败完整保留。仍为ORIGINAL_TEST_EXPOSED_DEVELOPMENT、seed17无SD，不能把TRAIN+TEST拟合门槛当独立测试或等数据/预算结构优势。下面各“当前在训/goal active”段为历史阶段，不覆盖此最新完整交付。
+
 ## 最新人工追加：同一联合LG的TRAIN/开发TEST四项均至少65%（2026-11-01）
 
 用户新增原TRAIN两域也至少65%，因此前述“TEST门槛已解决”只代表旧目标，不代表当前整体完成。当前保护PT e496的TRAIN52.0333/47.5667、开发TEST77.6/71.8；新目标四项同一PT都>=65%，VAL仍仅记录、无门槛，真实负载保持四路开启和已有分布。不能只改显示口径或把不同PT/域/划分拼成达标。

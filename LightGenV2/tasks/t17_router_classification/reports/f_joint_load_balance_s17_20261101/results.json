@@ -1,7 +1,7 @@
 {
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
-  "selected_joint_run": "runs\\simulation\\f_error_teacher_focus_s17_20261101\\student",
-  "checkpoint_sha256": "e496010c2ecd4b9eef3164f89db2fc753ab444b0ca86bbfde27bb2598f4b3d53",
+  "selected_joint_run": "runs\\simulation\\f_four_metric_s17_20261101\\student",
+  "checkpoint_sha256": "a3fa43923e4640246aa7e715703cb0242aa3b434f0b2f7ae181d0cd5a2663247",
   "definitions": {
     "selection_frequency": "P(expert is in hard Top2); four entries sum to 2, balanced reference 50% each",
     "selection_slot_share": "Expert selections / (2 * images); four entries sum to 1, balanced reference 25% each",
@@ -80,7 +80,7 @@
           "3+4": 0.37133333333333335
         },
         "fraction_outside_most_common_pair": 0.6286666666666667,
-        "accuracy": 0.5203333333333333,
+        "accuracy": 0.6916666666666667,
         "by_class": {
           "0": {
             "images": 300,
@@ -821,7 +821,7 @@
           "3+4": 0.007333333333333333
         },
         "fraction_outside_most_common_pair": 0.648,
-        "accuracy": 0.4756666666666667,
+        "accuracy": 0.6976666666666667,
         "by_class": {
           "0": {
             "images": 300,
@@ -1564,7 +1564,7 @@
           "3+4": 0.37
         },
         "fraction_outside_most_common_pair": 0.63,
-        "accuracy": 0.415,
+        "accuracy": 0.472,
         "by_class": {
           "0": {
             "images": 100,
@@ -2291,7 +2291,7 @@
           "3+4": 0.007
         },
         "fraction_outside_most_common_pair": 0.631,
-        "accuracy": 0.354,
+        "accuracy": 0.412,
         "by_class": {
           "0": {
             "images": 100,
@@ -3026,7 +3026,7 @@
           "3+4": 0.315
         },
         "fraction_outside_most_common_pair": 0.685,
-        "accuracy": 0.776,
+        "accuracy": 0.7,
         "by_class": {
           "0": {
             "images": 100,
@@ -3761,7 +3761,7 @@
           "3+4": 0.013
         },
         "fraction_outside_most_common_pair": 0.706,
-        "accuracy": 0.718,
+        "accuracy": 0.703,
         "by_class": {
           "0": {
             "images": 100,
@@ -4437,19 +4437,19 @@
   },
   "prediction_SHA_evidence": {
     "train": {
-      "path": "runs\\simulation\\f_error_teacher_focus_s17_20261101\\student\\train_predictions.npz",
-      "sha256": "d54f96a19d62fd10c407b276e9abeba8f2ef646ad3fd418d906ecb2146d88cb4",
-      "receipt": "reports\\f_error_teacher_focus_s17_20261101\\completed_transfer.json"
+      "path": "runs\\simulation\\f_four_metric_s17_20261101\\student\\train_predictions.npz",
+      "sha256": "92d94e262b1d2e407ea1ddf11590bb30380404ad185585e725dc53c43c28668c",
+      "receipt": "reports\\f_four_metric_s17_20261101\\completed_transfer.json"
     },
     "val": {
-      "path": "runs\\simulation\\f_error_teacher_focus_s17_20261101\\student\\val_predictions.npz",
-      "sha256": "b36c669350a91315d9c272fcac5ad273d26ad0d9f56db0e2cb938250d9cbd30e",
-      "receipt": "reports\\f_error_teacher_focus_s17_20261101\\completed_transfer.json"
+      "path": "runs\\simulation\\f_four_metric_s17_20261101\\student\\val_predictions.npz",
+      "sha256": "fb1ef9ce8d49d4dd9779b54dcbc8b4dbf91349bee7b303a92c0297d852dab3ce",
+      "receipt": "reports\\f_four_metric_s17_20261101\\completed_transfer.json"
     },
     "test": {
-      "path": "runs\\simulation\\f_error_teacher_focus_s17_20261101\\student\\test_predictions.npz",
-      "sha256": "42f5d713733c27fd94f89d6fd8e01c272cb59986083f7e62d227599ba60d8ac7",
-      "receipt": "reports\\f_error_teacher_focus_s17_20261101\\completed_transfer.json"
+      "path": "runs\\simulation\\f_four_metric_s17_20261101\\student\\test_predictions.npz",
+      "sha256": "09b264e6672f5ab2ddb210fb2f48ee82161c8ad28f23badf31747f06adb3c246",
+      "receipt": "reports\\f_four_metric_s17_20261101\\completed_transfer.json"
     }
   }
 }

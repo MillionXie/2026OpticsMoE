@@ -1,0 +1,127 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "remote_server_generated_manifest": true,
+  "manifest_sha256": "f11c85132191906b3f07c6d1c88fb1ec75c3038a30dc08b3fe84bf017f2963d7",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/exit_receipt.json",
+      "sha256": "42404e40b3418755b33eada3b2fa4ad459bd99a9e368f7bfac39dcb2be4748d4",
+      "size": 51
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/status.json",
+      "sha256": "01858302db8ff69394ecf94a98975532b766941c4258cf38c43799a85a633840",
+      "size": 44
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/best_checkpoint.pt",
+      "sha256": "a3fa43923e4640246aa7e715703cb0242aa3b434f0b2f7ae181d0cd5a2663247",
+      "size": 5461751
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/history.json",
+      "sha256": "366c7a68e4cc9d7937458bda05617c52bc42b7c59a301645cf774fe60b27cdfd",
+      "size": 217149
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/last_checkpoint.pt",
+      "sha256": "7bb0f3da49b2f014a108f60de7a01a10eb88145626f6c12e81eb13500a3a3c29",
+      "size": 5398184
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/metadata.json",
+      "sha256": "48ae8bd9c26ef293b65c4fb89c6c64104e934167f23c1bb04e247384640e4da6",
+      "size": 17844
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/result.json",
+      "sha256": "b5bcb0e1bd82dfd688b8a1ed6f948010bf2411a79c18ea80829da5d821e2727e",
+      "size": 14118
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/selection_lock.json",
+      "sha256": "34cb17f5c43ec75cfdec237463b262e9a42ea72dfb66f2388c9aa44b4195ed1f",
+      "size": 292
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/status.json",
+      "sha256": "b9c4752982450c5ad89f4c27d03dd33a5360d50d6ccefb1eeaed16937cd2e268",
+      "size": 14159
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/test_predictions.npz",
+      "sha256": "09b264e6672f5ab2ddb210fb2f48ee82161c8ad28f23badf31747f06adb3c246",
+      "size": 136062
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/train_predictions.npz",
+      "sha256": "92d94e262b1d2e407ea1ddf11590bb30380404ad185585e725dc53c43c28668c",
+      "size": 401580
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/student/val_predictions.npz",
+      "sha256": "fb1ef9ce8d49d4dd9779b54dcbc8b4dbf91349bee7b303a92c0297d852dab3ce",
+      "size": 136086
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/best_checkpoint.pt",
+      "sha256": "ab5441fecb716c5b301e7f0e683199c28feae36548624188ab72709e6381eddb",
+      "size": 5462455
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/canonical_teacher_targets.npz",
+      "sha256": "bd53b74cc378506b37711c062cdab065c9464d55ce60d0956177ef585c31e0c4",
+      "size": 320704
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/history.json",
+      "sha256": "24b0a47a98e43c263bfe3760882b29f7007b312eaf21b86a9a7077f5f0bf9b55",
+      "size": 868741
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/last_checkpoint.pt",
+      "sha256": "3a3e267cb7f4419368df48d145ecd69244f28d8f9fc36e4ec1999733ef25ed6f",
+      "size": 5398888
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/metadata.json",
+      "sha256": "ee454445c201cbfcc932e0087b430f9cc0945856c3fe150f20cb4920bd7198a2",
+      "size": 18690
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/result.json",
+      "sha256": "a09478d51d142ab380ce2799cb7e927ccd722dd8a501395e61b24338d6770f31",
+      "size": 14047
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/selection_lock.json",
+      "sha256": "4aaf9772a12af41819edc3510d03bbcd42afd710ee1155c0eea5516846ff4b9d",
+      "size": 292
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/status.json",
+      "sha256": "5d7636cd8e3f8b938d22040049fd2bc32391407c246de7bcadfe49ce36fd0693",
+      "size": 14088
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/teacher_target_manifest.json",
+      "sha256": "67c02d63811b220e1137135079c9a6e9b23bafb56a22b62b8d442d444ff24be6",
+      "size": 335
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/test_predictions.npz",
+      "sha256": "6b51167bd8be57a559188fda5a577d23076d4355a611b13d280643909248a2b1",
+      "size": 135856
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/train_predictions.npz",
+      "sha256": "1b1a673f1d3fefca676b6f903646de3d005a4aabbbb9a508bcd7b9c43b01f1ab",
+      "size": 401566
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/val_predictions.npz",
+      "sha256": "68ec1328549328fbe36643bf7ae108a8884b3abaa9867209c6fa451dc89e8df1",
+      "size": 135974
+    }
+  ]
+}
