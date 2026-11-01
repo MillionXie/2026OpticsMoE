@@ -21,13 +21,21 @@ def deployment_environment():
         raise ValueError('Explicit published execution-source commit required')
 
 
-def load_head(checkpoint, report, binding):
+def load_head(checkpoint, report, binding, *, parent_checkpoint=None):
     checked_binding(binding)
-    if sha(checkpoint)!=binding['generator_sha256']:raise ValueError('Accepted PT SHA changed')
+    digest=sha(checkpoint);derived=digest!=binding['generator_sha256']
+    if derived and parent_checkpoint is None:raise ValueError('Accepted PT SHA changed; derived head needs explicit original-parent proof')
+    if not derived and parent_checkpoint is not None:raise ValueError('Original parent must not be labelled as a derived head')
     import torch
     from .qwen3_scene_conditioning import QwenSDXLConditions
     state=torch.load(checkpoint,map_location='cpu',weights_only=False)
-    checked_state(state,report,binding)
+    if derived:
+        from .scene_lab_full70_adapt import checked_child
+        folder=Path(parent_checkpoint)
+        _,parent=load_head(folder/'best_checkpoint.pt',json.loads((folder/'report.json').read_text()),binding)
+        if report.get('best_sha256')!=digest:raise ValueError('Derived checkpoint/report SHA mismatch')
+        checked_child(state,parent,report,binding)
+    else:checked_state(state,report,binding)
     head=QwenSDXLConditions(joint_image_context=False)
     head.load_state_dict(state['head'],strict=True)
     head.eval().requires_grad_(False)
@@ -168,7 +176,7 @@ def render_main(binding,ledger_path,remaining):
     old_render,old_inputs,old_revision=renderer.render,renderer.inference_inputs,prompts.checked_revision
     def render(a):
         report=json.loads((a.checkpoint/'report.json').read_text())
-        _,state=load_head(a.checkpoint/'best_checkpoint.pt',report,binding)
+        _,state=load_head(a.checkpoint/'best_checkpoint.pt',report,binding,parent_checkpoint=a.adapted_parent)
         if (a.steps!=8 or a.scope!='dev' or a.prompt_revision is None or not a.fuse_task_lora
             or a.sampler!='original' or a.lcm_adapter or a.measure_software_latency
             or a.ip_scale!=.25 or a.unet_precision!='bf16' or getattr(a,'probe_conditioning_side',None)is not None
@@ -188,6 +196,8 @@ def render_main(binding,ledger_path,remaining):
             path=a.output/'report.json';out=json.loads(path.read_text())
             if out['generated_count']!=500:raise ValueError('All500 quality outputs required')
             out.update(lab_middle8_binding=binding,actual_CCD_replay=measured is not None,SDK_used=False,
+                adapted_existing_head=a.adapted_parent is not None,parent_physical_generator_SHA256=binding['generator_sha256'],
+                matching_new_PT_SIM_required=a.adapted_parent is not None,
                 depth_compression=state['depth_compression'],experimental_compression=observer.depth.graph,
                 compression_training_performed=True,physical_ledger_SHA256=measured.ledger.key if measured else None,
                 physical_CCD_stage_calls=3000 if measured else 0,TEST_gradients=False,quality_accepted=False)
@@ -202,6 +212,7 @@ def render_main(binding,ledger_path,remaining):
     torch.set_num_threads(2);torch.cuda.set_per_process_memory_fraction(.5,0)
     put(a.output/'execution.json',dict(source_commit=os.environ['T12_SOURCE_COMMIT'],
         generator_source_commit=binding['source_commit'],adapter_source_SHA256=sha(__file__),
+        actual_checkpoint_SHA256=sha(a.checkpoint/'best_checkpoint.pt'),adapted_parent=str(a.adapted_parent)if a.adapted_parent else None,
         source_renderer_SHA256=sha(Path(renderer.__file__)),SDK=False,actual_CCD_replay=ledger_path is not None))
     renderer.inference_inputs=public_inputs;prompts.checked_revision=checked_revision
     try:render(a)
@@ -218,6 +229,7 @@ def render_arguments(remaining):
     for key in ('data','checkpoint','qwen','cache','model-path','adapter-path','output','lg-frontend','lg-features','prompt-revision'):
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--fuse-task-lora',action='store_true',required=True)
+    p.add_argument('--adapted-parent',type=Path,help='Explicit approved original parent for a strict same-body derived electronic head')
     p.add_argument('--steps',type=int,choices=[8],default=8)
     p.add_argument('--ip-scale',type=float,choices=[.25],default=.25)
     p.add_argument('--unet-precision',choices=['bf16'],default='bf16')
