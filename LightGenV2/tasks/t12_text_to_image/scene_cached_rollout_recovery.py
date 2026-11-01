@@ -64,13 +64,35 @@ def run(a,admission=None):
     probes=[k for c in groups for k in groups[c][::max(1,len(groups[c])//8)][:8]]
     all_train=getattr(a,'reuse_all_TRAIN_contexts',False)
     active={c:list(groups[c])if all_train else[k for k in groups[c]if k not in probes]for c in groups};assert all(active.values())and len(set(probes))==16
+    covered=None
+    if getattr(a,'coverage_epochs',0):
+        from .scene_expanded_rollout_recovery import coverage_batches
+        assert admission is not None and all_train
+        covered=coverage_batches(active,a.training_batch_size,a.coverage_epochs);a.updates=len(covered)
     key=groups['lamp'][0];initial=teacher['paths'][key][0:1].cuda();sigma=teacher['sigmas'][0];t=torch.tensor(sampling['timesteps'][0],device='cuda')
     with torch.no_grad():
         actual=predict(pipe.unet,initial,t,conditions[key],state,sigma,True);expected=predict(reference,initial,t,conditions[key],state,sigma,True)
     assert torch.equal(actual,expected),'Merged compact prediction differs'
-    write(a.output/'fusion_GPU_identity.json',dict(complete=True,compressed_UNet_prediction_exact=True,graph=graph,fusion=fusion,scaled_saved_noise_used_directly=True))
+    batch_exact=None
+    if covered:
+        batch_keys=covered[0];assert len(batch_keys)==2
+        batch_initial=torch.cat([teacher['paths'][k][0:1]for k in batch_keys]).cuda()
+        batch_cond={n:torch.cat([conditions[k][n]for k in batch_keys])for n in ['text','image','pooled']}
+        with torch.no_grad():
+            batch_actual=predict(pipe.unet,batch_initial,t,batch_cond,state,sigma,True);batch_expected=predict(reference,batch_initial,t,batch_cond,state,sigma,True)
+        batch_exact=torch.equal(batch_actual,batch_expected);assert batch_exact,'Merged minibatch2 prediction differs'
+        del batch_initial,batch_cond,batch_actual,batch_expected
+    write(a.output/'fusion_GPU_identity.json',dict(complete=True,compressed_UNet_prediction_exact=True,minibatch2_prediction_exact=batch_exact,graph=graph,fusion=fusion,scaled_saved_noise_used_directly=True))
     del reference,initial,actual,expected;torch.cuda.empty_cache()
     def sample(key,gradient=False):
+        if isinstance(key,list):
+            cached=[teacher['paths'][k]for k in key];x=torch.cat([v[0:1]for v in cached]).cuda();wanted=torch.cat([v[-1:]for v in cached]).cuda()
+            cond={n:torch.cat([conditions[k][n]for k in key])for n in ['text','image','pooled']}
+            actual,points=rollout_from_scaled(pipe.scheduler,pipe.unet,x,cond,state,sampling['timesteps'],gradient)
+            from .scene_tail_batches import interval_loss
+            terminal=interval_loss(actual,wanted)
+            anchor=torch.stack([interval_loss(points[j+1],torch.cat([v[index:index+1]for v in cached]).cuda())for j,index in enumerate(edges[1:])]).mean()
+            return terminal+.1*anchor,terminal,anchor
         cached=teacher['paths'][key];x=cached[0:1].cuda();wanted=cached[-1:].cuda()
         actual,points=rollout_from_scaled(pipe.scheduler,pipe.unet,x,conditions[key],state,sampling['timesteps'],gradient)
         endpoints={index:cached[index:index+1].cuda()for index in edges[1:]}
@@ -81,7 +103,7 @@ def run(a,admission=None):
     def optimizer():return torch.optim.AdamW(parameters,lr=a.lr,weight_decay=.01)
     opt=optimizer();smoke=[];torch.cuda.reset_peak_memory_stats()
     for index in range(4):
-        key=active[['lamp','pillow'][index%2]][0];opt.zero_grad();loss,terminal,anchor=sample(key,True);loss.backward()
+        key=covered[index]if covered else active[['lamp','pillow'][index%2]][0];opt.zero_grad();loss,terminal,anchor=sample(key,True);loss.backward()
         norm=torch.nn.utils.clip_grad_norm_(parameters,1.,error_if_nonfinite=True);assert torch.isfinite(loss)and norm>0;opt.step()
         smoke.append(dict(loss=float(loss),terminal=float(terminal),anchor=float(anchor),gradient_norm=float(norm)))
     peak=torch.cuda.max_memory_allocated();assert peak<55*1024**3
@@ -89,17 +111,18 @@ def run(a,admission=None):
         for p,old in zip(parameters,initial):p.copy_(old)
     del initial,opt,loss,terminal,anchor;opt=optimizer()
     write(a.output/'smoke_report.json',dict(complete=True,real_full_rollout_backward_steps=4,student_and_optimizer_reset=True,
-        student_steps=sampling['steps'],peak_allocated_bytes=peak,history=smoke,teacher_GPU_loaded=False,initial_fixed_TRAIN_terminal_loss=before))
+        student_steps=sampling['steps'],training_batch_size=getattr(a,'training_batch_size',1),peak_allocated_bytes=peak,history=smoke,teacher_GPU_loaded=False,initial_fixed_TRAIN_terminal_loss=before))
     if a.stage=='smoke':
         write(a.output/'report.json',dict(complete=True,stage='smoke',training_performed=False,quality_or_speed_accepted=False));return
     rng=random.Random(20261031);best=math.inf;history=[];began=time.monotonic();recent=[];seen=set()
     for step in range(1,a.updates+1):
-        key=rng.choice(active[['lamp','pillow'][step%2]])
-        seen.add(key)
+        key=covered[step-1]if covered else rng.choice(active[['lamp','pillow'][step%2]])
+        if covered:seen.update(key)
+        else:seen.add(key)
         for group in opt.param_groups:group['lr']=a.lr*min(1.,step/20)*(.1+.9*.5*(1+math.cos(math.pi*step/a.updates)))
         opt.zero_grad();loss,terminal,anchor=sample(key,True);loss.backward();torch.nn.utils.clip_grad_norm_(parameters,1.,error_if_nonfinite=True)
         assert torch.isfinite(loss);opt.step();recent.append(float(terminal))
-        if step%10==0:write(a.output/'progress.json',dict(stage='TRAIN_cached_electronic_terminal_full_student_rollout',step=step,total=a.updates,recent_terminal=sum(recent[-10:])/len(recent[-10:])))
+        if step%10==0:write(a.output/'progress.json',dict(stage='TRAIN_cached_electronic_terminal_full_student_rollout',step=step,total=a.updates,recent_terminal=sum(recent[-10:])/len(recent[-10:]),seen_TRAIN_contexts=len(seen),training_batch_size=getattr(a,'training_batch_size',1)))
         if step%25==0 or step==a.updates:
             score=measure();assert all(torch.equal(v,head.state_dict()[n].cpu())for n,v in head_before.items())
             history.append(dict(step=step,fixed_TRAIN_terminal_loss=score,seconds=time.monotonic()-began));write(a.output/'history.json',history)
@@ -114,6 +137,8 @@ def run(a,admission=None):
         depth_compression=descriptor,compression_training_performed=True,sampling_steps=sampling['steps'],
         parent_checkpoint_sha256=parent['best_sha256'],teacher_sha256=teacher['teacher_sha256'],teacher_paths_sha256=digest(path),
         student_cache_sha256=cr['cache_sha256'],TRAIN_contexts=len(keys),gradient_TRAIN_contexts=len(seen),eligible_gradient_TRAIN_contexts=sum(len(g)for g in active.values()),
+        training_batch_size=getattr(a,'training_batch_size',1),complete_TRAIN_coverage=bool(covered)and seen==keys,
+        condition_alignment_updates=parent.get('condition_alignment_updates',0),inherited_paired_updates=parent.get('actual_paired_updates',0)+parent.get('inherited_paired_updates',0),
         fixed_probe_TRAIN_contexts=len(probes),initial_fixed_TRAIN_terminal_loss=before,best_TRAIN_terminal_loss=best,
         best_selection=('Reused fixed TRAIN contexts, not a validation set or final PT choice'if all_train else'Reserved fixed TRAIN contexts, not DEV/TEST or image quality'),gradient_through_all_student_steps=True,
         exact_saved_scaled_noise=True,one_noise_per_reference_context_from_saved_teacher=True,teacher_GPU_forward_repeated=False,

@@ -1,5 +1,5 @@
 import unittest
-from ..scene_expanded_rollout_recovery import checked_contract
+from ..scene_expanded_rollout_recovery import checked_contract,coverage_batches
 from ..scene_R2_middle_protocol import F6
 from ..scene_paper_expanded_data import PROFILE
 
@@ -20,6 +20,22 @@ def fixture():
 
 
 class ExpandedRolloutContract(unittest.TestCase):
+    def test_unbalanced_coverage_has_no_duplicates_padding_or_omissions(self):
+        groups=dict(lamp=['l'+str(i)for i in range(7)],pillow=['p0','p1'])
+        batches=coverage_batches(groups,2,1)
+        flat=[k for batch in batches for k in batch]
+        self.assertEqual(len(flat),9);self.assertEqual(len(set(flat)),9)
+        self.assertEqual(set(flat),set(groups['lamp']+groups['pillow']))
+        self.assertEqual(len(batches[-1]),1)
+        self.assertEqual(batches,coverage_batches(groups,2,1))
+        with self.assertRaises(ValueError):coverage_batches(dict(lamp=['same'],pillow=['same']),2,1)
+
+    def test_coverage_recipe_is_explicit_and_rejects_silent_budget_changes(self):
+        args=fixture();args[0].update(schema='scene_expanded_cached_rollout_coverage_v2',training_batch_size=2,coverage_epochs=1)
+        self.assertEqual(checked_contract(*args)['TRAIN_contexts'],2)
+        args[0]['coverage_epochs']=2
+        with self.assertRaises(ValueError):checked_contract(*args)
+
     def test_exact_lineage_accepted(self):
         self.assertEqual(checked_contract(*fixture())['TRAIN_contexts'],2)
 
