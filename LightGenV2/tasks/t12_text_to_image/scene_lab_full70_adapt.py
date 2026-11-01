@@ -23,8 +23,8 @@ def full_binding(binding):
 def fit_protocol(steps,seconds,lr,batch,anchor):
     if (type(steps)is not int or not 4<=steps<=1200 or not math.isfinite(seconds)or not 0<seconds<=900
         or not math.isfinite(lr)or not 0<lr<=1e-4 or type(batch)is not int or not 1<=batch<=4
-        or anchor not in (0.,.1)):
-        raise ValueError('Finite existing-head recipe required; anchor only0 or0.1')
+        or anchor not in (0.,.1,1.)):
+        raise ValueError('Finite existing-head recipe required; registered anchor only0,0.1 or1.0')
 
 
 def equal_value(left,right):

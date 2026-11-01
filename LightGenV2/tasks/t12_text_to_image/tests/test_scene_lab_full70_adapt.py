@@ -16,7 +16,8 @@ def test_only_the_approved_full70_parent_and_finite_recipes():
     b=admitted_binding();assert a.full_binding(b)==b
     with pytest.raises(ValueError):a.full_binding(full_binding())
     a.fit_protocol(1200,900,3e-5,4,0.);a.fit_protocol(1200,900,3e-5,4,.1)
-    for args in [(1201,900,3e-5,4,0.),(1200,901,3e-5,4,0.),(1200,900,float('nan'),4,0.),(1200,900,3e-5,5,0.),(1200,900,3e-5,4,1.)]:
+    a.fit_protocol(1200,900,3e-5,4,1.) # One additional manually approved stronger nominal constraint.
+    for args in [(1201,900,3e-5,4,0.),(1200,901,3e-5,4,0.),(1200,900,float('nan'),4,0.),(1200,900,3e-5,5,0.),(1200,900,3e-5,4,.5),(1200,900,3e-5,4,float('nan'))]:
         with pytest.raises(ValueError):a.fit_protocol(*args)
 
 
