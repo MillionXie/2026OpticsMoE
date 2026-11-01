@@ -3,7 +3,7 @@ import pytest
 import torch
 from LightGenV2.tasks.t17_router_classification.train_f_matched_optical_teacher import classification_loss, matched_balance
 from LightGenV2.tasks.t17_router_classification.select_monotone_checkpoints import select_strict_tuple
-from LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST import optical_teacher_mode,fit_objective
+from LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST import optical_teacher_mode,fit_objective,coordinate_fit_objective
 
 
 def test_monotone_selection_preserves_independent_maxima():
@@ -40,3 +40,11 @@ def test_canonical_soft_student_masks_TEST_GT_and_teacher_gradients():
     y=torch.tensor([0,1,2,-1,-1,-1]);a=fit_objective(w,x,y,w.detach(),t.detach(),mask);ga=torch.autograd.grad(a,w)[0]
     y[~mask]=999;b=fit_objective(w,x,y,w.detach(),t.detach(),mask);gb=torch.autograd.grad(b,w)[0]
     assert torch.equal(a,b) and torch.equal(ga,gb) and t.grad is None
+
+
+def test_teacher_hard_coordinate_closure_has_no_KD_requirement():
+    torch.manual_seed(17);x=torch.randn(8,4,dtype=torch.float64);w=torch.randn(3,4,dtype=torch.float64,requires_grad=True);anchor=w.detach().clone();y=torch.arange(8)%3
+    direct=fit_objective(w,x,y,anchor)
+    coordinate=coordinate_fit_objective(w,x,y,w,anchor)
+    assert torch.equal(direct,coordinate)
+    assert torch.equal(torch.autograd.grad(direct,w)[0],torch.autograd.grad(coordinate,w)[0])

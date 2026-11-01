@@ -34,6 +34,11 @@ def fit_objective(weight, features, labels, anchor, teacher=None, hard_mask=None
         .001, 0., teacher, .5 if teacher is not None else 0., 2., hard_mask)
 
 
+def coordinate_fit_objective(coordinate,features,labels,weight,anchor,teacher=None,hard_mask=None):
+    return anchored_classification(F.linear(features,coordinate),labels,weight,anchor,
+        .001,0.,teacher,.5 if teacher is not None else 0.,2.,hard_mask)
+
+
 def initialization_profile(parent,cfg):
     profile=parent['metadata']['profile'];requested=cfg.get('initialize_top_k')
     if requested is None:
@@ -147,7 +152,7 @@ def run_job(cfg, out):
         opt.zero_grad(set_to_none=True)
         weight=canonical_weight(coordinate,factor)
         # Classification in numerical coordinates, regularizer always in original W.
-        loss=anchored_classification(F.linear(transformed,coordinate),labels,weight,anchor,.001,0.,teacher,.5 if joint else 0.,2.,mask)
+        loss=coordinate_fit_objective(coordinate,transformed,labels,weight,anchor,teacher,mask)
         loss.backward();calls+=1
         if not torch.isfinite(loss) or not torch.isfinite(coordinate.grad).all():raise RuntimeError('Nonfinite fit')
         return loss
