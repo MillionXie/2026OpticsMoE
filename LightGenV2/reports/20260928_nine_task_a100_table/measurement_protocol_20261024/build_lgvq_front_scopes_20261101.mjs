@@ -125,14 +125,15 @@ title(main,'A27','四版本计算拆分');
 put(main,29,[['版本','CPU均值P/ms','平均收尾Q/ms','Q÷32/ms','P＋Q÷32/ms','三轮样本SD/ms']]);header(main,29,6);
 for(let v=0;v<4;v++){
   const r=30+v,c=col(5+4*v),start=col(2+4*v),end=col(4+4*v);
-  put(main,r,[[scopes[v]]]);f(main,'B'+r,`='阶段均值'!${c}35`);f(main,'C'+r,`='阶段均值'!${c}36`);f(main,'D'+r,`='阶段均值'!${c}37`);f(main,'E'+r,`='阶段均值'!${c}38`);f(main,'F'+r,`=STDEV.S('阶段均值'!${start}38:${end}38)`);
+  put(main,r,[[scopes[v]]]);f(main,'B'+r,`='阶段均值'!${c}35`);f(main,'C'+r,`='阶段均值'!${c}36`);f(main,'D'+r,`='阶段均值'!${c}37`);f(main,'E'+r,`='阶段均值'!${c}38`);f(main,'F'+r,`=STDEV('阶段均值'!${start}38:${end}38)`);
 }
 put(main,36,[['实验室硬件','A100 PCIe 40GB / 250W；Intel Xeon Gold 5218R @2.10GHz'],['租机baseline硬件','A100 SXM4 80GB / 400W；AMD EPYC 7742'],['每配置正式统计','3轮，每轮32场，每场16视频/64帧；每轮另有3场真实预热'],['固定光周期','SLM1886Hz，曝光300us，附加读出30.7us；非光路实测'],['仍不计入','quality像素准备、H2D、CPU调度/off-CPU等待、输出返回、FFT、残差及纯fusion/layout']]);
 main.getRange('A1:A40').format.columnWidth=36;main.getRange('B1:B40').format.columnWidth=26;main.getRange('C1:D40').format.columnWidth=17;main.getRange('E1:K40').format.columnWidth=26;main.getRange('E6:K21').setNumberFormat('#,##0.000');main.getRange('B30:F33').setNumberFormat('0.000000');main.getRange('A6:K9').format.fill='#EDF3F9';
 
-put(timeline,1,[['版本','轮次','场序号','估算CPU就绪/ms','估算评分完成/ms','估算累计均值/ms每16视频']]);header(timeline,1,6);
-timeline.getRange('A2:F385').values=d.estimated_groups.map(g=>[g.variant,g.repeat,g.field,g.estimated_CPU_ready_ms,g.estimated_score_done_ms,g.cumulative_average_ms]);
-timeline.getRange('A1:F385').format={font:{name:'Arial',size:10},columnWidth:25,rowHeight:25,verticalAlignment:'center'};header(timeline,1,6);timeline.getRange('D2:F385').setNumberFormat('0.000000');timeline.freezePanes.freezeRows(1);
+put(timeline,1,[['版本','轮次','场序号','估算CPU就绪/ms','估算评分完成/ms','估算累计均值/ms每16视频','实测CPU就绪/ms','实测FFT评分完成/ms']]);header(timeline,1,8);
+timeline.getRange('A2:H385').values=d.estimated_groups.map(g=>[g.variant,g.repeat,g.field,g.estimated_CPU_ready_ms,g.estimated_score_done_ms,g.cumulative_average_ms,g.actual_CPU_ready_ms,g.actual_FFT_score_done_ms]);
+timeline.getRange('A1:H385').format={font:{name:'Arial',size:10},columnWidth:25,rowHeight:25,verticalAlignment:'center'};header(timeline,1,8);timeline.getRange('D2:H385').setNumberFormat('0.000000');timeline.freezePanes.freezeRows(1);
+put(timeline,387,[['实测列从本轮正式软件窗口起计，包含FFT及OS间隙；估算列从理想均值流水起计，两者不能混加。']]);
 
 wb.recalculate();
 for(const v of d.variants){close(main.getRange('E'+(6+v.variant)).values[0][0],v.mean_ms16);close(main.getRange('G'+(6+v.variant)).values[0][0],v.component_energy_J16);close(main.getRange('F'+(30+v.variant)).values[0][0],v.sample_SD_ms16);}
@@ -142,8 +143,8 @@ cell.values=[[saved+1]];wb.recalculate();close(main.getRange('E6').values[0][0],
 const oldPower=raw.getRange('B21').values[0][0],oldJ=main.getRange('G6').values[0][0],counted=Array.from({length:3},(_,i)=>raw.getRange('G'+(6+i)).values[0][0]).reduce((a,b)=>a+b,0)/3;
 raw.getRange('B21').values=[[oldPower+1]];wb.recalculate();close(main.getRange('G6').values[0][0],oldJ+counted);raw.getRange('B21').values=[[oldPower]];wb.recalculate();close(main.getRange('G6').values[0][0],oldJ);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:2000});ok(!errors.ndjson.includes('"kind":"match"'),'Formula errors');
-const views=[['主表','A1:K25','main.png'],['主表','A27:H40','formula.png'],['阶段均值','A1:J43','stages_v01.png'],['阶段均值','K5:R38','stages_v23.png'],['实测与等待','A1:K25','measured.png'],['实测与等待','A27:H54','waiting.png'],['Baseline原值','A1:K13','baselines.png'],['384场估算时间轴','A1:F13','timeline.png']];
+const views=[['主表','A1:K25','main.png'],['主表','A27:H40','formula.png'],['阶段均值','A1:J43','stages_v01.png'],['阶段均值','K5:R38','stages_v23.png'],['实测与等待','A1:K25','measured.png'],['实测与等待','A27:H54','waiting.png'],['Baseline原值','A1:K13','baselines.png'],['384场估算时间轴','A1:H13','timeline.png']];
 for(const [sheetName,range,name] of views){const png=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(OUT,name),new Uint8Array(await png.arrayBuffer()));}
 await(await SpreadsheetFile.exportXlsx(wb)).save(BOOK);
-await fs.writeFile(path.join(OUT,'builder_checks01.json'),JSON.stringify({status:'exported_pending_visual_and_saved_XML_QA',sha256:sha(BOOK),audit_sha256:sha(input),baseline_source_sha256:sha(baseline),formula_perturbations_restored:true,baseline_trials_unchanged:36,LG_scopes:4,rounds:12,extra_warm_fields_each:3,mean_stage_estimate_not_measured_E2E:true},null,2),{flag:'wx'});
+await fs.writeFile(path.join(OUT,'builder_checks01.json'),JSON.stringify({status:'exported_pending_visual_and_saved_XML_QA',sha256:sha(BOOK),builder_source_sha256:sha(fileURLToPath(import.meta.url)),audit_sha256:sha(input),baseline_source_sha256:sha(baseline),formula_perturbations_restored:true,baseline_trials_unchanged:36,LG_scopes:4,rounds:12,extra_warm_fields_each:3,mean_stage_estimate_not_measured_E2E:true},null,2),{flag:'wx'});
 console.log(JSON.stringify({file:BOOK,sha256:sha(BOOK),variants:d.variants}));

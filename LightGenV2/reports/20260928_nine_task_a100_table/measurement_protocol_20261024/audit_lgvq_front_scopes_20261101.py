@@ -141,7 +141,9 @@ def main():
                 close(ready,(f+1)*P)
                 group_rows.append(dict(variant=v,repeat=repeat,field=f+1,
                                        estimated_CPU_ready_ms=ready*1000,estimated_score_done_ms=end*1000,
-                                       cumulative_average_ms=end/(f+1)*1000))
+                                       cumulative_average_ms=end/(f+1)*1000,
+                                       actual_CPU_ready_ms=(max(r['host_end'] for r in rows if r['field']==f)-raw['formal_host_start'])*1000,
+                                       actual_FFT_score_done_ms=(next(r['host_end'] for r in raw['host_records'] if not r['warm'] and r['field']==f)-raw['formal_host_start'])*1000))
             front={}
             for p in CPU[:3]:
                 segments=[s for r in rows for s in r['frontend_measurements'] if s['phase']==p]
@@ -174,6 +176,7 @@ def main():
                              amortized_tail_ms=statistics.mean(r['amortized_tail_ms'] for r in rs),
                              component_energy_J16=statistics.mean(r['component_energy_estimate']['total_J16'] for r in rs)))
     value=dict(status='independent_CPU_four_scope_triples_passed',published_runtime_commit=COMMIT,
+               audit_source_sha256=sha(Path(__file__)),
                formal_scores_bitwise_equal=6144,warm_scores_bitwise_equal=576,rounds=rounds,variants=variants,
                estimated_groups=group_rows,raw_receipt_sha256=sha(OUT/'local_raw_receipt01.json'),
                sources_verified=len(receipt['files']),Torch_imported='torch' in sys.modules,
