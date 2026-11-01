@@ -79,6 +79,48 @@ def guard_model_signal(p99,minimum):
         raise ValueError('Low native model signal; preserve raw frame and stop before ledger acceptance')
 
 
+def load_retained_manifest(path,digest,ledger,stage,config,calibration_sha):
+    """Explicit same-session prefix provenance, never permission to reuse bad CCDs."""
+    if path is None:
+        if digest is not None:raise ValueError('Retained manifest path is required')
+        return None
+    path=Path(path)
+    if not digest or sha(path)!=digest:raise ValueError('Retained manifest SHA mismatch')
+    value=json.loads(path.read_text(encoding='utf-8'))
+    if value.get('schema')!='scene_lab_retained_capture_prefix_v1' or value['ledger_sha256']!=ledger.key or value['stage']!=stage:
+        raise ValueError('Retained prefix ledger/stage mismatch')
+    source=Path(value['source_capture']).resolve()
+    if not source.is_relative_to(ledger.root.parent.resolve()):raise ValueError('Retained capture must belong to this cohort')
+    protocol=json.loads((source/'protocol.json').read_text())
+    if protocol['config']!=config or protocol['stage']!=stage or protocol['calibration_report_SHA256']!=calibration_sha:
+        raise ValueError('Retained capture settings/calibration changed')
+    items=value['retained'];ids=[x['sample_id']for x in items]
+    if not items or ids!=[x['sample_id']for x in ledger.requests[:len(items)]]or len(set(ids))!=len(ids):
+        raise ValueError('Retained rows must be the exact original request prefix')
+    return dict(source=source,items={x['sample_id']:x for x in items},manifest_SHA256=digest)
+
+
+def verify_retained_capture(proof,ledger,stage,request,minimum):
+    item=proof['items'].get(request['sample_id'])
+    if item is None:raise ValueError('Existing receipt is outside the retained prefix')
+    receipt,_=ledger.receipt(stage,request)
+    if identity(receipt)!=item['ledger_receipt_identity']:raise ValueError('Retained ledger receipt changed')
+    folder=(proof['source']/request['sample_id']).resolve()
+    if not folder.is_relative_to(proof['source']):raise ValueError('Retained physical path escaped source')
+    physical=folder/'receipt.json'
+    if sha(physical)!=item['physical_receipt_file_SHA256']:raise ValueError('Retained physical receipt changed')
+    row=json.loads(physical.read_text())
+    if row['tag']!=request['sample_id']or row['native_SHA256']!=receipt['metadata']['native_frame_sha256']:
+        raise ValueError('Retained physical frame identity mismatch')
+    actual=row['actual_camera'];expected=ledger.session
+    if abs(actual['exposure_us']-expected['exposure_us'])>2 or actual['gain']!=expected['gain']or actual['auto']!=0 or row['saturation_fraction']>.001:
+        raise ValueError('Retained physical settings/saturation mismatch')
+    if sha(folder/'native.npy')!=row['native_SHA256']:raise ValueError('Retained native frame changed')
+    guard_model_signal(row['p99'],minimum)
+    return dict(sample_id=request['sample_id'],receipt_sha256=identity(receipt),physical_capture_root=str(proof['source']),
+                physical_receipt_file_SHA256=sha(physical),native_frame_SHA256=row['native_SHA256'],capture_UTC=row['capture_UTC'])
+
+
 def await_payload(folder,run,seconds,pump):
     deadline=time.monotonic()+seconds
     while not(folder/'input.ready').exists():
@@ -101,7 +143,7 @@ class PersistentPhaseBridge:
     def __exit__(self,*args):return self.owner.__exit__(*args)
 
 
-def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=False,input_wait_seconds=0,persistent_phase_owner=False,minimum_model_native_p99=0):
+def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=False,input_wait_seconds=0,persistent_phase_owner=False,minimum_model_native_p99=0,retained_manifest=None,retained_manifest_sha256=None):
     import cv2
     from LightGenV2.hardware_common.shs.phase_owner import message_pump
     guard_model_signal(65535,minimum_model_native_p99)
@@ -111,7 +153,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
     other=[root/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/.t18_sdk_owner.lock',root/'LightGenV2/hardware_common/shs/results/phase_sdk_owner.lock']
     if any(p.exists()for p in other):raise RuntimeError('Another device owner exists')
     fd=os.open(own,os.O_WRONLY|os.O_CREAT|os.O_EXCL);os.write(fd,json.dumps(dict(pid=os.getpid(),out=str(out))).encode());os.close(fd)
-    rows=[];accepted=[];role='calibration'
+    rows=[];accepted=[];retained=[];role='calibration'
     try:
         warp=mapping(config);inverse=json.loads((calibration/'amplitude_inverse.json').read_text())['drive']
         admission=json.loads((calibration/'report.json').read_text())
@@ -119,9 +161,11 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
         ledger=None;dark=np.load(calibration/'dark.npy',allow_pickle=False);gain=np.load(calibration/'gain_map.npy',allow_pickle=False)
         if ledger_root is not None:
             ledger=open_ledger(ledger_root);validate_session(ledger,config,calibration,dark,gain);admission=ledger.admit_stage(stage)
+        if retained_manifest is not None and ledger is None:raise ValueError('Retained prefix requires an explicit model ledger')
+        proof=load_retained_manifest(retained_manifest,retained_manifest_sha256,ledger,stage,config,sha(calibration/'report.json'))
         role=ledger.requests[0]['split'] if ledger is not None else'calibration'
         put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,cohort_role=role,TRAIN_only=role=='train',DEV_evaluation_only=role=='dev',TEST_used=role=='test',TEST_gradients=False,TEST_selection_evaluation_only=role=='test',
-            parameter_changes=False,camera_process_isolated=camera_process,persistent_phase_owner=persistent_phase_owner,minimum_model_native_p99=minimum_model_native_p99,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
+            parameter_changes=False,camera_process_isolated=camera_process,persistent_phase_owner=persistent_phase_owner,minimum_model_native_p99=minimum_model_native_p99,retained_manifest_SHA256=retained_manifest_sha256,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
         factory=None
         if camera_process:
             from .scene_lab_camera_process import CameraProcess
@@ -158,6 +202,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
                     folder=ledger.folder(stage,request)
                     if(folder/'receipt.json').exists():
                         ledger.receipt(stage,request)
+                        if proof is not None:retained.append(verify_retained_capture(proof,ledger,stage,request,minimum_model_native_p99))
                         if not(folder/'capture.ready').exists():(folder/'capture.ready').touch(exist_ok=False)
                         continue
                     if input_wait_seconds:await_payload(folder,out.parent,input_wait_seconds,pump)
@@ -176,19 +221,20 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
                         frame_provenance='physical_linear_camera',native_frame_sha256=row['native_SHA256'],canonical_raw_sha256=array_sha(canonical),capture_UTC=row['capture_UTC'])
                     receipt=ledger.accept(stage,request,canonical,metadata,dark,gain,admission=admission);accepted.append(dict(sample_id=request['sample_id'],receipt_sha256=identity(receipt)))
                     (folder/'capture.ready').touch(exist_ok=False)
-        put(out/'report.json',dict(complete=True,accepted=accepted,**cohort_summary(role,len(accepted)),canary_frames=2,raw_frames=len(rows),SDK_released=True,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
+        if proof is not None and len(retained)!=len(proof['items']):raise ValueError('Retained prefix incomplete')
+        put(out/'report.json',dict(complete=True,accepted=accepted,retained=retained,new_model_CCD=len(accepted),retained_model_CCD=len(retained),**cohort_summary(role,len(accepted)+len(retained)),canary_frames=2,raw_frames=len(rows),SDK_released=True,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
     except BaseException as error:
-        put(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),frames_saved=len(rows),**cohort_summary(role,len(accepted)),automatic_retry=False));raise
+        put(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),frames_saved=len(rows),new_model_CCD=len(accepted),retained_model_CCD=len(retained),**cohort_summary(role,len(accepted)+len(retained)),automatic_retry=False));raise
     finally:
         assert json.loads(own.read_text())['pid']==os.getpid();own.unlink();put(out/'release.json',dict(pid=os.getpid(),own_lock_released=True,closed_context=True))
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--calibration',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--minimum-model-native-p99',type=float,default=0)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--calibration',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--minimum-model-native-p99',type=float,default=0);p.add_argument('--retained-manifest',type=Path);p.add_argument('--retained-manifest-sha256')
     p.add_argument('--ledger',type=Path);p.add_argument('--stage',choices=STAGES);p.add_argument('--camera-process',action='store_true');p.add_argument('--persistent-phase-owner',action='store_true');p.add_argument('--input-wait-seconds',type=float,default=0);a=p.parse_args()
     if bool(a.ledger)!=bool(a.stage):raise ValueError('ledger and stage required together')
     if not 0<=a.input_wait_seconds<=600:raise ValueError('Bounded input wait required')
-    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage,camera_process=a.camera_process,input_wait_seconds=a.input_wait_seconds,persistent_phase_owner=a.persistent_phase_owner,minimum_model_native_p99=a.minimum_model_native_p99)
+    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage,camera_process=a.camera_process,input_wait_seconds=a.input_wait_seconds,persistent_phase_owner=a.persistent_phase_owner,minimum_model_native_p99=a.minimum_model_native_p99,retained_manifest=a.retained_manifest,retained_manifest_sha256=a.retained_manifest_sha256)
 
 
 if __name__=='__main__':main()

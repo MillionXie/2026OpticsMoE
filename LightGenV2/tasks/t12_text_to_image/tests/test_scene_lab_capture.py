@@ -53,3 +53,50 @@ def test_declared_model_signal_stop_does_not_change_or_replace_the_frame():
     for invalid in (-1,65536,float('nan'),float('inf')):
         with pytest.raises(ValueError):guard_model_signal(12000,invalid)
         with pytest.raises(ValueError):guard_model_signal(invalid,1500)
+
+
+def retained_fixture(tmp_path):
+    import json
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_protocol import sha,identity
+    cohort=tmp_path/'TRAIN';source=cohort/'capture_original';frame=source/'sample0';frame.mkdir(parents=True)
+    native=frame/'native.npy';np.save(native,np.full((16,16),20000,np.uint16))
+    row=dict(tag='sample0',native_SHA256=sha(native),p99=20000,actual_camera=dict(exposure_us=1999.8,gain=0,auto=0),saturation_fraction=0,capture_UTC='2026-11-01T09:00:00Z')
+    (frame/'receipt.json').write_text(json.dumps(row))
+    receipt=dict(metadata=dict(native_frame_sha256=sha(native)))
+    config=dict(exposure_us=1999.8,gain=0,wait_ms=240)
+    (source/'protocol.json').write_text(json.dumps(dict(config=config,stage='language_expert',calibration_report_SHA256='b'*64)))
+    requests=[dict(sample_id='sample0'),dict(sample_id='sample1')]
+    ledger=SimpleNamespace(root=cohort/'ledger',key='a'*64,requests=requests,session=config,receipt=lambda stage,req:(receipt,None))
+    manifest=cohort/'retained.json'
+    value=dict(schema='scene_lab_retained_capture_prefix_v1',ledger_sha256=ledger.key,stage='language_expert',source_capture=str(source),retained=[dict(sample_id='sample0',ledger_receipt_identity=identity(receipt),physical_receipt_file_SHA256=sha(frame/'receipt.json'))])
+    manifest.write_text(json.dumps(value))
+    return ledger,config,source,manifest,value
+
+
+def test_retained_prefix_is_physical_same_session_and_not_new_acquisition(tmp_path):
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_capture import load_retained_manifest,verify_retained_capture
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_protocol import sha
+    ledger,config,source,manifest,value=retained_fixture(tmp_path)
+    proof=load_retained_manifest(manifest,sha(manifest),ledger,'language_expert',config,'b'*64)
+    r=verify_retained_capture(proof,ledger,'language_expert',ledger.requests[0],1500)
+    assert r['sample_id']=='sample0'and r['physical_capture_root']==str(source.resolve())
+    with pytest.raises(ValueError,match='outside the retained prefix'):
+        verify_retained_capture(proof,ledger,'language_expert',ledger.requests[1],1500)
+    assert load_retained_manifest(None,None,None,None,None,None)is None
+
+
+def test_retained_prefix_rejects_changed_sha_settings_scope_order_and_raw(tmp_path):
+    import json
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_capture import load_retained_manifest,verify_retained_capture
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_protocol import sha
+    ledger,config,source,manifest,value=retained_fixture(tmp_path)
+    with pytest.raises(ValueError,match='SHA mismatch'):load_retained_manifest(manifest,'f'*64,ledger,'language_expert',config,'b'*64)
+    with pytest.raises(ValueError,match='settings/calibration'):load_retained_manifest(manifest,sha(manifest),ledger,'language_expert',dict(config,gain=1),'b'*64)
+    with pytest.raises(ValueError,match='ledger/stage'):load_retained_manifest(manifest,sha(manifest),ledger,'language_global',config,'b'*64)
+    value['retained'][0]['sample_id']='sample1';manifest.write_text(json.dumps(value))
+    with pytest.raises(ValueError,match='original request prefix'):load_retained_manifest(manifest,sha(manifest),ledger,'language_expert',config,'b'*64)
+    value['retained'][0]['sample_id']='sample0';manifest.write_text(json.dumps(value))
+    proof=load_retained_manifest(manifest,sha(manifest),ledger,'language_expert',config,'b'*64)
+    (source/'sample0/native.npy').write_bytes(b'tampered')
+    with pytest.raises(ValueError,match='native frame changed'):verify_retained_capture(proof,ledger,'language_expert',ledger.requests[0],1500)
