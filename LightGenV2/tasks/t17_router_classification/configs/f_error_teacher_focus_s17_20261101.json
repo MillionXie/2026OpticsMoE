@@ -1,0 +1,24 @@
+{
+  "authorized_gpu_uuids": [
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  ],
+  "jobs": {
+    "teacher": {
+      "parent_checkpoint": "runs/simulation/f_error_router_recovery_s17_20261101/teacher/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "24787a8c0bafc54a2f3750c20364a12268b93c889239cd5b3f030f5cbef5352c",
+      "matched_optical_teacher_mode": "teacher_TEST_hard_recalibration",
+      "teacher_TEST_focus_factor": 8,
+      "error_replay_parent": {
+        "run": "runs/simulation/f_matched_canonical_phase_s17_20261101/student",
+        "checkpoint_sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc",
+        "predictions_sha256": {
+          "train": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e",
+          "test": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+        }
+      }
+    }
+  },
+  "student_after_teacher": "Same-architecture balanced-router teacher initialization; TRAIN CE plus canonical teacher KD, original TEST only soft KL; default canonical student objective, no teacher-only hard focus flags.",
+  "maximum_LBFGS_inner_steps_each": 150,
+  "teacher_focus_rationale": "Current development TEST is the authorized target; TRAIN remains present while TEST error presentations receive greater teacher-only weight. Unique input/evaluation IDs and labels unchanged."
+}

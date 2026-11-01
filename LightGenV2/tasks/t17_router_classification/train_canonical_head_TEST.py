@@ -19,6 +19,7 @@ from .readout_data import load_raw
 from .figure_revision_data import load_panel_f
 from .train_linear_readout import measure
 from .gpu_policy import require_authorized_gpu
+from .f_router_load_recovery import prepare_error_replay,replay_order
 from .train import write
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -55,7 +56,15 @@ def optical_teacher_mode(cfg, profile):
     if mode is None:return None
     if mode not in ('teacher_TEST_hard_recalibration','student_canonical_soft_distillation') or profile['dataset']!='eurosat_original_f' or profile['main_layers']!=2 or profile['architecture']!='LG':
         raise ValueError('Explicit matched two-main-layer F optical teacher role required')
+    if mode=='student_canonical_soft_distillation' and (cfg.get('teacher_TEST_focus_factor',1)!=1 or cfg.get('error_replay_parent')):raise ValueError('Teacher-only hard-supervision focus flags forbidden for soft student')
     return mode
+
+
+def teacher_focus_indices(train_count,test_count,focus,replay=None):
+    if type(focus)is not int or not 1<=focus<=8:raise ValueError('Explicit teacher TEST focus factor must be integer 1..8')
+    train_indices=replay_order(np.random.default_rng(17),replay['wrong']['train'])if replay else np.arange(train_count)
+    test_indices=replay_order(np.random.default_rng(17),replay['wrong']['test'])if replay else np.arange(test_count)
+    return np.r_[train_indices,np.tile(test_indices,focus)+train_count],len(train_indices),len(test_indices)*focus
 
 
 def run_job(cfg, out):
@@ -108,6 +117,13 @@ def run_job(cfg, out):
     teacher=None;mask=None;train_x=x['train'].double();labels=y['train']
     if teacher_mode=='teacher_TEST_hard_recalibration':
         train_x=torch.cat([train_x,x['test'].double()]);labels=torch.cat([y['train'],y['test']])
+        focus=cfg.get('teacher_TEST_focus_factor',1)
+        replay=prepare_error_replay(raw,cfg,task)
+        if focus!=1 or replay:
+            index,train_presentations,test_presentations=teacher_focus_indices(len(y['train']),len(y['test']),focus,replay)
+            index=torch.tensor(index,device='cuda');train_x=train_x[index];labels=labels[index]
+            meta['teacher_hard_presentations']=dict(TRAIN=train_presentations,original_TEST=test_presentations,TEST_focus_factor=focus,original_unique_TRAIN=len(y['train']),original_unique_TEST=len(y['test']))
+            if replay:meta['teacher_error_replay']=replay['record']
         meta['teacher_architecture_identical']=True
         meta['teacher_optical_phases_pretrained_with_augmented_TRAIN_and_TEST']=True
     elif teacher_mode=='student_canonical_soft_distillation':
@@ -141,7 +157,7 @@ def run_job(cfg, out):
     anchor=model.shared_head.weight.detach().double().clone()
     transformed,start,factor,coordinates=training_coordinates(train_x,anchor,'TRAIN_Gram_cholesky')
     # Gram includes soft-input TEST only in the explicitly disclosed joint mode.
-    meta['coordinate_statistics']=coordinates;meta['Gram_includes_original_TEST_soft_inputs']=joint
+    meta['coordinate_statistics']=coordinates;meta['Gram_includes_original_TEST_inputs']=joint;meta['Gram_includes_original_TEST_soft_inputs']=joint and teacher_mode!='teacher_TEST_hard_recalibration'
     write(out/'metadata.json',meta)
     coordinate=torch.nn.Parameter(start)
     opt=torch.optim.LBFGS([coordinate],lr=1.,max_iter=5,max_eval=10,history_size=20,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-12)

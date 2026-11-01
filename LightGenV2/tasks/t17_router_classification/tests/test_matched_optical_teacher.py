@@ -3,7 +3,7 @@ import pytest
 import torch
 from LightGenV2.tasks.t17_router_classification.train_f_matched_optical_teacher import classification_loss, matched_balance,matched_training_codes
 from LightGenV2.tasks.t17_router_classification.select_monotone_checkpoints import select_strict_tuple
-from LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST import optical_teacher_mode,fit_objective,coordinate_fit_objective
+from LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST import optical_teacher_mode,fit_objective,coordinate_fit_objective,teacher_focus_indices
 
 
 def test_monotone_selection_preserves_independent_maxima():
@@ -55,3 +55,11 @@ def test_default_view_sequence_compatible_and_canonical_mode_explicit():
     assert np.array_equal(codes,matched_training_codes(np.random.default_rng(17),100))
     assert not matched_training_codes(np.random.default_rng(17),100,1.).any()
     with pytest.raises(ValueError):matched_training_codes(np.random.default_rng(17),10,2.)
+
+
+def test_teacher_focus_retains_every_image_and_is_forbidden_for_student():
+    replay=dict(wrong=dict(train=np.array([False,True]),test=np.array([True,False])))
+    index,trn,tst=teacher_focus_indices(2,2,8,replay)
+    assert np.array_equal(np.bincount(index),[1,3,24,8])and trn==4 and tst==32
+    profile=dict(dataset='eurosat_original_f',main_layers=2,architecture='LG')
+    with pytest.raises(ValueError):optical_teacher_mode(dict(matched_optical_teacher_mode='student_canonical_soft_distillation',teacher_TEST_focus_factor=8),profile)
