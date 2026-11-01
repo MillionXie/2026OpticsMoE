@@ -1,5 +1,28 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-11-01：新四范围三轮测量计划（尚非完成结果）
+
+人工已批准依次计入：V0原resize/normalize/patch，V1再加文件打开/定位/解码BGR，
+V2再加BGR转RGB，V3再加原中心65%裁剪。预先固定每配置3个fresh进程，
+每轮3个额外真实预热光场及32个正式16视频/64帧相干场，共12轮384正式场；
+原512 TEST/权重/精度/数值门保持。新入口为
+`measurement_protocol_20261024/run_lgvq_front_scopes_20261101.py`，
+新独立root为`lgvq_compute_scope_20261029_15`，不覆盖此前run或Excel。
+
+主估算采用人工指定的阶段均值理想流水：CPU各阶段总活跃工作量除以16及32，
+后端各阶段取本轮32场均值，SLM1886Hz替代FFT，保留跨组后端资源依赖。
+不计任务分配不均衡或CPU调度/off-CPU等待。当CPU主导条件经排程核验成立时，
+每场估算为CPU均值P加平均图像就绪后端Q/32；不强行将后端瓶颈隐藏。
+文字tokenizer/embedding工作量照实保留，是否增加尾巴由依赖决定。
+该结果不是实测经过时间，也不是物理光电E2E；真实队列、FFT软件和NVML独立记录。
+
+V1..V3在线执行原生解码、RGB和裁剪，只对所选累计范围计入估算；不将各配置
+软件完整wall误作其选定范围wall。FFmpeg明确每CPU worker单线程并核原生像素/
+归一化/BF16 patch/逐视频评分字节身份；裁剪仍为原切片，不新增copy。
+各段wall与thread CPU同时保存，两者差额只称off-CPU/时钟差额，不能认定全为磁盘等待。
+不清系统缓存，不声称冷盘测量。quality像素准备、H2D、返回、残差/fusion/layout
+仍沿用既有选定范围排除项。完整结果以新root实际状态/原始记录及后续独立核验为准。
+
 ## 2026-11-01：连续动态FIFO16新三轮完成（本轮更新结果）
 
 实验室A100 PCIe40GB/250W、Xeon Gold5218R的新三轮已完成：
