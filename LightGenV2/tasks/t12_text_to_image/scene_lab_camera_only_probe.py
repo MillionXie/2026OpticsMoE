@@ -25,7 +25,7 @@ def audit_vendor_save(camera,path,decoded):
     path=Path(path)
     if path.exists()or path.with_suffix('.tif').exists():raise FileExistsError('Preserve prior vendor frame audit')
     m=camera._module
-    request=m.TUCAM_FILE_SAVE(m.TUIMG_FORMATS.TUFMT_TIF.value,str(path).encode('mbcs'),ctypes.pointer(camera._frame))
+    request=m.TUCAM_FILE_SAVE(m.TUIMG_FORMATS.TUFMT_TIF.value,str(path).encode('mbcs'if os.name=='nt'else'utf-8'),ctypes.pointer(camera._frame))
     camera._check(m.TUCAM_File_SaveImage(camera._handle(),request),'vendor same-frame TIFF save')
     candidates=[p for p in (path,path.with_suffix('.tif'),Path(str(path)+'.tif'))if p.is_file()]
     candidates=list(dict.fromkeys(candidates))
