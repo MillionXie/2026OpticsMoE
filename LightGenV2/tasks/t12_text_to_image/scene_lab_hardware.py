@@ -77,7 +77,7 @@ def field_inverse(grays,means):
 
 
 class Bench:
-    def __init__(self,config,out,camera_factory=None):self.c=config;self.out=Path(out);self.camera_factory=camera_factory
+    def __init__(self,config,out,camera_factory=None,phase_factory=None):self.c=config;self.out=Path(out);self.camera_factory=camera_factory;self.phase_factory=phase_factory
     def __enter__(self):
         from experiments.hardware_sdk.devices import build_slm
         from experiments.hardware_sdk.drivers.tucam_camera import TucamCamera
@@ -87,7 +87,7 @@ class Bench:
             for path,digest in c['fixed_files'].items():
                 if sha(path)!=digest:raise ValueError(('Changed device identity',path))
             m=json.loads(Path(c['machine_config']).read_text(encoding='utf-8-sig'));m['amplitude_slm']['sdk_path']=c['amplitude_sdk']
-            self.phase=self.stack.enter_context(PhaseHDMI(c['phase_sdk'],c['phase_lut'],settle_s=.8,pixel_format='rgba'))
+            self.phase=self.stack.enter_context((self.phase_factory or PhaseHDMI)(c['phase_sdk'],c['phase_lut'],settle_s=.8,pixel_format='rgba'))
             self.slm=self.stack.enter_context(build_slm(m['amplitude_slm'],Path(c['machine_config']).parent))
             self.camera=self.stack.enter_context((self.camera_factory or TucamCamera)(c['camera_sdk'],timeout_ms=10000,auto_exposure=None,exposure_us=None,analog_gain=None,
                 warmup_frames=3,discard_frames_after_display=6,saved_frame_size_wh=None,saved_frame_resize_mode='none',saved_frame_bit_depth=None))
