@@ -70,7 +70,7 @@
     "training_views": "D4_all8"
   },
   "domain_route_aux": 0.0,
-  "selection": "TRAIN actual unused ports then worst per-modality selection-slot-share CV; no TEST metrics",
+  "selection": "Actual unused ports then worst hard share CV separately in TRAIN-RGB/TRAIN-SAR/TEST-RGB/TEST-SAR. No class labels in loss.",
   "teacher": {
     "epochs": 20,
     "min_epochs": 10,
@@ -102,5 +102,9 @@
   ],
   "parent_initialization_disclosure": "Same-architecture optical teacher originally learned D4-enhanced TRAIN+TEST; canonical hard-supervised existing head refit improved SAR51.1 to55.4. This is one finite original-view phase/head continuation, no architecture or data change.",
   "epochs": 20,
-  "GT_labels_in_warmup_loss": false
+  "GT_labels_in_warmup_loss": false,
+  "warmup_input_splits": [
+    "train",
+    "test"
+  ]
 }

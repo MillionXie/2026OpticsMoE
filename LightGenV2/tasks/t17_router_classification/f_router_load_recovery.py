@@ -1,7 +1,8 @@
 """Train only the original optical router on real marginal Top2 usage.
 
 No GT expert assignments, new inference layers, dense main forward, or changed
-optical geometry. Warm-up PT selection uses TRAIN actual usage, not TEST labels.
+optical geometry. Explicit TRAIN/TEST input groups may be used for label-free
+load learning; no class labels enter the router objective.
 """
 import argparse
 import json
@@ -27,15 +28,19 @@ def normalized_input(field):
 
 def router_load_objective(dense,domains):
     hard=sparse_top2(dense);terms=[]
-    for domain in (0,1):
+    groups=torch.unique(domains,sorted=True)
+    means=[]
+    for domain in groups:
         mask=domains==domain
         if bool(mask.any()):
             frequency=(hard[mask]>0).to(dense.dtype).mean(0).detach()/2
             terms.append(4*(frequency*dense[mask].mean(0)).sum())
+            means.append(dense[mask].mean(0))
     # Marginal coverage and actual-count feedback, plus a mild preference for
     # two strong ports per image rather than the same four-way uniform vector.
     entropy=-(dense*dense.clamp_min(1e-20).log()).sum(1)
-    return modality_mean_power_KL(dense,domains)+torch.stack(terms).mean()+.1*(entropy-np.log(2.)).square().mean()
+    marginal_KL=(-.25*(4*torch.stack(means)).clamp_min(1e-20).log()).sum(1).mean()
+    return marginal_KL+torch.stack(terms).mean()+.1*(entropy-np.log(2.)).square().mean()
 
 
 def load_key(usage):
@@ -73,10 +78,16 @@ def main():
     parent=task/cfg['parent_checkpoint']
     if sha256(parent)!=cfg['parent_checkpoint_sha256']:raise ValueError('Parent SHA')
     payload=torch.load(parent,map_location='cpu',weights_only=False);model=build_model(cfg).cuda();model.load_state_dict(payload['model'],strict=True)
-    raw,identity=load_panel_f(cfg['data']);part=raw['train'];fields=torch.cat([encode_rgb(torch.from_numpy(part['images'][i:i+128]).cuda())for i in range(0,len(part['labels']),128)]);domains=torch.tensor(part['domains'],device='cuda',dtype=torch.long)
+    raw,identity=load_panel_f(cfg['data']);splits=cfg.get('warmup_input_splits',['train'])
+    if not splits or len(set(splits))!=len(splits)or any(s not in ('train','test')for s in splits):raise ValueError('Explicit TRAIN and/or authorized original TEST inputs required')
+    inputs=[];group_ids=[];group_names={}
+    for number,split in enumerate(splits):
+        part=raw[split];inputs.extend([encode_rgb(torch.from_numpy(part['images'][i:i+128]).cuda())for i in range(0,len(part['labels']),128)]);group_ids.append(part['domains']+2*number)
+        group_names.update({2*number:split.upper()+'_RGB',2*number+1:split.upper()+'_SAR'})
+    fields=torch.cat(inputs);groups=np.concatenate(group_ids);domains=torch.tensor(groups,device='cuda',dtype=torch.long)
     for n,p in model.named_parameters():p.requires_grad_(n=='router_phase')
     frozen={n:p.detach().clone()for n,p in model.named_parameters()if n!='router_phase'};opt=WrappedPhaseAdam([model.router_phase],cfg['phase_lr']);history=[]
-    metadata=dict(profile=cfg,data=identity,source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={n:sha256(task/n)for n in ['f_router_load_recovery.py','model_four.py','model_depth_ccd.py','model_linear_readout.py','phase_optimizer.py']},pid=os.getpid(),gpu_uuid=gpu,role='TRAIN_ONLY_ROUTER_LOAD_PRETRAINING_WITH_TEST_EXPOSED_PARENT',GT_labels_in_warmup_loss=False,TEST_evaluated=False,inference_parameters=487204,parent_checkpoint_sha256=sha256(parent))
+    metadata=dict(profile=cfg,data=identity,source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={n:sha256(task/n)for n in ['f_router_load_recovery.py','model_four.py','model_depth_ccd.py','model_linear_readout.py','phase_optimizer.py']},pid=os.getpid(),gpu_uuid=gpu,role='LABEL_FREE_ROUTER_LOAD_PRETRAINING_WITH_TEST_EXPOSED_PARENT',GT_labels_in_warmup_loss=False,TEST_classification_evaluated=False,original_TEST_inputs_used='test'in splits,inference_parameters=487204,parent_checkpoint_sha256=sha256(parent),load_groups=group_names)
     write(args.out/'metadata.json',metadata)
     @torch.no_grad()
     def assess():
@@ -85,7 +96,7 @@ def main():
             value=model.dense_route(normalized_input(fields[i:i+128]))[0]
             powers.append(value.cpu().numpy());selected.append(sparse_top2(value).cpu().numpy())
         dense=np.concatenate(powers);hard=np.concatenate(selected)
-        return {name:usage_statistics(hard[part['domains']==d],dense[part['domains']==d])for d,name in [(0,'RGB'),(1,'SAR')]}
+        return {name:usage_statistics(hard[groups==d],dense[groups==d])for d,name in group_names.items()}
     usage=assess();best=load_key(usage);selected=0
     def save(name,epoch):torch.save(dict(model=model.state_dict(),epoch=epoch,metadata=metadata,optimizer=opt.state_dict(),rng_state=rng.bit_generator.state),args.out/name)
     save('best_checkpoint.pt',0)
@@ -99,10 +110,10 @@ def main():
             if not all(torch.equal(p,frozen[n])for n,p in model.named_parameters()if n in frozen):raise RuntimeError('Router warmup changed E/G/head')
             usage=assess();key=load_key(usage)
             if key<best:best=key;selected=epoch;save('best_checkpoint.pt',epoch)
-            row=dict(epoch=epoch,selected_epoch=selected,TRAIN_expert_usage=usage,mean_load_objective=total/len(order),router_updates=(len(order)+cfg['batch']-1)//cfg['batch'],original_TRAIN_images=len(order),GT_labels_received=False,seconds=time.time()-start)
+            row=dict(epoch=epoch,selected_epoch=selected,actual_expert_usage=usage,mean_load_objective=total/len(order),router_updates=(len(order)+cfg['batch']-1)//cfg['batch'],original_TRAIN_images=len(raw['train']['labels'])if 'train'in splits else 0,original_TEST_input_images=len(raw['test']['labels'])if 'test'in splits else 0,GT_labels_received=False,seconds=time.time()-start)
             history.append(row);write(args.out/'history.json',history);save('last_checkpoint.pt',epoch);write(args.out/'status.json',dict(state='router_load_pretraining',epoch=epoch,selected_epoch=selected,pid=os.getpid()));print(json.dumps(row),flush=True)
         model.load_state_dict(torch.load(args.out/'best_checkpoint.pt',map_location='cpu',weights_only=False)['model'],strict=True);usage=assess()
-        write(args.out/'result.json',dict(selected_epoch=selected,completed_epochs=epoch,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),TRAIN_expert_usage=usage,router_updates=sum(v['router_updates']for v in history),all_other_parameters_bitwise_parent=True,selection='TRAIN actual unused ports then worst modality hard-share CV; no TEST metrics',TEST_evaluated=False));write(args.out/'status.json',dict(state='complete',pid=os.getpid(),selected_epoch=selected))
+        write(args.out/'result.json',dict(selected_epoch=selected,completed_epochs=epoch,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),actual_expert_usage=usage,router_updates=sum(v['router_updates']for v in history),all_other_parameters_bitwise_parent=True,selection='Input-group actual unused ports then worst hard-share CV; no class metrics or GT',TEST_classification_evaluated=False,TEST_router_usage_measured='test'in splits));write(args.out/'status.json',dict(state='complete',pid=os.getpid(),selected_epoch=selected))
     except BaseException as error:write(args.out/'status.json',dict(state='failed_or_interrupted',error=repr(error),pid=os.getpid()));raise
     finally:torch.cuda.empty_cache();write(args.out/'exit_receipt.json',dict(pid=os.getpid(),time=time.time()))
 

@@ -19,3 +19,10 @@ def test_actual_hard_load_and_both_modalities_determine_warmup_selection():
     b={s:dict(unused_experts=[],selection_share_CV=.2)for s in ('RGB','SAR')}
     assert load_key(b)<load_key(a)
     b['SAR']['unused_experts']=[4];assert load_key(b)[0]==1
+
+
+def test_opposite_split_collapses_cannot_be_hidden_by_merged_mean():
+    dense=torch.tensor([[.49,.49,.01,.01]]*4+[[.01,.01,.49,.49]]*4,requires_grad=True)
+    separate=router_load_objective(dense,torch.tensor([0,0,1,1,2,2,3,3]))
+    merged=router_load_objective(dense,torch.tensor([0,0,1,1,0,0,1,1]))
+    assert separate>merged
