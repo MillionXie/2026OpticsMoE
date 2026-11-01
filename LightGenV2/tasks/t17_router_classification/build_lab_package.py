@@ -82,7 +82,7 @@ def prepare(out):
             for e in range(4):E.append(dict(split='TEST_DEV'if split=='test'else split.upper(),modality=domain,expert=e+1,n=v['images'],selected=v['expert_selection_counts'][e],frequency=v['per_image_selection_frequency'][e],share=v['selection_slot_share'][e],post_power=v['post_Top2_mean_power'][e],dense_power=v['pre_Top2_mean_dense_power'][e],record='F_joint_LG_'+domain))
     assert min(actual[d][s]['accuracy']for d in ('RGB','SAR')for s in ('train','test'))>=.65
     data=dict(as_of_local=datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),builder_sha256=sha(Path(__file__)),role=ROLE,seed=17,SD_available=False,A=A,B=B,D=D,E=E,F=F,F_joint_training=actual,F_checkpoint_sha256=digest,sources=sources,notes=[
-        ['评估口径','全部为固定完整原TEST开发指标，已用于选模/诊断/部分教师训练；不是独立测试。单seed17，无标准差。'],
+        ['评估口径','全部为光学仿真，非实验台实测。固定完整原TEST开发指标，已用于选模/诊断/部分教师训练；不是独立测试。单seed17，无标准差。'],
         ['A 数据顺序','第一组Kather2016，第二组BloodMNIST128，第三组CRC9。LG均四专家、主层2、Top2、逐层OEO、唯一无bias Linear。'],
         ['A 基线','保留三层纯线性D2NN：无OEO、无Linear；不能与B的带OEO三层D2NN53.99%混用。'],
         ['B 层数','LG主层2/4/6，D2NN相位3/5/7。LG额外有入口router；不要把D2NN层数标为2/4/6。'],
@@ -119,7 +119,7 @@ def prepare(out):
             flat.append(item)
         with(out/f'data/{key}_plot_data.csv').open('w',encoding='utf-8-sig',newline='')as f:w=csv.DictWriter(f,fieldnames=list(flat[0]));w.writeheader();w.writerows(flat)
     draw(data,out/'figures');page=handoff_html(data);(out/'READ_ME.html').write_text(page,encoding='utf-8')
-    (out/'READ_ME.txt').write_text('画图交接：2026-11-01\n先读READ_ME.html，再取Figure_data.xlsx或data/*.csv。\n百分比CSV为0..1小数，gap_pp为百分点；图中字数值显示两位小数。\n全部为原TEST开发值，seed17无SD。\n'+'\n'.join(k+'：'+v for k,v in data['notes'])+'\n',encoding='utf-8')
+    (out/'READ_ME.txt').write_text('画图交接：2026-11-01\n先读READ_ME.html，再取Figure_data.xlsx或data/*.csv。\n百分比CSV为0..1小数，gap_pp为百分点；图中字数值显示两位小数。\n全部为光学仿真原TEST开发值，非实验台实测；seed17无SD。\n'+'\n'.join(k+'：'+v for k,v in data['notes'])+'\n',encoding='utf-8')
     print(json.dumps(dict(prepared=str(out),source_records=len(sources),D_points=len(D),F_main_values=len(F)),ensure_ascii=False))
 
 def draw(d,out):
@@ -152,14 +152,15 @@ def draw(d,out):
 def handoff_html(d):
     notes=''.join('<tr><td>'+html.escape(k)+'</td><td>'+html.escape(v)+'</td></tr>'for k,v in d['notes'])
     figs=''.join(f'<h2>{letter}</h2><img src="figures/{file}" alt="{letter}">'for letter,file in [('A','A_classification.svg'),('B','B_depth.svg'),('D','D_topk.svg'),('E','E_expert_usage.svg'),('F','F_modalities.svg')])
-    return '<!doctype html><html lang="zh"><meta charset="utf-8"><title>A B D E F 画图交接</title><style>body{max-width:1120px;margin:36px auto;font:16px/1.7 system-ui;color:#182d43}td,th{padding:12px;border-bottom:1px solid #ddd;vertical-align:top}td:first-child{width:150px}img{max-width:100%}a{color:#2467b2}</style><h1>A、B、D、E、F 画图交接 · 2026-11-01</h1><p>本包冻结当前已核验结果。图仅供重绘参考，可编辑SVG保留文本；原始小数和正确数见工作簿、CSV与source_data.json。请勿混用旧图高分、VAL或不同PT。全部为已暴露原TEST开发结果，seed17，无标准差。</p><p><a href="Figure_data.xlsx">数据工作簿</a> · <a href="data/source_data.json">全部数字及权重来源</a></p><table>'+notes+'</table>'+figs+'</html>'
+    return '<!doctype html><html lang="zh"><meta charset="utf-8"><title>A B D E F 画图交接</title><style>body{max-width:1120px;margin:36px auto;font:16px/1.7 system-ui;color:#182d43}td,th{padding:12px;border-bottom:1px solid #ddd;vertical-align:top}td:first-child{width:150px}img{max-width:100%}a{color:#2467b2}</style><h1>A、B、D、E、F 画图交接 · 2026-11-01</h1><p>本包冻结当前已核验结果。图仅供重绘参考，可编辑SVG保留文本；原始小数和正确数见工作簿、CSV与source_data.json。请勿混用旧图高分、VAL或不同PT。全部为光学仿真的已暴露原TEST开发结果，非实验台实测；seed17，无标准差。</p><p><a href="Figure_data.xlsx">数据工作簿</a> · <a href="data/source_data.json">全部数字及权重来源</a></p><table>'+notes+'</table>'+figs+'</html>'
 
 def package(out):
     book=out/'Figure_data.xlsx';assert book.exists(),'Export and visually verify workbook first'
     files=sorted(p for p in out.rglob('*')if p.is_file()and p.name!='manifest.json'and p.suffix in ('.csv','.json','.svg','.xlsx','.html','.txt'))
     assert all(p.suffix not in ('.pt','.npz','.npy','.py')for p in files)
     manifest=dict(as_of_local=datetime.now(ZoneInfo('Asia/Shanghai')).isoformat(),role=ROLE,files=[dict(path=p.relative_to(out).as_posix(),size=p.stat().st_size,sha256=sha(p))for p in files]);(out/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-    archive=out.with_suffix('.zip')
+    archive=TASK/'releases'/(out.name+'.zip');archive.parent.mkdir(exist_ok=True)
+    if archive.exists():raise FileExistsError('Preserve the existing release; use a new explicitly versioned output directory')
     with zipfile.ZipFile(archive,'w',zipfile.ZIP_DEFLATED)as z:
         for p in files+[out/'manifest.json']:z.write(p,arcname=out.name+'/'+p.relative_to(out).as_posix())
     with zipfile.ZipFile(archive)as z:

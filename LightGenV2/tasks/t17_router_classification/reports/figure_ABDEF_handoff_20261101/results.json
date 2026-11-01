@@ -1,0 +1,1733 @@
+{
+  "as_of_local": "2026-11-01T14:14:05.178832+08:00",
+  "source_commit": "439198294822f7c8ad6a6e4afc81a2977d49729c",
+  "builder_sha256": "a3a41b6aaacd569f92dae4650ed872d8b431a3eec72da537028c9f5fffa92e59",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "seed": 17,
+  "SD_available": false,
+  "A": [
+    {
+      "dataset": "Kather2016",
+      "model": "LG",
+      "layers": 2,
+      "k": 2,
+      "OEO": true,
+      "Linear": true,
+      "train": {
+        "n": 3496,
+        "correct": 3051,
+        "accuracy": 0.8727116704805492
+      },
+      "val": {
+        "n": 752,
+        "correct": 572,
+        "accuracy": 0.7606382978723404
+      },
+      "test": {
+        "n": 752,
+        "correct": 596,
+        "accuracy": 0.7925531914893617
+      },
+      "record": "A_kather2016_LG"
+    },
+    {
+      "dataset": "Kather2016",
+      "model": "D2NN",
+      "layers": 3,
+      "k": null,
+      "OEO": false,
+      "Linear": false,
+      "test": {
+        "n": 752,
+        "correct": 306,
+        "accuracy": 0.40691489361702127
+      },
+      "train": {
+        "n": 3496,
+        "correct": 1641,
+        "accuracy": 0.46939359267734554
+      },
+      "val": {
+        "n": 752,
+        "correct": 317,
+        "accuracy": 0.42154255319148937
+      },
+      "record": "A_kather2016_D2NN"
+    },
+    {
+      "dataset": "BloodMNIST128",
+      "model": "LG",
+      "layers": 2,
+      "k": 2,
+      "OEO": true,
+      "Linear": true,
+      "train": {
+        "n": 11948,
+        "correct": 10551,
+        "accuracy": 0.8830766655507197
+      },
+      "val": {
+        "n": 1712,
+        "correct": 1474,
+        "accuracy": 0.860981308411215
+      },
+      "test": {
+        "n": 3421,
+        "correct": 2945,
+        "accuracy": 0.8608593978368898
+      },
+      "record": "A_bloodmnist128_LG"
+    },
+    {
+      "dataset": "BloodMNIST128",
+      "model": "D2NN",
+      "layers": 3,
+      "k": null,
+      "OEO": false,
+      "Linear": false,
+      "test": {
+        "n": 3421,
+        "correct": 2052,
+        "accuracy": 0.599824612686349
+      },
+      "train": {
+        "n": 11948,
+        "correct": 7348,
+        "accuracy": 0.6149983260796786
+      },
+      "val": {
+        "n": 1712,
+        "correct": 1068,
+        "accuracy": 0.6238317757009346
+      },
+      "record": "A_bloodmnist128_D2NN"
+    },
+    {
+      "dataset": "CRC9",
+      "model": "LG",
+      "layers": 2,
+      "k": 2,
+      "OEO": true,
+      "Linear": true,
+      "train": {
+        "n": 5026,
+        "correct": 4281,
+        "accuracy": 0.8517707918822125
+      },
+      "val": {
+        "n": 718,
+        "correct": 553,
+        "accuracy": 0.7701949860724234
+      },
+      "test": {
+        "n": 1436,
+        "correct": 1171,
+        "accuracy": 0.8154596100278552
+      },
+      "record": "A_crc9_LG"
+    },
+    {
+      "dataset": "CRC9",
+      "model": "D2NN",
+      "layers": 3,
+      "k": null,
+      "OEO": false,
+      "Linear": false,
+      "test": {
+        "n": 1436,
+        "correct": 858,
+        "accuracy": 0.5974930362116991
+      },
+      "train": {
+        "n": 5026,
+        "correct": 3121,
+        "accuracy": 0.6209709510545165
+      },
+      "val": {
+        "n": 718,
+        "correct": 448,
+        "accuracy": 0.6239554317548747
+      },
+      "record": "A_crc9_D2NN"
+    }
+  ],
+  "B": [
+    {
+      "dataset": "Kather2016",
+      "LG_layers": 2,
+      "D2NN_layers": 3,
+      "n": 752,
+      "LG_correct": 596,
+      "D2NN_correct": 406,
+      "LG_accuracy": 0.7925531914893617,
+      "D2NN_accuracy": 0.5398936170212766,
+      "gap_pp": 25.265957446808507,
+      "LG_record": "A_kather2016_LG",
+      "D2NN_record": "B_D2NN3",
+      "target_15pp_met": true
+    },
+    {
+      "dataset": "Kather2016",
+      "LG_layers": 4,
+      "D2NN_layers": 5,
+      "n": 752,
+      "LG_correct": 628,
+      "D2NN_correct": 506,
+      "LG_accuracy": 0.8351063829787234,
+      "D2NN_accuracy": 0.6728723404255319,
+      "gap_pp": 16.223404255319153,
+      "LG_record": "B_LG4",
+      "D2NN_record": "B_D2NN5",
+      "target_15pp_met": true
+    },
+    {
+      "dataset": "Kather2016",
+      "LG_layers": 6,
+      "D2NN_layers": 7,
+      "n": 752,
+      "LG_correct": 653,
+      "D2NN_correct": 542,
+      "LG_accuracy": 0.8683510638297872,
+      "D2NN_accuracy": 0.7207446808510638,
+      "gap_pp": 14.760638297872342,
+      "LG_record": "B_LG6",
+      "D2NN_record": "B_D2NN7",
+      "target_15pp_met": false
+    }
+  ],
+  "D": [
+    {
+      "dataset": "Kather2016",
+      "k": 1,
+      "n": 752,
+      "correct": 590,
+      "accuracy": 0.7845744680851063,
+      "selection": "constrained_saved_PT",
+      "record": "D_kather2016_k1"
+    },
+    {
+      "dataset": "Kather2016",
+      "k": 2,
+      "n": 752,
+      "correct": 596,
+      "accuracy": 0.7925531914893617,
+      "selection": "constrained_saved_PT",
+      "record": "D_kather2016_k2"
+    },
+    {
+      "dataset": "Kather2016",
+      "k": 3,
+      "n": 752,
+      "correct": 600,
+      "accuracy": 0.7978723404255319,
+      "selection": "constrained_saved_PT",
+      "record": "D_kather2016_k3"
+    },
+    {
+      "dataset": "Kather2016",
+      "k": 4,
+      "n": 752,
+      "correct": 604,
+      "accuracy": 0.8031914893617021,
+      "selection": "constrained_saved_PT",
+      "record": "D_kather2016_k4"
+    },
+    {
+      "dataset": "BloodMNIST128",
+      "k": 1,
+      "n": 3421,
+      "correct": 2919,
+      "accuracy": 0.8532592809120141,
+      "selection": "independent_development_best",
+      "record": "D_bloodmnist128_k1"
+    },
+    {
+      "dataset": "BloodMNIST128",
+      "k": 2,
+      "n": 3421,
+      "correct": 2945,
+      "accuracy": 0.8608593978368898,
+      "selection": "independent_development_best",
+      "record": "D_bloodmnist128_k2"
+    },
+    {
+      "dataset": "BloodMNIST128",
+      "k": 3,
+      "n": 3421,
+      "correct": 3058,
+      "accuracy": 0.8938906752411575,
+      "selection": "independent_development_best",
+      "record": "D_bloodmnist128_k3"
+    },
+    {
+      "dataset": "BloodMNIST128",
+      "k": 4,
+      "n": 3421,
+      "correct": 3098,
+      "accuracy": 0.9055831628178895,
+      "selection": "independent_development_best",
+      "record": "D_bloodmnist128_k4"
+    },
+    {
+      "dataset": "OrganCMNIST",
+      "k": 1,
+      "n": 8216,
+      "correct": 5848,
+      "accuracy": 0.7117818889970788,
+      "selection": "independent_development_best",
+      "record": "D_organcmnist_k1"
+    },
+    {
+      "dataset": "OrganCMNIST",
+      "k": 2,
+      "n": 8216,
+      "correct": 5981,
+      "accuracy": 0.7279698149951315,
+      "selection": "independent_development_best",
+      "record": "D_organcmnist_k2"
+    },
+    {
+      "dataset": "OrganCMNIST",
+      "k": 3,
+      "n": 8216,
+      "correct": 6039,
+      "accuracy": 0.7350292112950341,
+      "selection": "independent_development_best",
+      "record": "D_organcmnist_k3"
+    },
+    {
+      "dataset": "OrganCMNIST",
+      "k": 4,
+      "n": 8216,
+      "correct": 6053,
+      "accuracy": 0.7367332035053554,
+      "selection": "independent_development_best",
+      "record": "D_organcmnist_k4"
+    }
+  ],
+  "E": [
+    {
+      "split": "TEST_DEV",
+      "modality": "RGB",
+      "expert": 1,
+      "n": 1000,
+      "selected": 460,
+      "frequency": 0.46,
+      "share": 0.23,
+      "post_power": 0.24059233301877975,
+      "dense_power": 0.24356847515702248,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TEST_DEV",
+      "modality": "RGB",
+      "expert": 2,
+      "n": 1000,
+      "selected": 420,
+      "frequency": 0.42,
+      "share": 0.21,
+      "post_power": 0.20575079530477525,
+      "dense_power": 0.2416885994374752,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TEST_DEV",
+      "modality": "RGB",
+      "expert": 3,
+      "n": 1000,
+      "selected": 553,
+      "frequency": 0.553,
+      "share": 0.2765,
+      "post_power": 0.2737560296356678,
+      "dense_power": 0.25661671698093413,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TEST_DEV",
+      "modality": "RGB",
+      "expert": 4,
+      "n": 1000,
+      "selected": 567,
+      "frequency": 0.567,
+      "share": 0.2835,
+      "post_power": 0.2799008413553238,
+      "dense_power": 0.25812620790302754,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TEST_DEV",
+      "modality": "SAR",
+      "expert": 1,
+      "n": 1000,
+      "selected": 503,
+      "frequency": 0.503,
+      "share": 0.2515,
+      "post_power": 0.25146505495905874,
+      "dense_power": 0.2475367054864764,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "TEST_DEV",
+      "modality": "SAR",
+      "expert": 2,
+      "n": 1000,
+      "selected": 640,
+      "frequency": 0.64,
+      "share": 0.32,
+      "post_power": 0.33430754342675206,
+      "dense_power": 0.267556281812489,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "TEST_DEV",
+      "modality": "SAR",
+      "expert": 3,
+      "n": 1000,
+      "selected": 461,
+      "frequency": 0.461,
+      "share": 0.2305,
+      "post_power": 0.22418154865503312,
+      "dense_power": 0.2515482832491398,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "TEST_DEV",
+      "modality": "SAR",
+      "expert": 4,
+      "n": 1000,
+      "selected": 396,
+      "frequency": 0.396,
+      "share": 0.198,
+      "post_power": 0.19004585474729538,
+      "dense_power": 0.2333587303124368,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "RGB",
+      "expert": 1,
+      "n": 3000,
+      "selected": 1176,
+      "frequency": 0.392,
+      "share": 0.196,
+      "post_power": 0.20334793135523796,
+      "dense_power": 0.23923061228791873,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "RGB",
+      "expert": 2,
+      "n": 3000,
+      "selected": 1088,
+      "frequency": 0.3626666666666667,
+      "share": 0.18133333333333335,
+      "post_power": 0.17813443421324093,
+      "dense_power": 0.24140369157493113,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "RGB",
+      "expert": 3,
+      "n": 3000,
+      "selected": 1732,
+      "frequency": 0.5773333333333334,
+      "share": 0.2886666666666667,
+      "post_power": 0.2856032551825047,
+      "dense_power": 0.257573409597079,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "RGB",
+      "expert": 4,
+      "n": 3000,
+      "selected": 2004,
+      "frequency": 0.668,
+      "share": 0.334,
+      "post_power": 0.3329143808186054,
+      "dense_power": 0.26179228629668555,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "SAR",
+      "expert": 1,
+      "n": 3000,
+      "selected": 1460,
+      "frequency": 0.4866666666666667,
+      "share": 0.24333333333333335,
+      "post_power": 0.2441329231361548,
+      "dense_power": 0.2495782747163127,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "SAR",
+      "expert": 2,
+      "n": 3000,
+      "selected": 2016,
+      "frequency": 0.672,
+      "share": 0.336,
+      "post_power": 0.3497815085252126,
+      "dense_power": 0.26639397868234665,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "SAR",
+      "expert": 3,
+      "n": 3000,
+      "selected": 1166,
+      "frequency": 0.38866666666666666,
+      "share": 0.19433333333333333,
+      "post_power": 0.18842767767608165,
+      "dense_power": 0.24752589178085327,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "TRAIN",
+      "modality": "SAR",
+      "expert": 4,
+      "n": 3000,
+      "selected": 1358,
+      "frequency": 0.45266666666666666,
+      "share": 0.22633333333333333,
+      "post_power": 0.21765789085129897,
+      "dense_power": 0.23650185437096904,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "VAL",
+      "modality": "RGB",
+      "expert": 1,
+      "n": 1000,
+      "selected": 377,
+      "frequency": 0.377,
+      "share": 0.1885,
+      "post_power": 0.1952395667731762,
+      "dense_power": 0.2387418977022171,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "VAL",
+      "modality": "RGB",
+      "expert": 2,
+      "n": 1000,
+      "selected": 357,
+      "frequency": 0.357,
+      "share": 0.1785,
+      "post_power": 0.1738885285258293,
+      "dense_power": 0.24093802864849567,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "VAL",
+      "modality": "RGB",
+      "expert": 3,
+      "n": 1000,
+      "selected": 555,
+      "frequency": 0.555,
+      "share": 0.2775,
+      "post_power": 0.27635339099168776,
+      "dense_power": 0.25726725682616236,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "VAL",
+      "modality": "RGB",
+      "expert": 4,
+      "n": 1000,
+      "selected": 711,
+      "frequency": 0.711,
+      "share": 0.3555,
+      "post_power": 0.35451851162314413,
+      "dense_power": 0.26305281673371794,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "split": "VAL",
+      "modality": "SAR",
+      "expert": 1,
+      "n": 1000,
+      "selected": 472,
+      "frequency": 0.472,
+      "share": 0.236,
+      "post_power": 0.23771240493655205,
+      "dense_power": 0.24970496762543917,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "VAL",
+      "modality": "SAR",
+      "expert": 2,
+      "n": 1000,
+      "selected": 680,
+      "frequency": 0.68,
+      "share": 0.34,
+      "post_power": 0.35394880616664887,
+      "dense_power": 0.2677239694106975,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "VAL",
+      "modality": "SAR",
+      "expert": 3,
+      "n": 1000,
+      "selected": 370,
+      "frequency": 0.37,
+      "share": 0.185,
+      "post_power": 0.17925211077928543,
+      "dense_power": 0.24687165927886962,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "split": "VAL",
+      "modality": "SAR",
+      "expert": 4,
+      "n": 1000,
+      "selected": 478,
+      "frequency": 0.478,
+      "share": 0.239,
+      "post_power": 0.2290866772979498,
+      "dense_power": 0.23569940251251684,
+      "record": "F_joint_LG_SAR"
+    }
+  ],
+  "F": [
+    {
+      "model": "LG",
+      "train_domain": "RGB+SAR joint",
+      "test_domain": "RGB",
+      "n": 1000,
+      "correct": 700,
+      "accuracy": 0.7,
+      "record": "F_joint_LG_RGB"
+    },
+    {
+      "model": "LG",
+      "train_domain": "RGB+SAR joint",
+      "test_domain": "SAR",
+      "n": 1000,
+      "correct": 703,
+      "accuracy": 0.703,
+      "record": "F_joint_LG_SAR"
+    },
+    {
+      "model": "D2NN",
+      "train_domain": "RGB",
+      "test_domain": "RGB",
+      "n": 1000,
+      "correct": 509,
+      "accuracy": 0.509,
+      "record": "F_D2NN_RGB"
+    },
+    {
+      "model": "D2NN",
+      "train_domain": "RGB",
+      "test_domain": "SAR",
+      "n": 1000,
+      "correct": 97,
+      "accuracy": 0.097,
+      "record": "F_D2NN_RGB"
+    },
+    {
+      "model": "D2NN",
+      "train_domain": "SAR",
+      "test_domain": "RGB",
+      "n": 1000,
+      "correct": 173,
+      "accuracy": 0.173,
+      "record": "F_D2NN_SAR"
+    },
+    {
+      "model": "D2NN",
+      "train_domain": "SAR",
+      "test_domain": "SAR",
+      "n": 1000,
+      "correct": 416,
+      "accuracy": 0.416,
+      "record": "F_D2NN_SAR"
+    }
+  ],
+  "F_joint_training": {
+    "RGB": {
+      "train": {
+        "n": 3000,
+        "correct": 2075,
+        "accuracy": 0.6916666666666667
+      },
+      "val": {
+        "n": 1000,
+        "correct": 472,
+        "accuracy": 0.472
+      },
+      "test": {
+        "n": 1000,
+        "correct": 700,
+        "accuracy": 0.7
+      }
+    },
+    "SAR": {
+      "train": {
+        "n": 3000,
+        "correct": 2093,
+        "accuracy": 0.6976666666666667
+      },
+      "val": {
+        "n": 1000,
+        "correct": 412,
+        "accuracy": 0.412
+      },
+      "test": {
+        "n": 1000,
+        "correct": 703,
+        "accuracy": 0.703
+      }
+    }
+  },
+  "F_checkpoint_sha256": "a3fa43923e4640246aa7e715703cb0242aa3b434f0b2f7ae181d0cd5a2663247",
+  "sources": {
+    "A_kather2016_LG": {
+      "record_id": "A_kather2016_LG",
+      "run": "runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2",
+      "checkpoint": "runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2/best_checkpoint.pt",
+      "checkpoint_sha256": "2ed5a80655a1fdd62b060830e86cabaae7260f4fe4a33838f27c28bb262f60ea",
+      "test_prediction_sha256": "b530ed342767fefa9ca571aafe2be9d98a23656a5dbe5d05f1bce09ed69ea568",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "existing optical phases with newly fitted/optimized Linear; shared k2 where applicable",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3051,
+          "accuracy": 0.8727116704805492
+        },
+        "val": {
+          "n": 752,
+          "correct": 572,
+          "accuracy": 0.7606382978723404
+        },
+        "test": {
+          "n": 752,
+          "correct": 596,
+          "accuracy": 0.7925531914893617
+        }
+      }
+    },
+    "A_kather2016_D2NN": {
+      "record_id": "A_kather2016_D2NN",
+      "run": "runs/simulation/linear3_8class_lab_s17_20261030/kather2016",
+      "checkpoint": "runs/simulation/linear3_8class_lab_s17_20261030/kather2016/best_checkpoint.pt",
+      "checkpoint_sha256": "cf6d2ed22d569ccd26446a3665ec4a5b9f8106be821ab89bd8ef189b1e605b69",
+      "test_prediction_sha256": "507368de349a023c134522891f3c4ddc69789bc166a8458c863bd5627158025a",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "D2NN",
+      "main_layers": 3,
+      "top_k": null,
+      "OEO": false,
+      "Linear": false,
+      "origin": "protected 2026-10-30 pure-linear 3-phase baseline; not rerun for this handoff",
+      "metrics": {
+        "test": {
+          "n": 752,
+          "correct": 306,
+          "accuracy": 0.40691489361702127
+        },
+        "train": {
+          "n": 3496,
+          "correct": 1641,
+          "accuracy": 0.46939359267734554
+        },
+        "val": {
+          "n": 752,
+          "correct": 317,
+          "accuracy": 0.42154255319148937
+        }
+      }
+    },
+    "A_bloodmnist128_LG": {
+      "record_id": "A_bloodmnist128_LG",
+      "run": "runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128",
+      "checkpoint": "runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/best_checkpoint.pt",
+      "checkpoint_sha256": "66677286fa4c0466cca4fe46e6963880d7c3349ef2af8589e26c41784563941c",
+      "test_prediction_sha256": "143f5769fcecae6f7a565dfad0ddc06ff99cf5f3ed9a42ac46f74e8e559ce786",
+      "test_ID_sha256": "3a778fb5cd349d4d09c8f1f65f29e49ffe59f65ed68409d9867a4c7b14098467",
+      "test_label_sha256": "1c0a87f38802694e71c517ccfa6c6915ed03e32eb064c27065cc3bec51e2de36",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "existing optical phases with newly fitted/optimized Linear; shared k2 where applicable",
+      "metrics": {
+        "train": {
+          "n": 11948,
+          "correct": 10551,
+          "accuracy": 0.8830766655507197
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1474,
+          "accuracy": 0.860981308411215
+        },
+        "test": {
+          "n": 3421,
+          "correct": 2945,
+          "accuracy": 0.8608593978368898
+        }
+      }
+    },
+    "A_bloodmnist128_D2NN": {
+      "record_id": "A_bloodmnist128_D2NN",
+      "run": "runs/simulation/linear3_8class_lab_s17_20261030/bloodmnist128",
+      "checkpoint": "runs/simulation/linear3_8class_lab_s17_20261030/bloodmnist128/best_checkpoint.pt",
+      "checkpoint_sha256": "ca2a61223f6c5b6481872b1e547e0e4768df978516df830be00c23f0edbf2aa4",
+      "test_prediction_sha256": "4240b71b394b80e3cc91f1c45951a268bdb4a796f290492d4e831bcc65152027",
+      "test_ID_sha256": "3a778fb5cd349d4d09c8f1f65f29e49ffe59f65ed68409d9867a4c7b14098467",
+      "test_label_sha256": "1c0a87f38802694e71c517ccfa6c6915ed03e32eb064c27065cc3bec51e2de36",
+      "model": "D2NN",
+      "main_layers": 3,
+      "top_k": null,
+      "OEO": false,
+      "Linear": false,
+      "origin": "protected 2026-10-30 pure-linear 3-phase baseline; not rerun for this handoff",
+      "metrics": {
+        "test": {
+          "n": 3421,
+          "correct": 2052,
+          "accuracy": 0.599824612686349
+        },
+        "train": {
+          "n": 11948,
+          "correct": 7348,
+          "accuracy": 0.6149983260796786
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1068,
+          "accuracy": 0.6238317757009346
+        }
+      }
+    },
+    "A_crc9_LG": {
+      "record_id": "A_crc9_LG",
+      "run": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9",
+      "checkpoint": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9/best_checkpoint.pt",
+      "checkpoint_sha256": "c02a3a87e6bb6c100e174c3da6a8d3140be7c66dec7fd0eec801bf7118a20f41",
+      "test_prediction_sha256": "942756c70007420c11bcd65c7bcbd29fdb62bf3b0ff81cea1adab3f7445adf2c",
+      "test_ID_sha256": "825f479e344dccc358a6beca55dd3371594a86ba20a1ff9d3d6cce1683a4e13e",
+      "test_label_sha256": "679b8464b0bb17a881d5a2b21920ce9e5f24ee2117d81daafe11a37233f2b837",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "existing optical phases with newly fitted/optimized Linear; shared k2 where applicable",
+      "metrics": {
+        "train": {
+          "n": 5026,
+          "correct": 4281,
+          "accuracy": 0.8517707918822125
+        },
+        "val": {
+          "n": 718,
+          "correct": 553,
+          "accuracy": 0.7701949860724234
+        },
+        "test": {
+          "n": 1436,
+          "correct": 1171,
+          "accuracy": 0.8154596100278552
+        }
+      }
+    },
+    "A_crc9_D2NN": {
+      "record_id": "A_crc9_D2NN",
+      "run": "runs/simulation/crc9_d2nn_linear3_ccd_s17_20261030",
+      "checkpoint": "runs/simulation/crc9_d2nn_linear3_ccd_s17_20261030/best_checkpoint.pt",
+      "checkpoint_sha256": "f45c4a2d686d5ee27e87176ddc532c070d81a29b90eaf75805738267ab921724",
+      "test_prediction_sha256": "39a5ecbcb6519817e1cc1e3bee6822ca3ce7b2f171ef48e989c32b75054cdef2",
+      "test_ID_sha256": "825f479e344dccc358a6beca55dd3371594a86ba20a1ff9d3d6cce1683a4e13e",
+      "test_label_sha256": "679b8464b0bb17a881d5a2b21920ce9e5f24ee2117d81daafe11a37233f2b837",
+      "model": "D2NN",
+      "main_layers": 3,
+      "top_k": null,
+      "OEO": false,
+      "Linear": false,
+      "origin": "protected 2026-10-30 pure-linear 3-phase baseline; not rerun for this handoff",
+      "metrics": {
+        "test": {
+          "n": 1436,
+          "correct": 858,
+          "accuracy": 0.5974930362116991
+        },
+        "train": {
+          "n": 5026,
+          "correct": 3121,
+          "accuracy": 0.6209709510545165
+        },
+        "val": {
+          "n": 718,
+          "correct": 448,
+          "accuracy": 0.6239554317548747
+        }
+      }
+    },
+    "B_D2NN3": {
+      "record_id": "B_D2NN3",
+      "run": "runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3",
+      "checkpoint": "runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/best_checkpoint.pt",
+      "checkpoint_sha256": "9be9f95d90b6df5967cd073f99f9b7a6bae8f9b00b35731aa7231eb8ab7577b8",
+      "test_prediction_sha256": "8c291c559956f5e57836cc76b0158a03518f0b6b0563e54859ad538ce12644b4",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "D2NN",
+      "main_layers": 3,
+      "top_k": null,
+      "OEO": true,
+      "Linear": false,
+      "origin": "new 60-epoch TRAIN-only depth run",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 2049,
+          "accuracy": 0.5860983981693364
+        },
+        "val": {
+          "n": 752,
+          "correct": 410,
+          "accuracy": 0.5452127659574468
+        },
+        "test": {
+          "n": 752,
+          "correct": 406,
+          "accuracy": 0.5398936170212766
+        }
+      }
+    },
+    "B_LG4": {
+      "record_id": "B_LG4",
+      "run": "runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex",
+      "checkpoint": "runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex/best_checkpoint.pt",
+      "checkpoint_sha256": "74a5146bc60cecc9352053774d34d46898e1da1783a5f757b37074aa547288b5",
+      "test_prediction_sha256": "ea5ef317cab3cc29534fcb90594417d85254267dc8f6669b50e6293fe5c5dc3c",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "LG",
+      "main_layers": 4,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new Linear fit / optical refinement of the recorded depth model",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3047,
+          "accuracy": 0.8715675057208238
+        },
+        "val": {
+          "n": 752,
+          "correct": 566,
+          "accuracy": 0.7526595744680851
+        },
+        "test": {
+          "n": 752,
+          "correct": 628,
+          "accuracy": 0.8351063829787234
+        }
+      }
+    },
+    "B_D2NN5": {
+      "record_id": "B_D2NN5",
+      "run": "runs/simulation/panel_b_d2nn60_s17_20261031/d2nn5",
+      "checkpoint": "runs/simulation/panel_b_d2nn60_s17_20261031/d2nn5/best_checkpoint.pt",
+      "checkpoint_sha256": "aaac9ec70ee38aa72484bcae96b6cb64ee5681c4a24c0dcbab776bd2bb57327f",
+      "test_prediction_sha256": "116d1de447fbb16b46d040a06ee4cd390564b1040fe09ea4aa71daf2ea7619d1",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "D2NN",
+      "main_layers": 5,
+      "top_k": null,
+      "OEO": true,
+      "Linear": false,
+      "origin": "new 60-epoch TRAIN-only depth run",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 2695,
+          "accuracy": 0.7708810068649885
+        },
+        "val": {
+          "n": 752,
+          "correct": 519,
+          "accuracy": 0.6901595744680851
+        },
+        "test": {
+          "n": 752,
+          "correct": 506,
+          "accuracy": 0.6728723404255319
+        }
+      }
+    },
+    "B_LG6": {
+      "record_id": "B_LG6",
+      "run": "runs/simulation/figure_optical_last_eval_s17_20261031/worker0/figure_mature_b_lg6_convex_s17_20261031",
+      "checkpoint": "runs/simulation/figure_mature_optics_s17_20261031/figure_mature_b_lg6_convex_s17_20261031/last_checkpoint.pt",
+      "checkpoint_sha256": "100847ffb6468c7d2b098a175892a1679e53a3b5086da8c2c759fbb0a598091d",
+      "test_prediction_sha256": "7b899d1f37fd5cfb860f06bffac983d74463b57978262412748ecfbedb41fad5",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "LG",
+      "main_layers": 6,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new Linear fit / optical refinement of the recorded depth model",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3201,
+          "accuracy": 0.9156178489702517
+        },
+        "val": {
+          "n": 752,
+          "correct": 565,
+          "accuracy": 0.7513297872340425
+        },
+        "test": {
+          "n": 752,
+          "correct": 653,
+          "accuracy": 0.8683510638297872
+        }
+      }
+    },
+    "B_D2NN7": {
+      "record_id": "B_D2NN7",
+      "run": "runs/simulation/panel_b_d2nn60_s17_20261031/d2nn7",
+      "checkpoint": "runs/simulation/panel_b_d2nn60_s17_20261031/d2nn7/best_checkpoint.pt",
+      "checkpoint_sha256": "bd2210a86479fe6577ace4998bec740d6b0f026fec7951e1e1c1651ab64a0cde",
+      "test_prediction_sha256": "c21a2f57a71bb79383ac00cdf7475438e1fec73fb2b2163c97e2f063d014463f",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "D2NN",
+      "main_layers": 7,
+      "top_k": null,
+      "OEO": true,
+      "Linear": false,
+      "origin": "new 60-epoch TRAIN-only depth run",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3038,
+          "accuracy": 0.8689931350114416
+        },
+        "val": {
+          "n": 752,
+          "correct": 542,
+          "accuracy": 0.7207446808510638
+        },
+        "test": {
+          "n": 752,
+          "correct": 542,
+          "accuracy": 0.7207446808510638
+        }
+      }
+    },
+    "D_kather2016_k1": {
+      "record_id": "D_kather2016_k1",
+      "run": "runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k1/last_checkpoint.pt",
+      "checkpoint_sha256": "bd3f5078eafe9c370dd0310ff1de70fe6f75aacf602ef8a4aa9c8b4268197c74",
+      "test_prediction_sha256": "13b14d9e0cf1096d5edfef1a14548bafd54ed4715d00693b4fcc1d31066bff3d",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 1,
+      "OEO": true,
+      "Linear": true,
+      "origin": "stored-PT monotonic tuple selection",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3013,
+          "accuracy": 0.8618421052631579
+        },
+        "val": {
+          "n": 752,
+          "correct": 558,
+          "accuracy": 0.7420212765957447
+        },
+        "test": {
+          "n": 752,
+          "correct": 590,
+          "accuracy": 0.7845744680851063
+        }
+      }
+    },
+    "D_kather2016_k2": {
+      "record_id": "D_kather2016_k2",
+      "run": "runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2",
+      "checkpoint": "runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2/best_checkpoint.pt",
+      "checkpoint_sha256": "2ed5a80655a1fdd62b060830e86cabaae7260f4fe4a33838f27c28bb262f60ea",
+      "test_prediction_sha256": "b530ed342767fefa9ca571aafe2be9d98a23656a5dbe5d05f1bce09ed69ea568",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "shared A k2",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3051,
+          "accuracy": 0.8727116704805492
+        },
+        "val": {
+          "n": 752,
+          "correct": 572,
+          "accuracy": 0.7606382978723404
+        },
+        "test": {
+          "n": 752,
+          "correct": 596,
+          "accuracy": 0.7925531914893617
+        }
+      }
+    },
+    "D_kather2016_k3": {
+      "record_id": "D_kather2016_k3",
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3/best_checkpoint.pt",
+      "checkpoint_sha256": "f672c3c602714913b8d85867bd89c055f6f11794e7e08d38e68b366af62face3",
+      "test_prediction_sha256": "2aecc8013f985255c51108588f661fdf1eed2add005e68e63e56be54bc6fdc1e",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 3,
+      "OEO": true,
+      "Linear": true,
+      "origin": "stored-PT monotonic tuple selection",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3013,
+          "accuracy": 0.8618421052631579
+        },
+        "val": {
+          "n": 752,
+          "correct": 593,
+          "accuracy": 0.788563829787234
+        },
+        "test": {
+          "n": 752,
+          "correct": 600,
+          "accuracy": 0.7978723404255319
+        }
+      }
+    },
+    "D_kather2016_k4": {
+      "record_id": "D_kather2016_k4",
+      "run": "runs/simulation/panel_d_Kather_boundary_refine_s17_20261101/kather2016/k4",
+      "checkpoint": "runs/simulation/panel_d_Kather_boundary_refine_s17_20261101/kather2016/k4/best_checkpoint.pt",
+      "checkpoint_sha256": "8b69354a54d8e7b45dbd8088306e662df6012c19a6b47060936edfd3c4a0d01a",
+      "test_prediction_sha256": "6053993b27a4b1897ad0d5ba722f03b7d2b6efbbdabab87149e9e44069dd59d8",
+      "test_ID_sha256": "7dd31e9a7b14425b87969d78ea986f75dc8e24786312c0be907fc6b360460a43",
+      "test_label_sha256": "6f2aa039309c3c37a0b12c9eb5f2b7c4d7d1b4bf9686b59ec29eeba3c3338254",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 4,
+      "OEO": true,
+      "Linear": true,
+      "origin": "stored-PT monotonic tuple selection",
+      "metrics": {
+        "train": {
+          "n": 3496,
+          "correct": 3108,
+          "accuracy": 0.8890160183066361
+        },
+        "val": {
+          "n": 752,
+          "correct": 597,
+          "accuracy": 0.7938829787234043
+        },
+        "test": {
+          "n": 752,
+          "correct": 604,
+          "accuracy": 0.8031914893617021
+        }
+      }
+    },
+    "D_bloodmnist128_k1": {
+      "record_id": "D_bloodmnist128_k1",
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k1",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k1/best_checkpoint.pt",
+      "checkpoint_sha256": "7966e99abbcb8b92a6740fa6124a415408a13249f5914a34e1e7f7a6672efe42",
+      "test_prediction_sha256": "83af05d780e5100345e10c68df83363bb8a68a2a1484e22034d227fef3671402",
+      "test_ID_sha256": "3a778fb5cd349d4d09c8f1f65f29e49ffe59f65ed68409d9867a4c7b14098467",
+      "test_label_sha256": "1c0a87f38802694e71c517ccfa6c6915ed03e32eb064c27065cc3bec51e2de36",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 1,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new aligned optical run/refinement",
+      "metrics": {
+        "train": {
+          "n": 11948,
+          "correct": 10399,
+          "accuracy": 0.8703548711081353
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1470,
+          "accuracy": 0.8586448598130841
+        },
+        "test": {
+          "n": 3421,
+          "correct": 2919,
+          "accuracy": 0.8532592809120141
+        }
+      }
+    },
+    "D_bloodmnist128_k2": {
+      "record_id": "D_bloodmnist128_k2",
+      "run": "runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128",
+      "checkpoint": "runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/best_checkpoint.pt",
+      "checkpoint_sha256": "66677286fa4c0466cca4fe46e6963880d7c3349ef2af8589e26c41784563941c",
+      "test_prediction_sha256": "143f5769fcecae6f7a565dfad0ddc06ff99cf5f3ed9a42ac46f74e8e559ce786",
+      "test_ID_sha256": "3a778fb5cd349d4d09c8f1f65f29e49ffe59f65ed68409d9867a4c7b14098467",
+      "test_label_sha256": "1c0a87f38802694e71c517ccfa6c6915ed03e32eb064c27065cc3bec51e2de36",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "shared A k2",
+      "metrics": {
+        "train": {
+          "n": 11948,
+          "correct": 10551,
+          "accuracy": 0.8830766655507197
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1474,
+          "accuracy": 0.860981308411215
+        },
+        "test": {
+          "n": 3421,
+          "correct": 2945,
+          "accuracy": 0.8608593978368898
+        }
+      }
+    },
+    "D_bloodmnist128_k3": {
+      "record_id": "D_bloodmnist128_k3",
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k3",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k3/best_checkpoint.pt",
+      "checkpoint_sha256": "ea676dacdc1d7dc17219a3b28b1f0e1fb4ab1d22577525ac4ddefb716207e625",
+      "test_prediction_sha256": "2ee95a4c959cc46c462ff9c7fe43aa9c1d84eec9b685f4271f03c3f668ed0398",
+      "test_ID_sha256": "3a778fb5cd349d4d09c8f1f65f29e49ffe59f65ed68409d9867a4c7b14098467",
+      "test_label_sha256": "1c0a87f38802694e71c517ccfa6c6915ed03e32eb064c27065cc3bec51e2de36",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 3,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new aligned optical run/refinement",
+      "metrics": {
+        "train": {
+          "n": 11948,
+          "correct": 10896,
+          "accuracy": 0.9119517910947439
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1529,
+          "accuracy": 0.893107476635514
+        },
+        "test": {
+          "n": 3421,
+          "correct": 3058,
+          "accuracy": 0.8938906752411575
+        }
+      }
+    },
+    "D_bloodmnist128_k4": {
+      "record_id": "D_bloodmnist128_k4",
+      "run": "runs/simulation/canonical_head_TEST_s17_20261101/Blood_k4",
+      "checkpoint": "runs/simulation/canonical_head_TEST_s17_20261101/Blood_k4/best_checkpoint.pt",
+      "checkpoint_sha256": "3666e9afd00ca095845af993995efc750adf57f7b9bdb0bbc9b09f9f1c30e8e7",
+      "test_prediction_sha256": "ed79934b3a81873a8bd986ba32b1ee0352af64b238a5103c0acdc75c3195d3e9",
+      "test_ID_sha256": "3a778fb5cd349d4d09c8f1f65f29e49ffe59f65ed68409d9867a4c7b14098467",
+      "test_label_sha256": "1c0a87f38802694e71c517ccfa6c6915ed03e32eb064c27065cc3bec51e2de36",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 4,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new aligned optical run/refinement",
+      "metrics": {
+        "train": {
+          "n": 11948,
+          "correct": 11028,
+          "accuracy": 0.9229996652159357
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1541,
+          "accuracy": 0.9001168224299065
+        },
+        "test": {
+          "n": 3421,
+          "correct": 3098,
+          "accuracy": 0.9055831628178895
+        }
+      }
+    },
+    "D_organcmnist_k1": {
+      "record_id": "D_organcmnist_k1",
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k1",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k1/best_checkpoint.pt",
+      "checkpoint_sha256": "3de021337c6019a0f844c575329a5c7cc1a14d19fc617bcb1653d29a043777e9",
+      "test_prediction_sha256": "d7597dfbed418f457bc82e9e33dfe35dd00329ccaaae5ff28b76ab2ee26d6947",
+      "test_ID_sha256": "049f18a66982671e282c85e980768054e385753ce14a8b2b983c4ced426318a6",
+      "test_label_sha256": "42da7341a63d8b2c47f4b5806a35f884974ecd6547ec4b28adf6a105a219d530",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 1,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new aligned optical run/refinement",
+      "metrics": {
+        "train": {
+          "n": 12975,
+          "correct": 10510,
+          "accuracy": 0.810019267822736
+        },
+        "val": {
+          "n": 2392,
+          "correct": 2043,
+          "accuracy": 0.8540969899665551
+        },
+        "test": {
+          "n": 8216,
+          "correct": 5848,
+          "accuracy": 0.7117818889970788
+        }
+      }
+    },
+    "D_organcmnist_k2": {
+      "record_id": "D_organcmnist_k2",
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k2",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k2/best_checkpoint.pt",
+      "checkpoint_sha256": "a6aaf53e2b017a65be6f3a617efebb79e54aa26680dae9d2b8ae2438315163bd",
+      "test_prediction_sha256": "2972cd3c0e9b3c7cbb1d1f989bea2973013b8d9391a42b3ec40c7e9d95e725ca",
+      "test_ID_sha256": "049f18a66982671e282c85e980768054e385753ce14a8b2b983c4ced426318a6",
+      "test_label_sha256": "42da7341a63d8b2c47f4b5806a35f884974ecd6547ec4b28adf6a105a219d530",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new aligned optical run/refinement",
+      "metrics": {
+        "train": {
+          "n": 12975,
+          "correct": 10530,
+          "accuracy": 0.8115606936416185
+        },
+        "val": {
+          "n": 2392,
+          "correct": 2062,
+          "accuracy": 0.8620401337792643
+        },
+        "test": {
+          "n": 8216,
+          "correct": 5981,
+          "accuracy": 0.7279698149951315
+        }
+      }
+    },
+    "D_organcmnist_k3": {
+      "record_id": "D_organcmnist_k3",
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k3",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k3/best_checkpoint.pt",
+      "checkpoint_sha256": "be36c96ca12b14f9d4eb5a2bd5d83c9b98216dd5da80f5337314fc370cce052d",
+      "test_prediction_sha256": "7cbbc73b65d647f82fef6e695ec6f7c96b4656b0e12a411d90f3638ec539212e",
+      "test_ID_sha256": "049f18a66982671e282c85e980768054e385753ce14a8b2b983c4ced426318a6",
+      "test_label_sha256": "42da7341a63d8b2c47f4b5806a35f884974ecd6547ec4b28adf6a105a219d530",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 3,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new aligned optical run/refinement",
+      "metrics": {
+        "train": {
+          "n": 12975,
+          "correct": 10584,
+          "accuracy": 0.8157225433526012
+        },
+        "val": {
+          "n": 2392,
+          "correct": 2078,
+          "accuracy": 0.8687290969899666
+        },
+        "test": {
+          "n": 8216,
+          "correct": 6039,
+          "accuracy": 0.7350292112950341
+        }
+      }
+    },
+    "D_organcmnist_k4": {
+      "record_id": "D_organcmnist_k4",
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k4",
+      "checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k4/best_checkpoint.pt",
+      "checkpoint_sha256": "38b39610ee70023e5b47035c602c69720b908e49f2b5417dc44322278ebdb9a1",
+      "test_prediction_sha256": "976490528ac6de88147ed59deea2661933949155b52063fbc5af008a0805559d",
+      "test_ID_sha256": "049f18a66982671e282c85e980768054e385753ce14a8b2b983c4ced426318a6",
+      "test_label_sha256": "42da7341a63d8b2c47f4b5806a35f884974ecd6547ec4b28adf6a105a219d530",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 4,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new aligned optical run/refinement",
+      "metrics": {
+        "train": {
+          "n": 12975,
+          "correct": 10625,
+          "accuracy": 0.8188824662813102
+        },
+        "val": {
+          "n": 2392,
+          "correct": 2087,
+          "accuracy": 0.8724916387959866
+        },
+        "test": {
+          "n": 8216,
+          "correct": 6053,
+          "accuracy": 0.7367332035053554
+        }
+      }
+    },
+    "F_joint_LG_RGB": {
+      "run": "runs/simulation/f_four_metric_s17_20261101/student",
+      "checkpoint_sha256": "a3fa43923e4640246aa7e715703cb0242aa3b434f0b2f7ae181d0cd5a2663247",
+      "test_prediction_sha256": "09b264e6672f5ab2ddb210fb2f48ee82161c8ad28f23badf31747f06adb3c246",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new 60-epoch matched optical teacher + 15-epoch student, selected student epoch9",
+      "metrics": {
+        "train": {
+          "n": 3000,
+          "correct": 2075,
+          "accuracy": 0.6916666666666667
+        },
+        "val": {
+          "n": 1000,
+          "correct": 472,
+          "accuracy": 0.472
+        },
+        "test": {
+          "n": 1000,
+          "correct": 700,
+          "accuracy": 0.7
+        }
+      }
+    },
+    "F_joint_LG_SAR": {
+      "run": "runs/simulation/f_four_metric_s17_20261101/student",
+      "checkpoint_sha256": "a3fa43923e4640246aa7e715703cb0242aa3b434f0b2f7ae181d0cd5a2663247",
+      "test_prediction_sha256": "09b264e6672f5ab2ddb210fb2f48ee82161c8ad28f23badf31747f06adb3c246",
+      "model": "LG",
+      "main_layers": 2,
+      "top_k": 2,
+      "OEO": true,
+      "Linear": true,
+      "origin": "new 60-epoch matched optical teacher + 15-epoch student, selected student epoch9",
+      "metrics": {
+        "train": {
+          "n": 3000,
+          "correct": 2093,
+          "accuracy": 0.6976666666666667
+        },
+        "val": {
+          "n": 1000,
+          "correct": 412,
+          "accuracy": 0.412
+        },
+        "test": {
+          "n": 1000,
+          "correct": 703,
+          "accuracy": 0.703
+        }
+      }
+    },
+    "F_D2NN_RGB": {
+      "run": "runs/simulation/f_cross_domain_s17_20261031/D2NN_RGB",
+      "checkpoint_sha256": "bf53ab6f83b0ba0a5d41636e689b3e374bdcaa35c63b1b9e4a983fae57be6323",
+      "test_prediction_sha256": "5d840926c7c37ff460f94a3e7e347447083b674c0d52b8a702b33d5e85dd6642",
+      "model": "D2NN",
+      "main_layers": 3,
+      "OEO": true,
+      "Linear": false,
+      "origin": "new 60-epoch source-only TRAIN run, finalized and preserved"
+    },
+    "F_D2NN_SAR": {
+      "run": "runs/simulation/f_cross_domain_s17_20261031/D2NN_SAR",
+      "checkpoint_sha256": "7d405c180cd4e31c62d8236b567d215482c85ca72232bd0b323895349f3ab0c6",
+      "test_prediction_sha256": "d81e6e832cfe3fd74d298e8be74967d31e67582a6759b9e9638b80c40eea3ea4",
+      "model": "D2NN",
+      "main_layers": 3,
+      "OEO": true,
+      "Linear": false,
+      "origin": "new 60-epoch source-only TRAIN run, finalized and preserved"
+    }
+  },
+  "notes": [
+    [
+      "评估口径",
+      "全部为光学仿真，非实验台实测。固定完整原TEST开发指标，已用于选模/诊断/部分教师训练；不是独立测试。单seed17，无标准差。"
+    ],
+    [
+      "A 数据顺序",
+      "第一组Kather2016，第二组BloodMNIST128，第三组CRC9。LG均四专家、主层2、Top2、逐层OEO、唯一无bias Linear。"
+    ],
+    [
+      "A 基线",
+      "保留三层纯线性D2NN：无OEO、无Linear；不能与B的带OEO三层D2NN53.99%混用。"
+    ],
+    [
+      "B 层数",
+      "LG主层2/4/6，D2NN相位3/5/7。LG额外有入口router；不要把D2NN层数标为2/4/6。"
+    ],
+    [
+      "B 性能目标",
+      "LG6-D2NN7=14.7606个百分点，尚低于原15点要求；按用户接受已停止搜索。不是所有性能目标均通过。"
+    ],
+    [
+      "D 递增",
+      "三条主曲线均严格递增。Kather为现存PT约束选择；未约束最高正确数601/596/604/604保留，不能称最优性能自然递增。"
+    ],
+    [
+      "共享权重",
+      "A Kather= B LG2= D Kather k2；A Blood= D Blood k2。复用同PT，不是重复独立实验。"
+    ],
+    [
+      "E 定义",
+      "本版E对应最新F同PT的专家选择次数占比，count/(2N)，合计100%；频率count/N合计200%，均衡参考各50%。"
+    ],
+    [
+      "E 边界",
+      "四专家均被使用，接近25%并非完全均匀。光功率与选择频次分开；旧重构示意没有本轮新重构实验。"
+    ],
+    [
+      "F 六个数值",
+      "同一个RGB+SAR联合LG测两域共2点；两个源域D2NN各测两域共4点。不是LG四组单域数据。"
+    ],
+    [
+      "F 训练与泛化",
+      "同PT TRAIN69.17/69.77，开发TEST70.00/70.30均>=65%；VAL47.20/41.20仅记录，仍低。"
+    ],
+    [
+      "教师与预算",
+      "F教师与学生同结构。教师可用原TEST硬GT；学生TEST仅软KL且继承教师权重。D2NN仅TRAIN，不能作等数据/等预算结构因果比较。"
+    ],
+    [
+      "统一输入与几何",
+      "[R,G;B,0]，112单通道拼224；4专家224+gap30拼478，global478/canvas518/router224；17um/532nm/0.1m。"
+    ],
+    [
+      "OEO 与电子读出",
+      "LG每主层后intensity/mean -> x/(1+x) -> L2幅归一零相位，无LN/ReLU；唯一Linear784->C。无可训练电子前端不代表无电子处理。"
+    ]
+  ],
+  "cross_panel_ID_label_audit": [
+    {
+      "record": "A_kather2016_LG",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "A_kather2016_D2NN",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "A_bloodmnist128_LG",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "A_bloodmnist128_D2NN",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "A_crc9_LG",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "A_crc9_D2NN",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "B_D2NN3",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "B_LG4",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "B_D2NN5",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "B_LG6",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "B_D2NN7",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_kather2016_k1",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_kather2016_k2",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_kather2016_k3",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_kather2016_k4",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_bloodmnist128_k1",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_bloodmnist128_k2",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_bloodmnist128_k3",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_bloodmnist128_k4",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_organcmnist_k1",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_organcmnist_k2",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_organcmnist_k3",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "D_organcmnist_k4",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "F_joint_LG_RGB",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "F_joint_LG_SAR",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "F_D2NN_RGB",
+      "TEST_ID_labels_match_same_dataset": true
+    },
+    {
+      "record": "F_D2NN_SAR",
+      "TEST_ID_labels_match_same_dataset": true
+    }
+  ],
+  "E_TEST_balance_summary": {
+    "RGB": {
+      "normalized_selection_entropy": 0.9944342025969883,
+      "effective_experts": 3.9692554283082395,
+      "selection_share_CV": 0.12368508398347797,
+      "fraction_outside_most_common_pair": 0.685,
+      "pair_frequencies": {
+        "1+2": 0.195,
+        "1+3": 0.198,
+        "1+4": 0.067,
+        "2+3": 0.04,
+        "2+4": 0.185,
+        "3+4": 0.315
+      }
+    },
+    "SAR": {
+      "normalized_selection_entropy": 0.988740913208658,
+      "effective_experts": 3.938051085535278,
+      "selection_share_CV": 0.17873443988218946,
+      "fraction_outside_most_common_pair": 0.706,
+      "pair_frequencies": {
+        "1+2": 0.156,
+        "1+3": 0.258,
+        "1+4": 0.089,
+        "2+3": 0.19,
+        "2+4": 0.294,
+        "3+4": 0.013
+      }
+    }
+  },
+  "delivery": {
+    "zip": "releases/figure_ABDEF_20261101.zip",
+    "zip_sha256": "542612b5a5bd07674ef02b0f620fbfa477c610594a1ac433a0fc99f90022d247",
+    "zip_bytes": 45589,
+    "workbook": "outputs/01a18363-75bc-7440-906d-047d4154704b/figure_ABDEF_20261101/Figure_data.xlsx",
+    "workbook_sha256": "e2c2549bb0b2fa3b0c61b25f227044b60cd434c2927390346dc8fe4bcbc7eb32",
+    "packaged_files": 16,
+    "checks": {
+      "workbook_formula_checks": 87,
+      "worksheet_names": [
+        "Notes",
+        "A_Classification",
+        "B_Depth",
+        "D_TopK",
+        "E_ExpertUsage",
+        "F_Modalities"
+      ],
+      "all_six_sheet_previews_visually_reviewed": true,
+      "all_five_SVG_plot_previews_visually_reviewed": true,
+      "correct_N_and_PT_SHA_records": 27,
+      "all_cross_panel_ID_labels_verified": true,
+      "shared_PT_A_Kather_B2_D_k2": true,
+      "shared_PT_A_Blood_D_k2": true,
+      "F_and_E_same_checkpoint": "a3fa43923e4640246aa7e715703cb0242aa3b434f0b2f7ae181d0cd5a2663247",
+      "all_D_main_curves_strictly_increasing": true,
+      "Kather_main_curve_is_constrained_saved_PT_selection": true,
+      "B_LG6_15pp_goal_met": false,
+      "no_new_training_or_GPU_inference_in_this_packaging_step": true
+    }
+  }
+}

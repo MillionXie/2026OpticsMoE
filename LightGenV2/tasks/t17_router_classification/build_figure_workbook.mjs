@@ -65,7 +65,7 @@ for(const v of expected){const actual=wb.worksheets.getItem(v.sheet).getRange(v.
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:1500});
 console.log(errors.ndjson);
 console.log((await wb.inspect({kind:'table',range:'F_Modalities!A5:F11',include:'values,formulas',tableMaxRows:7,tableMaxCols:6,maxChars:1800})).ndjson);
-for(const v of views){const png=await wb.render({sheetName:v.sheet,range:v.range,scale:1,format:'png'});await fs.writeFile(path.join(preview,v.sheet+'.png'),new Uint8Array(await png.arrayBuffer()));}
+for(const v of views){if(process.argv[3]&&v.sheet!==process.argv[3])continue;const png=await wb.render({sheetName:v.sheet,range:v.range,scale:1,format:'png'});await fs.writeFile(path.join(preview,v.sheet+'.png'),new Uint8Array(await png.arrayBuffer()));}
 const output=await SpreadsheetFile.exportXlsx(wb);await output.save(path.join(out,'Figure_data.xlsx'));
 await fs.writeFile(path.join(preview,'verification.json'),JSON.stringify({formula_checks:expected.length,all_numeric_formulas_match_source:true,sheets:views,error_scan:errors.ndjson},null,2));
 console.log(JSON.stringify({workbook:path.join(out,'Figure_data.xlsx'),preview,formula_checks:expected.length,sheets:views.length}));
