@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 
 const [input,output,dependencies]=process.argv.slice(2);
+const checkOnly=process.argv.includes('--check-only');
 if(!input||!output||!dependencies)throw Error('Usage: builder results.json result.xlsx bundled_node_modules');
 const require=createRequire(import.meta.url);
 const entry=require.resolve('@oai/artifact-tool',{paths:[path.resolve(dependencies)]});
@@ -16,18 +17,18 @@ const summary=wb.worksheets.add('Overall');
 const examples=wb.worksheets.add('Examples20');
 const appendix=wb.worksheets.add('TEST500');
 const models=['Qwen','Simulation','Experiment'],metrics=['CLIP_T','DINOv2_I','CLIP_I'];
-const pretty={'CLIP_T':'CLIP-T','DINOv2_I':'DINO-I','CLIP_I':'CLIP-I'};
+const pretty={'CLIP_T':'CLIP-T','DINOv2_I':'DINOv2-I','CLIP_I':'CLIP-I'};
 const titles=['Sample ID','Category','Prompt',...models.flatMap(m=>metrics.map(k=>m+'\n'+pretty[k])),...models.map(m=>m+' image'),'Example ID'];
 const values=data.rows.map(r=>[r.sample_id,r.category,r.prompt,...models.flatMap(m=>metrics.map(k=>r.scores[m][k])),...models.map(m=>r.paths[m]),r.example_id]);
 appendix.getRange('A4:P504').values=[titles,...values];
 appendix.getRange('A2').values=[['Complete TEST per-image results']];
-appendix.getRange('A3').values=[['500 requests. Scores are unrounded source values; all original PNGs are included.']];
+appendix.getRange('A3').values=[['500 requests. Scores retain full source precision; all original PNGs are included.']];
 appendix.tables.add('A4:P504',true,'TESTRecords');
 appendix.freezePanes.freezeRows(4);appendix.freezePanes.freezeColumns(2);
 
 const lookup=new Map(data.rows.map((r,i)=>[r.sample_id,i+5]));
 examples.getRange('A2').values=[['Curated figure examples']];
-examples.getRange('A3').values=[['20 manually selected examples. Overall statistics use all500 requests, not this subset.']];
+examples.getRange('A3').values=[['20 manually selected examples. Overall statistics use all 500 requests, not this subset.']];
 examples.getRange('A4:P4').values=[['Example','Sample ID','Prompt',...models.flatMap(m=>metrics.map(k=>m+'\n'+pretty[k])),...models.map(m=>m+' image'),'Prompt review']];
 const exampleRows=data.examples.map(e=>{
  const r=lookup.get(e.sample_id);if(!r)throw Error('Unmatched selected request');
@@ -47,7 +48,7 @@ const modelColumns={Qwen:['D','E','F'],Simulation:['G','H','I'],Experiment:['J',
 const cohorts=['all','lamp','pillow'];
 for(let g=0;g<3;g++)for(let k=0;k<3;k++){
  const row=5+g*3+k,cohort=cohorts[g];
- summary.getRange(`A${row}:C${row}`).values=[[(cohort==='all'?'All500':cohort==='lamp'?'Lamp':'Pillow'),pretty[metrics[k]],null]];
+ summary.getRange(`A${row}:C${row}`).values=[[(cohort==='all'?'All samples':cohort==='lamp'?'Lamp':'Pillow'),pretty[metrics[k]],null]];
  summary.getRange(`C${row}`).formulas=[[g===0?'=COUNTA(TEST500!$A$5:$A$504)':`=COUNTIFS(TEST500!$B$5:$B$504,"${cohort}")`]];
  for(let m=0;m<3;m++){
   const col=modelColumns[models[m]][k],dest='DEF'[m];
@@ -57,11 +58,11 @@ for(let g=0;g<3;g++)for(let k=0;k<3;k++){
  summary.getRange(`G${row}:H${row}`).formulas=[[`=F${row}/E${row}-1`,`=IF(F${row}>E${row},"Above simulation","At or below")`]];
 }
 summary.getRange('A16').values=[['Overall selection rule']];
-summary.getRange('D16').formulas=[['=AND(COUNTIFS(G5:G7,">0")<=1,MIN(G5:G7)>=-0.05,MAX(G5:G7)<=0.05)']];
+summary.getRange('D16').formulas=[['=IF(AND(COUNTIFS(G5:G7,">0")<=1,MIN(G5:G7)>=-0.05,MAX(G5:G7)<=0.05),"Meets rule","Not met")']];
 summary.getRange('A18').values=[['Simulation PT']];summary.getRange('C18').values=[[data.simulation_SHA256]];
 summary.getRange('A19').values=[['Experiment PT']];summary.getRange('C19').values=[[data.experiment_SHA256]];
 summary.getRange('A21').values=[['Higher scores indicate greater similarity, not literal prompt-compliance accuracy.']];
-summary.getRange('A22').values=[['Selection rule: overall three differences within5%; no more than one above simulation.']];
+summary.getRange('A22').values=[['Selection rule: overall three differences within 5%; no more than one above simulation.']];
 summary.getRange('A23').values=[['TEST-based candidate selection is a development result, not independent generalization.']];
 summary.getRange('A24').values=[['Sources: immutable original metrics and the stated experimental run. Full SHA manifest accompanies the workbook.']];
 
@@ -88,8 +89,9 @@ for(const [col,width]of Object.entries({A:17,B:16,C:9,D:16,E:16,F:16,G:21,H:22})
 summary.getRange('D5:F13').setNumberFormat('0.0000');summary.getRange('G5:G13').setNumberFormat('+0.00%;-0.00%;0.00%');
 summary.getRange('C5:G13').format.horizontalAlignment='right';summary.getRange('A5:H13').format.rowHeight=23;
 summary.getRange('G5:G13').conditionalFormats.add('cellIs',{operator:'greaterThan',formula:0,format:{fill:'#FFF0D6',font:{color:'#8F4F0A'}}});
-summary.getRange('D16').conditionalFormats.add('cellIs',{operator:'equal',formula:false,format:{fill:'#FBE8E6',font:{color:'#A02B23',bold:true}}});
+summary.getRange('D16').conditionalFormats.addCustom('D16="Not met"',{fill:'#FBE8E6',font:{color:'#A02B23',bold:true}});
 summary.getRange('A3').format.font={name:'Arial',size:10,color:'#536171',italic:true};
+examples.getRange('A5:A24').setNumberFormat('00');appendix.getRange('P5:P504').setNumberFormat('00');
 
 wb.recalculate();
 const means=summary.getRange('D5:F13').values;
@@ -97,7 +99,7 @@ for(let i=0;i<9;i++)for(let j=0;j<3;j++){
  const expected=data.overall[i][models[j]],actual=means[i][j];
  if(typeof actual!=='number'||Math.abs(actual-expected)>1e-12)throw Error(`Aggregate mismatch ${i}/${j}: ${actual} vs ${expected}`);
 }
-if(summary.getRange('D16').values[0][0]!==data.rule.overall_at_most_one_above_and_within5)throw Error('Selection-rule formula mismatch');
+if(summary.getRange('D16').values[0][0]!== (data.rule.overall_at_most_one_above_and_within5?'Meets rule':'Not met'))throw Error('Selection-rule formula mismatch');
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:2000});
 const qaDir=path.join(path.dirname(output),'_review');await fs.mkdir(qaDir,{recursive:true});
 const checks={means,selectionRule:summary.getRange('D16').values,formulaScan:errors.ndjson};
@@ -106,5 +108,5 @@ for(const [sheetName,range,file]of [['Overall','A2:H16','overall_sheet.png'],['E
  const preview=await wb.render({sheetName,range,scale:1,format:'png'});
  await fs.writeFile(path.join(qaDir,file),new Uint8Array(await preview.arrayBuffer()));
 }
-const exported=await SpreadsheetFile.exportXlsx(wb);await exported.save(output);
-console.log(JSON.stringify({complete:true,output,TEST:500,examples:20,sheets:3,aggregatesReconciled:true,selectionRule:data.rule}));
+if(!checkOnly){const exported=await SpreadsheetFile.exportXlsx(wb);await exported.save(output);}
+console.log(JSON.stringify({complete:true,output:checkOnly?null:output,checkOnly,TEST:500,examples:20,sheets:3,aggregatesReconciled:true,selectionRule:data.rule}));

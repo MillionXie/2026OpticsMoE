@@ -24,14 +24,17 @@ def write_csv(path,headers,rows):
   w=csv.writer(f);w.writerow(headers);w.writerows(rows)
 
 def join_records(post,experiment):
+ if sha(post/'Qwen_reference_metrics/per_image.json')!='3dfecc66b0ad604547cddbc22feee546be8bf2a542fea68d7110d735027fec24':raise ValueError('Fixed original metrics changed')
  original=read(post/'Qwen_reference_metrics/per_image.json')
  groups=[{r['sample_id']:r for r in original if r['checkpoint_sha256']==s}for s in (QWEN_SHA,SIM_SHA)]
  quality=post/('quality_'+experiment.removeprefix('EXP_'))
  groups.append({r['sample_id']:r for r in read(quality/'per_image.json')if r['run_id']==experiment})
+ experiment_sha=read(post/experiment/'report.json')['checkpoint_sha256']
  if any(len(g)!=500 for g in groups)or not all(g.keys()==groups[0].keys()for g in groups):raise ValueError('All three complete500 cohorts required')
  rows=[]
  for sid in groups[1]:
   values=[g[sid]for g in groups];ref=values[1]
+  if values[2]['checkpoint_sha256']!=experiment_sha or any(v.get('split')!='test'for v in values):raise ValueError('Mixed experimental checkpoint or data role')
   if not all(all(v[k]==ref[k]for k in ('input_sha256','prompt','seed','initial_latent_sha256'))for v in values):raise ValueError('Input/prompt/seed/noise identity changed')
   rows.append(dict(sample_id=sid,category=ref['category'],prompt=ref['prompt'],reference_id=ref['reference_id'],
                    seed=ref['seed'],models=dict(zip(MODELS,values))))
@@ -102,7 +105,7 @@ def main():
    if not target.exists():shutil.copy2(path,target)
    x=24+j*528;draw.text((x,115),{'Qwen':'Qwen3-VL','Simulation':'LightGen-II (simulation)','Experiment':'LightGen-II (experiment)'}[model],font=fonts['label'],fill='#111111')
    with Image.open(path)as im:card.paste(im,(x,157))
-   draw.text((x,687),f"CLIP-T {source['CLIP_T']:.4f}   DINO-I {source['DINOv2_I']:.4f}",font=fonts['metric'],fill='#222222')
+   draw.text((x,687),f"CLIP-T {source['CLIP_T']:.4f}   DINOv2-I {source['DINOv2_I']:.4f}",font=fonts['metric'],fill='#222222')
    draw.text((x,720),f"CLIP-I {source['CLIP_I']:.4f}",font=fonts['metric'],fill='#222222')
   card.save(folder/'comparison.png')
   (folder/'prompt.txt').write_text(row['prompt']+'\n',encoding='utf-8')
