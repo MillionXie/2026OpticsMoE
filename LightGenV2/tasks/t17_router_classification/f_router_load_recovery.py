@@ -70,6 +70,20 @@ def prepare_error_replay(raw,cfg,task):
     return dict(wrong=wrong,record=dict(parent=reference,evidence=evidence,all_original_samples_once_plus_errors_twice=True,TEST_GT_used_for_sampling_not_student_CE=True))
 
 
+@torch.no_grad()
+def audit_checkpoint_routes(cfg,checkpoint,out):
+    """Export full original split routes for an already locked warmup PT."""
+    require_authorized_gpu(cfg['authorized_gpu_uuids']);out=Path(out);out.mkdir(exist_ok=False,parents=True)
+    payload=torch.load(checkpoint,map_location='cpu',weights_only=False);model=build_model(cfg).cuda().eval().requires_grad_(False);model.load_state_dict(payload['model'],strict=True);raw,identity=load_panel_f(cfg['data']);parts={};files={}
+    for split,part in raw.items():
+        dense=[];hard=[];capture=[]
+        for i in range(0,len(part['labels']),128):
+            x=encode_rgb(torch.from_numpy(part['images'][i:i+128]).cuda());p,c=model.dense_route(normalized_input(x));dense.append(p.cpu().numpy());hard.append(sparse_top2(p).cpu().numpy());capture.append(c.cpu().numpy())
+        dense=np.concatenate(dense);hard=np.concatenate(hard);capture=np.concatenate(capture);file=out/f'{split}_routes.npz';np.savez_compressed(file,ids=part['ids'],labels=part['labels'],domains=part['domains'],route_power=hard,dense_route_power=dense,router_capture=capture);files[split]=dict(path=str(file),sha256=sha256(file));parts[split]={name:usage_statistics(hard[part['domains']==d],dense[part['domains']==d])for d,name in [(0,'RGB'),(1,'SAR')]}
+    result=dict(checkpoint_sha256=sha256(checkpoint),audit_source_commit=os.environ.get('T17_SOURCE_COMMIT'),audit_helper_sha256=sha256(Path(__file__)),data=identity,parts=parts,files=files,all_original_split_ID_labels_preserved=True,classification_metrics_not_computed=True)
+    write(out/'audit.json',result);return result
+
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--profile',type=Path,required=True);parser.add_argument('--out',type=Path,required=True);args=parser.parse_args()
     cfg=json.loads(args.profile.read_text());task=Path(__file__).resolve().parent

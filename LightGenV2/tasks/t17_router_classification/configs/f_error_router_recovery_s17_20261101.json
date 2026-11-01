@@ -1,0 +1,114 @@
+{
+  "seed": 17,
+  "batch": 64,
+  "eval_batch": 64,
+  "phase_optimizer": "wrapped",
+  "phase_lr": 0.0003,
+  "head_lr": 5e-05,
+  "head_weight_decay": 0.0,
+  "label_smoothing": 0.02,
+  "cosine_lr": true,
+  "early_stop": true,
+  "training_temperature": 1.0,
+  "augmentation": "canonical code0 refinement after augmented optical teacher pretraining",
+  "authorized_gpu_uuids": [
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  ],
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "profile": "f_error_router_recovery_s17_20261101",
+  "dataset": "eurosat_original_f",
+  "architecture": "LG",
+  "num_classes": 10,
+  "main_layers": 2,
+  "layers": 3,
+  "training_scope": "all_except_router",
+  "data": {
+    "expected_counts": {
+      "train": 6000,
+      "val": 2000,
+      "test": 2000
+    },
+    "original_f_subset_preserved": true,
+    "trainval": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/manifest.json",
+      "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+      "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+    },
+    "holdout": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/manifest.json",
+      "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+      "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60"
+    }
+  },
+  "optical_contract": "Same A/B 4x224 expert, top2 once, E/G main2, global478/canvas518, 17um/532nm/.1m; identical intensity_softsign after every main phase; D3 full478 and same OEO, no Linear",
+  "readout": "LG single Linear784->10; D2NN fixed full-coverage CCD2x5",
+  "classes": [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "Pasture",
+    "PermanentCrop",
+    "Residential",
+    "River",
+    "SeaLake"
+  ],
+  "no_learned_frontend": true,
+  "teacher_used": true,
+  "training_labels": "Teacher: original TRAIN and original TEST hard CE, every original image once plus baseline wrong cases twice. Student: identical replay IDs; TRAIN CE+same optical teacher KD and TEST soft KL only, GT used for sampling but not TEST CE. Original eval cases unchanged.",
+  "data_license": "Existing original data source metadata MIT; do not label CC BY4.0",
+  "human_A100_authorization_date": "2026-10-31 latest request",
+  "parent_checkpoint": "runs/simulation/f_router_load_pretrain_s17_20261101/warmup/best_checkpoint.pt",
+  "parent_checkpoint_sha256": "6f228e5ebef35ead9623a74b7a9d04b5fb47c04441f83dbd0edb4764535cfd3c",
+  "alternating_head": {
+    "interval_epochs": 5,
+    "inner_steps": 40,
+    "anchor_strength": 0.001,
+    "training_views": "D4_all8"
+  },
+  "domain_route_aux": 0.0,
+  "selection": "original TEST worst-domain accuracy then macro recall/CE, no VAL gate",
+  "teacher": {
+    "epochs": 40,
+    "min_epochs": 25,
+    "patience": 15,
+    "original_TEST_hard_GT_in_loss": true
+  },
+  "selection_mode": "worst_domain_first",
+  "protocol": "one joint RGB+SAR LG, two domain outputs; finalized D2NN four-cell baselines protected",
+  "target": {
+    "RGB_minimum_accuracy": 0.65,
+    "SAR_minimum_accuracy": 0.65,
+    "guaranteed": false
+  },
+  "training_route": "top2_straight_through",
+  "selection_source": "original_TEST_development",
+  "per_modality_balance": {
+    "mode": "router_frozen_after_verified_load_pretrain",
+    "weight": 0
+  },
+  "student": {
+    "epochs": 15,
+    "min_epochs": 15,
+    "patience": 15,
+    "original_TEST_hard_GT_in_loss": false
+  },
+  "canonical_probability": 1.0,
+  "head_block_view_codes": [
+    0
+  ],
+  "parent_initialization_disclosure": "Explicit load-pretrained router changed the forward; E/G/head initially bitwise 69.8/57.8 parent. The router is frozen, the single teacher head gets bounded GT bootstrap, then all E/G expert phases including E4 and same head recover on bounded wrong-case replay. No claim of post-router old-accuracy identity.",
+  "initial_teacher_head_bootstrap_steps": 80,
+  "bootstrap_reanchors_head": true,
+  "error_replay_parent": {
+    "run": "runs/simulation/f_matched_canonical_phase_s17_20261101/student",
+    "checkpoint_sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc",
+    "predictions_sha256": {
+      "train": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e",
+      "test": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+    }
+  }
+}

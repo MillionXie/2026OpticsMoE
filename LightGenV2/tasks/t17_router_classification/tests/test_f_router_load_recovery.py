@@ -1,6 +1,8 @@
 import numpy as np
 import torch
-from LightGenV2.tasks.t17_router_classification.f_router_load_recovery import router_load_objective,replay_order,load_key
+import json,hashlib,pytest
+from pathlib import Path
+from LightGenV2.tasks.t17_router_classification.f_router_load_recovery import router_load_objective,replay_order,load_key,prepare_error_replay
 
 
 def test_error_replay_keeps_every_case_and_repeats_only_fixed_errors():
@@ -26,3 +28,14 @@ def test_opposite_split_collapses_cannot_be_hidden_by_merged_mean():
     separate=router_load_objective(dense,torch.tensor([0,0,1,1,2,2,3,3]))
     merged=router_load_objective(dense,torch.tensor([0,0,1,1,0,0,1,1]))
     assert separate>merged
+
+
+def test_replay_parent_SHA_and_every_ID_label_domain_are_bound(tmp_path):
+    folder=tmp_path/'parent';folder.mkdir();(folder/'best_checkpoint.pt').write_bytes(b'identity fixture, not an initialization model')
+    raw={s:dict(ids=np.array(['a','b']),labels=np.array([0,1]),domains=np.array([0,1]))for s in ('train','test')};hashes={}
+    for split in raw:
+        p=folder/f'{split}_predictions.npz';np.savez(p,**raw[split],predictions=np.array([0,0]));hashes[split]=hashlib.sha256(p.read_bytes()).hexdigest()
+    cfg=dict(error_replay_parent=dict(run='parent',checkpoint_sha256=hashlib.sha256((folder/'best_checkpoint.pt').read_bytes()).hexdigest(),predictions_sha256=hashes))
+    value=prepare_error_replay(raw,cfg,tmp_path);assert np.array_equal(value['wrong']['test'],[False,True]);assert value['record']['evidence']['test']['extra_replay_presentations']==2
+    raw['test']['labels'][1]=0
+    with pytest.raises(ValueError):prepare_error_replay(raw,cfg,tmp_path)

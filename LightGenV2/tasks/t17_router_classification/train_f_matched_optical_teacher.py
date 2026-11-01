@@ -22,6 +22,7 @@ from .original_f_teacher import teacher_KL
 from .f_load_balance import modality_mean_power_KL
 from .report_f_load_balance import usage_statistics
 from .gpu_policy import require_authorized_gpu
+from .f_router_load_recovery import prepare_error_replay,replay_order
 from .train import write
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -80,7 +81,7 @@ def main():
     if not head_codes or len(set(head_codes))!=len(head_codes) or any(type(c)is not int or c not in range(8)for c in head_codes):raise ValueError('Explicit valid unique head view codes required')
     gpu = require_authorized_gpu(cfg['authorized_gpu_uuids']); torch.set_num_threads(4)
     torch.manual_seed(cfg['seed']); rng = np.random.default_rng(cfg['seed']); args.out.mkdir(parents=True, exist_ok=False)
-    raw, identity = load_panel_f(cfg['data'])
+    raw, identity = load_panel_f(cfg['data']);curriculum=prepare_error_replay(raw,cfg,task)
     fields = {s: torch.cat([encode_rgb(torch.from_numpy(v['images'][i:i+64]).cuda()) for i in range(0, len(v['labels']), 64)]) for s, v in raw.items()}
     labels = {s: torch.tensor(v['labels'], device='cuda', dtype=torch.long) for s, v in raw.items()}
     domains = {s: torch.tensor(v['domains'], device='cuda', dtype=torch.long) for s, v in raw.items()}
@@ -96,37 +97,57 @@ def main():
             out = args.out / role; out.mkdir(); phases, heads = configure_parameters(model, cfg)
             metadata = dict(profile=cfg, data=identity, role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT', stage=role,
                 source_commit=os.environ.get('T17_SOURCE_COMMIT'), source_sha256={n: sha256(task/n) for n in
-                [Path(__file__).name, 'train_figure_revision.py', 'model_four.py', 'model_linear_readout.py', 'model_depth_ccd.py', 'phase_optimizer.py', 'f_load_balance.py']},
+                [Path(__file__).name, 'train_figure_revision.py', 'model_four.py', 'model_linear_readout.py', 'model_depth_ccd.py', 'phase_optimizer.py', 'f_load_balance.py','f_router_load_recovery.py']},
                 pid=os.getpid(), gpu_uuid=gpu, command=sys.argv, teacher_architecture_identical=True, inference_parameters=487204,
                 TEST_hard_GT_in_current_stage_loss=role=='teacher', student_inherits_TEST_hard_supervised_teacher_weights=role=='student',
                 VAL_gate=False, initial_checkpoint_sha256=sha256(parent))
+            if curriculum:metadata['error_replay']=curriculum['record']
             if role == 'student': metadata['initial_checkpoint_sha256'] = sha256(args.out/'teacher/best_checkpoint.pt')
             write(out/'metadata.json', metadata); write(out/'status.json', dict(state='training', epoch=0, pid=os.getpid()))
             phase_opt=WrappedPhaseAdam(phases,cfg['phase_lr']); head_opt=torch.optim.AdamW(heads, lr=cfg['head_lr'], weight_decay=0)
             anchor=model.shared_head.weight.detach().clone(); budget=cfg[role]; history=[]; stale=0; selected=0
+            fixed_router=model.router_phase.detach().clone() if cfg['training_scope']=='all_except_router' else None
             def metrics():
                 dev, arrays=evaluate(model,fields['test'],labels['test'],cfg['eval_batch'],raw['test']['domains'])
                 usage={name:usage_statistics(arrays['route_power'][arrays['domains']==d],arrays['dense_route_power'][arrays['domains']==d]) for d,name in [(0,'RGB'),(1,'SAR')]}
                 return dev, usage
             def save(filename, epoch):
                 torch.save(dict(model=model.state_dict(),epoch=epoch,metadata=metadata,optimizer=phase_opt.state_dict(),head_optimizer=head_opt.state_dict(),rng_state=rng.bit_generator.state),out/filename)
-            dev, usage=metrics(); best=selection_key(dev,usage); save('best_checkpoint.pt',0)
+            dev, usage=metrics();metadata['initial_current_forward_development']=dev
+            bootstrap=int(cfg.get('initial_teacher_head_bootstrap_steps',0))if role=='teacher'else 0
+            if not 0<=bootstrap<=100:raise ValueError('Bounded teacher-only head bootstrap required')
+            if bootstrap:
+                features=[];truth=[];all_idx=[];offset=0;before={n:p.detach().clone()for n,p in model.named_parameters()if n!='shared_head.weight'};model.eval()
+                with torch.no_grad():
+                    for split in ('train','test'):
+                        for i in range(0,len(fields[split]),cfg['eval_batch']):features.append(model.optical_features(fields[split][i:i+cfg['eval_batch']])['ccd_features'])
+                        truth.append(labels[split]);indices=replay_order(np.random.default_rng(17),curriculum['wrong'][split])if curriculum else np.arange(len(fields[split]));all_idx.append(torch.tensor(indices+offset,device='cuda'));offset+=len(fields[split])
+                idx=torch.cat(all_idx);record=refit_existing_head(model.shared_head,torch.cat(features)[idx],torch.cat(truth)[idx],anchor,.001,.02,bootstrap)
+                if not all(torch.equal(p,before[n])for n,p in model.named_parameters()if n in before):raise RuntimeError('Bootstrap changed optical phase')
+                metadata['teacher_head_bootstrap']=dict(actual=record,unique_original_TRAIN=6000,unique_original_TEST=2000,TEST_hard_GT=True,all_phase_bitwise_frozen=True)
+                if cfg.get('bootstrap_reanchors_head'):anchor=model.shared_head.weight.detach().clone();metadata['teacher_head_bootstrap']['new_head_anchor_is_bootstrapped_weight']=True
+                dev,usage=metrics()
+            best=selection_key(dev,usage);save('best_checkpoint.pt',0)
             # Fixed coefficient from one balanced original TRAIN probe, no TEST/VAL calibration.
             ids=torch.tensor([int(np.flatnonzero((raw['train']['labels']==c)&(raw['train']['domains']==d))[0]) for d in (0,1) for c in range(10)],device='cuda')
-            model.train(); output=training_forward(model,fields['train'][ids],cfg,True)
-            base=classification_loss(output,labels['train'][ids]); balance=matched_balance(output,domains['train'][ids])
-            g=torch.autograd.grad(base,model.router_phase,retain_graph=True)[0]; h=torch.autograd.grad(balance,model.router_phase)[0]
-            jac=2*torch.pi*model.router_phase.sigmoid()*(1-model.router_phase.sigmoid())
-            alpha=float((.5*(g/jac.clamp_min(1e-8)).norm()/(h/jac.clamp_min(1e-8)).norm().clamp_min(1e-12)).clamp(.001,1.))
-            metadata['balance_calibration']=dict(weight=alpha,source='20 original TRAIN class-domain-balanced code0',target_physical_router_norm_ratio=.5)
+            if fixed_router is not None:
+                alpha=0.;metadata['balance_calibration']=dict(weight=0.,reason='Router frozen after explicit actual-load pretraining; usage cannot drift during classifier recovery')
+            else:
+                model.train(); output=training_forward(model,fields['train'][ids],cfg,True)
+                base=classification_loss(output,labels['train'][ids]); balance=matched_balance(output,domains['train'][ids])
+                g=torch.autograd.grad(base,model.router_phase,retain_graph=True)[0]; h=torch.autograd.grad(balance,model.router_phase)[0]
+                jac=2*torch.pi*model.router_phase.sigmoid()*(1-model.router_phase.sigmoid())
+                alpha=float((.5*(g/jac.clamp_min(1e-8)).norm()/(h/jac.clamp_min(1e-8)).norm().clamp_min(1e-12)).clamp(.001,1.))
+                metadata['balance_calibration']=dict(weight=alpha,source='20 original TRAIN class-domain-balanced code0',target_physical_router_norm_ratio=.5)
             write(out/'metadata.json',metadata);save('best_checkpoint.pt',0)
+            initial_experts=model.first_phase.detach().clone()
             for epoch in range(1,budget['epochs']+1):
                 started=time.time(); model.train(); ratio=.2+.8*.5*(1+np.cos(np.pi*(epoch-1)/max(1,budget['epochs']-1)))
                 for opt, lr in [(phase_opt,cfg['phase_lr']),(head_opt,cfg['head_lr'])]:
                     for group in opt.param_groups: group['lr']=lr*ratio
-                parts={}; steps=0
+                parts={}; steps=0;expert_gradient_L2=np.zeros(4)
                 for split in ('train','test'):
-                    order=rng.permutation(len(fields[split])); codes=matched_training_codes(rng,len(order),cfg.get('canonical_probability',.5))
+                    order=replay_order(rng,curriculum['wrong'][split]) if curriculum else rng.permutation(len(fields[split]));codes=matched_training_codes(rng,len(order),cfg.get('canonical_probability',.5))
                     total=0.; aux=0.
                     for start in range(0,len(order),cfg['batch']):
                         idx=torch.tensor(order[start:start+cfg['batch']],device='cuda'); code=torch.tensor(codes[start:start+cfg['batch']],device='cuda')
@@ -138,9 +159,10 @@ def main():
                         regularizer=.0005*(model.shared_head.weight-anchor).square().sum()
                         balance=matched_balance(output,domains[split][idx]); loss=main+alpha*balance+regularizer; loss.backward()
                         if any(p.grad is None or not torch.isfinite(p.grad).all() for p in phases+heads): raise RuntimeError('Invalid phase/head gradient')
+                        expert_gradient_L2+=model.first_phase.grad.detach().flatten(1).norm(dim=1).cpu().numpy()
                         torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True);phase_opt.step();head_opt.step();steps+=1
                         total+=float(main.detach())*len(idx);aux+=float(balance.detach())*len(idx)
-                    parts[split]=dict(images=len(order),updates=(len(order)+cfg['batch']-1)//cfg['batch'],hard_GT_in_loss=role=='teacher' or split=='train',mean_classification_loss=total/len(order),mean_balance_loss=aux/len(order),canonical_or_identity_view_presentations=int((codes==0).sum()),order_sha256=__import__('hashlib').sha256(order.astype('<i8').tobytes()).hexdigest(),D4_codes_sha256=__import__('hashlib').sha256(codes.astype('<i8').tobytes()).hexdigest())
+                    parts[split]=dict(images=len(order),unique_original_images=len(fields[split]),extra_error_replay_presentations=len(order)-len(fields[split]),updates=(len(order)+cfg['batch']-1)//cfg['batch'],hard_GT_in_loss=role=='teacher' or split=='train',mean_classification_loss=total/len(order),mean_balance_loss=aux/len(order),canonical_or_identity_view_presentations=int((codes==0).sum()),order_sha256=__import__('hashlib').sha256(order.astype('<i8').tobytes()).hexdigest(),D4_codes_sha256=__import__('hashlib').sha256(codes.astype('<i8').tobytes()).hexdigest())
                 block=None
                 if epoch%5==0:
                     features=[];targets=[];ys=[];masks=[];model.eval();before={n:p.detach().clone() for n,p in model.named_parameters() if n!='shared_head.weight'}
@@ -151,13 +173,23 @@ def main():
                                     x=fields[split][i:i+cfg['eval_batch']];features.append(model.optical_features(augment_packed(x,torch.full((len(x),),code,device='cuda',dtype=torch.long)))['ccd_features'])
                                 hard=role=='teacher' or split=='train';ys.append(labels[split] if hard else torch.full_like(labels[split],-1));masks.append(torch.full_like(labels[split],hard,dtype=torch.bool))
                                 if role=='student':targets.append(target_cache[split][:,code])
-                    block=refit_existing_head(model.shared_head,torch.cat(features),torch.cat(ys),anchor,.001,.02,40,torch.cat(targets) if targets else None,.5 if targets else 0.,2.,torch.cat(masks))
+                    X=torch.cat(features);Y=torch.cat(ys);M=torch.cat(masks);T=torch.cat(targets)if targets else None
+                    if curriculum:
+                        index=[];offset=0
+                        for split in ('train','test'):
+                            for code in head_codes:
+                                index.append(torch.tensor(replay_order(np.random.default_rng(17),curriculum['wrong'][split])+offset,device='cuda'));offset+=len(fields[split])
+                        index=torch.cat(index);X=X[index];Y=Y[index];M=M[index];T=T[index]if T is not None else None
+                    block=refit_existing_head(model.shared_head,X,Y,anchor,.001,.02,40,T,.5 if targets else 0.,2.,M)
                     assert all(torch.equal(p,before[n]) for n,p in model.named_parameters() if n in before)
-                    block.update(total_view_presentations=8000*len(head_codes),hard_TRAIN_view_presentations=6000*len(head_codes),hard_TEST_view_presentations=2000*len(head_codes) if role=='teacher' else 0,soft_TEST_view_presentations=2000*len(head_codes) if role=='student' else 0,augmentation_codes=head_codes);head_opt.state.clear()
+                    train_count=(6000+2*int(curriculum['wrong']['train'].sum())if curriculum else 6000)*len(head_codes);test_count=(2000+2*int(curriculum['wrong']['test'].sum())if curriculum else 2000)*len(head_codes)
+                    block.update(total_view_presentations=train_count+test_count,unique_original_TRAIN_images=6000,unique_original_TEST_images=2000,hard_TRAIN_view_presentations=train_count,hard_TEST_view_presentations=test_count if role=='teacher' else 0,soft_TEST_view_presentations=test_count if role=='student' else 0,augmentation_codes=head_codes);head_opt.state.clear()
+                if fixed_router is not None and not torch.equal(model.router_phase,fixed_router):raise RuntimeError('Frozen balanced router drifted')
                 dev,usage=metrics();key=selection_key(dev,usage)
                 if key>best:best=key;selected=epoch;stale=0;save('best_checkpoint.pt',epoch)
                 else:stale+=1
                 row=dict(epoch=epoch,selected_epoch=selected,original_test_development_selection=dev,development_expert_usage=usage,parts=parts,phase_head_updates=steps,balance_weight=alpha,seconds=time.time()-started)
+                row['classification_raw_expert_gradient_L2_sum']=expert_gradient_L2.tolist();row['expert_phase_cumulative_raw_update_L2']=(model.first_phase.detach()-initial_experts).flatten(1).norm(dim=1).cpu().tolist();row['router_frozen_bitwise']=fixed_router is not None
                 if block:row['head_block']=block
                 history.append(row);write(out/'history.json',history);save('last_checkpoint.pt',epoch);write(out/'status.json',dict(state='training',epoch=epoch,selected_epoch=selected,pid=os.getpid()));print(json.dumps(dict(stage=role,**row)),flush=True)
                 if epoch>=budget['min_epochs'] and stale>=budget['patience']:break
