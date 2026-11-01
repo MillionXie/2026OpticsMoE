@@ -7,6 +7,7 @@ from .train_figure_revision import build_model,evaluate
 from .figure_revision_data import load_panel_f
 from .model_four import encode_rgb
 from .report_f_load_balance import usage_statistics
+from .gpu_policy import require_authorized_gpu
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
@@ -14,6 +15,7 @@ def audit(root):
     task=Path(__file__).resolve().parent;torch.set_num_threads(4);audits={};teacher_logits=[]
     for stage in ('teacher','student'):
         folder=root/stage;result=json.loads((folder/'result.json').read_text());metadata=json.loads((folder/'metadata.json').read_text());history=json.loads((folder/'history.json').read_text());cfg=metadata['profile'];best=torch.load(folder/'best_checkpoint.pt',map_location='cpu',weights_only=False);last=torch.load(folder/'last_checkpoint.pt',map_location='cpu',weights_only=False)
+        require_authorized_gpu(cfg['authorized_gpu_uuids'])
         assert sha256(folder/'best_checkpoint.pt')==result['checkpoint_sha256']
         assert metadata['TEST_hard_GT_in_loss']==(stage=='teacher')and metadata['VAL_gate']is False
         for name,digest in metadata['source_sha256'].items():assert sha256(task/name)==digest,name

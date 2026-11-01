@@ -67,12 +67,17 @@ def main():
     focus_root=task/'runs/simulation/f_error_teacher_focus_s17_20261101';focus=read(focus_root/'student/result.json');focus_report=task/'reports/f_error_teacher_focus_s17_20261101'
     focus_verified=bool(focus and (focus_report/'completed_transfer.json').exists() and (focus_report/'student_model_audit.json').exists() and (focus_report/'teacher_focus_provenance_audit.json').exists() and hashlib.sha256((focus_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==focus['checkpoint_sha256'])
     if focus_verified:choices.append(('Balanced optical teacher with explicit TEST-error focus, inherited student',focus,focus_root/'student'))
+    four_root=task/'runs/simulation/f_four_metric_s17_20261101';four_report=task/'reports/f_four_metric_s17_20261101';four_result=read(four_root/'student/result.json');four_audit=read(four_report/'student_model_audit.json')
+    four_verified=bool(four_result and four_audit and (four_report/'completed_transfer.json').exists() and (four_root/'student/best_checkpoint.pt').exists() and hashlib.sha256((four_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==four_result['checkpoint_sha256']==four_audit['checkpoint_sha256'] and four_audit['router_bitwise_parent'])
+    four_qualified=bool(four_verified and all(four_result[split]['domains'][d]['accuracy']>=.65 for split in ('train','original_test_dev')for d in ('RGB','SAR')) and four_audit['all_four_at_least_65'])
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
     eligible=choices # Latest human rule: original TEST only; no validation floor.
     def development_key(item):
         values=[v['accuracy'] for v in item[1]['original_test_dev']['domains'].values()]
         return min(values),sum(values)/len(values)
     _,selected,path=max(eligible,key=development_key)
+    if four_qualified:
+        selected=four_result;path=four_root/'student';choices.append(('Same-PT four-metric optical teacher and student',four_result,path))
     records={};rows=[]
     for architecture,source,r in [('LG','RGB+SAR联合',selected)]+[('D2NN',d,read(task/f'runs/simulation/f_cross_domain_s17_20261031/D2NN_{d}/result.json')) for d in ('RGB','SAR')]:
         records[architecture+'_'+source]=r
@@ -164,12 +169,12 @@ def main():
             values=matched_student['original_test_dev']['domains'];announcement+='<p>增强阶段同结构学生已完整备份/strict/原ID标签/实际Top2和canonical重放核验：RGB '+pct(values['RGB']['accuracy'])+' / SAR '+pct(values['SAR']['accuracy'])+'；后续原图头拟合与相位继续的最新结果见上方主表。原64.6/49.6父与所有失败保留，主表按原TEST开发较低域再均值选择同一PT。未达项目如实保留。</p>'
         else:announcement+='<p>新候选完整权重/逐样本/SHA审计前，主表仍保留已核验64.6%/49.6%；距65%分别差4/154正确，各域1000。VAL仅记录，不选模。新教师最多40轮、学生最多20轮，父E0参选。</p>'
         page=page.replace('</h1>','</h1>'+announcement,1)
-    latest='<h2>当前已完整核验的同一联合LG</h2><table><tr><th>模态</th><th>TRAIN</th><th>VAL（仅记录）</th><th>原TEST开发</th><th>距65%尚差正确数/1000</th></tr>'
+    latest='<h2>当前已完整核验的同一联合LG</h2><table><tr><th>模态</th><th>TRAIN</th><th>VAL（仅记录）</th><th>原TEST开发</th><th>TRAIN距65%尚差正确数/3000</th><th>TEST距65%尚差正确数/1000</th></tr>'
     for d in ('RGB','SAR'):
         metric=selected['original_test_dev']['domains'][d]
-        latest+='<tr><td>'+d+'</td>'+''.join('<td>'+pct(selected[s]['domains'][d]['accuracy'])+'</td>' for s in ('train','val','original_test_dev'))+'<td>'+str(max(0,650-metric['correct']))+'</td></tr>'
+        latest+='<tr><td>'+d+'</td>'+''.join('<td>'+pct(selected[s]['domains'][d]['accuracy'])+'</td>' for s in ('train','val','original_test_dev'))+'<td>'+str(max(0,1950-selected['train']['domains'][d]['correct']))+'</td><td>'+str(max(0,650-metric['correct']))+'</td></tr>'
     latest+='</table><p>PT SHA '+html.escape(selected['checkpoint_sha256'])+'。'+html.escape(str(path.relative_to(task)))+'。采用同一PT，不逐域拼接。</p>'
-    if focus_verified:
+    if focus_verified and path==focus_root/'student':
         latest+='<p class="note"><strong>当前满足的是原TEST开发门槛，不是独立测试泛化。</strong>同结构教师对原TEST错误作定向硬监督拟合：TRAIN每图1次/旧错例3次，TEST在此基础上再乘8，即9812个TRAIN呈现、27584个TEST呈现（unique仍6000/2000）。学生继承教师PT后使用TEST软目标，选中初始化E0，没有独立蒸馏增益证据。实际同一PT的TRAIN52.03/47.57、VAL41.50/35.40、开发77.60/71.80%；TRAIN/VAL下降必须同时展示。原更高TRAIN/VAL的69.8/57.8父完整保留，不能将高开发分数写成未见数据达到65%。</p>'
         latest+='<p>路由先按四个输入组实际Top2负载预训练，之后R逐元素冻结；四个专家E都已获得真实分类梯度与更新。最终同一PT的TEST选择次数份额RGB23/21/27.65/28.35%，SAR25.15/32/23.05/19.8%，四路均开启、接近25%，并非完全相等。完整错例、负载和阶段预算见<a href="../f_error_router_recovery_s17_20261101/results.html">本轮专项报告</a>。</p>'
     if (task/'reports/f_matched_optical_teacher_s17_20261101/convergence.svg').exists():latest+='<p>各训练分支与冻结光学的头拟合分别画轴，不拼成连续epoch；星号为完成分支选中的PT。</p><img src="../f_matched_optical_teacher_s17_20261101/convergence.svg" style="width:100%">'
@@ -186,8 +191,12 @@ def main():
     four=read(task/'reports/f_four_metric_s17_20261101/results.json')
     if four:
         data['latest_four_metric_goal']=four
+        data['four_metric_candidate_fully_verified']=four_verified
+        data['four_metric_candidate_qualified']=four_qualified
         data['latest_target_same_PT_TRAIN_TEST_four_at_least_65_percent']=all(selected[split]['domains'][d]['accuracy']>=.65 for split in ('train','original_test_dev')for d in ('RGB','SAR'))
         message='<h2>最新追加目标：同一PT的TRAIN与开发TEST四项均至少65%</h2><p>此前TEST达标不等于当前目标已完成。原PT的TRAIN52.03/47.57仍低；新的四组联合弱项优化已启动，冻结已均衡router、更新原E/G和同一Linear，按四项最低成绩选同一PT。VAL只记录。教师使用已授权TEST硬GT，学生TEST只软KL，仍是开发拟合。</p><p><a href="../f_four_metric_s17_20261101/results.html">查看真实四项进度与有限预算</a>。未经完整SHA/strict/原ID与四项重放核验，不替换上面的旧PT。</p>'
+        if four_qualified:
+            message='<h2>新增四项65%条件已完整核验</h2><p>主表现使用同一学生PT的TRAIN-RGB、TRAIN-SAR、原TEST开发RGB/SAR，四项均至少65%；原光学router逐元素冻结，四专家实际负载保持。教师/学生完全同结构，TEST明确暴露，不是独立泛化。此前77.6/71.8低TRAIN权重仍保留。</p><p><a href="../f_four_metric_s17_20261101/results.html">四项曲线、负载、预算与同PT完整审计</a></p>'
         page=page.replace('</h1>','</h1>'+message,1)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
