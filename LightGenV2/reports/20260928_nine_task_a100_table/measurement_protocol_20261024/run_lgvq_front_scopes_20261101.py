@@ -18,7 +18,13 @@ def sources():
 
 
 def write(path, value):
-    if path.name == 'compute_identity.json':
+    if path.name == 'input_preparation.json':
+        value = dict(value, variant=VARIANT,
+                     external_preparation_is_reference_validation_not_formal_timing=True,
+                     included_in_estimate=['decode', 'RGB', 'crop'][:VARIANT]+['resize', 'normalization', 'patch'],
+                     excluded_from_estimate=['decode', 'RGB', 'crop'][VARIANT:]+['quality', 'H2D', 'CPU_dispatch_and_off_CPU_wait'],
+                     online_input='native RGB crops' if VARIANT == 0 else 'original video files; excluded RGB/crop still execute as dependencies')
+    elif path.name == 'compute_identity.json':
         value = dict(value, profile='LG_FOUR_CUMULATIVE_MEAN_SCOPE_20261101', variant=VARIANT,
                      CPU_FIFO_workers=16, explicit_extra_warm_fields=3,
                      CPU_jobs_independent_of_GPU_completion=True, SLM_hz=1886,
