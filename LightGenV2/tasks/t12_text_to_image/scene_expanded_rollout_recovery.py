@@ -79,7 +79,7 @@ def main():
             warm_model_training_updates=4992,existing_head_unchanged=True,TEST_used_for_gradient=False,
             all_TRAIN_eligible_including_fixed_monitor=True)
         if contract['schema']=='scene_expanded_cached_rollout_coverage_v2':
-            report.update(training_batch_size=2,complete_TRAIN_coverage_epochs=1)
+            report.update(training_batch_size=2,planned_TRAIN_coverage_epochs=1,complete_TRAIN_coverage_epochs=1 if a.stage=='train' else 0)
             if a.stage=='train':assert report['gradient_TRAIN_contexts']==report['TRAIN_contexts']
         write(a.output/'report.json',report)
     base.run=run;sys.argv=[sys.argv[0],*remaining]
