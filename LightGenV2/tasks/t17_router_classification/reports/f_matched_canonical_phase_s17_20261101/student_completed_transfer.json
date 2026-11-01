@@ -1,0 +1,56 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "stage": "student",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/val_predictions.npz",
+      "size": 138419,
+      "sha256": "d627966fafa0553fa3c596d3d67ea245f4111f9f762b0ae06c47e648fc5e43ec"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/last_checkpoint.pt",
+      "size": 5796151,
+      "sha256": "570431a23475fdab2c27fa830d06ffed5ecfe8e2953613972d53cfe6f72d9b55"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/metadata.json",
+      "size": 7038,
+      "sha256": "55014b46597084344d1a404cda86b25ff8edc4dcec283cb8900474f72c72d596"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/selection_lock.json",
+      "size": 228,
+      "sha256": "b0458b7da0f54a7a9a02703c0d98963d6ccee5f3cea07fbe6dc033d9afedfdcd"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/status.json",
+      "size": 13874,
+      "sha256": "d6ca4142ad4972f14d9e52bdd0f5d72426d52f8181b2b9d67154abf41b30a715"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/test_predictions.npz",
+      "size": 138510,
+      "sha256": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/result.json",
+      "size": 13833,
+      "sha256": "0ac3751de340fcd438943ba311ee39788a9141f8a12fdff75b522dc2768eea62"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/train_predictions.npz",
+      "size": 409286,
+      "sha256": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/history.json",
+      "size": 91590,
+      "sha256": "84795a7f422df82aac442bb5709590c5034adce7fc5d3102158e689a6717528e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/best_checkpoint.pt",
+      "size": 1958416,
+      "sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc"
+    }
+  ]
+}

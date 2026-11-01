@@ -1,0 +1,56 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "stage": "student",
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/val_predictions.npz",
+      "size": 138075,
+      "sha256": "8942364863faf8dc4a9f66eb81d0f56b18f4d2f7f85467a46e6605cab3b408ad"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/last_checkpoint.pt",
+      "size": 5795703,
+      "sha256": "e2eed4b02691ee20e1b6b8ee327d7e9cf3c6f132e8aa9bf763d94b42063fe51d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/metadata.json",
+      "size": 6593,
+      "sha256": "e2fd97359dba71e6595031907527342706369066dab96963d621c3ccaf8d1335"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/selection_lock.json",
+      "size": 228,
+      "sha256": "327ef3b97cc4584203e89d38b26efcba56d9e41c3c336bc481d9488caae06368"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/status.json",
+      "size": 13653,
+      "sha256": "59f8ce87f75fbd061582f4298ba860aa220e22591a63a8f6125d18e02b0ac96a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/test_predictions.npz",
+      "size": 138273,
+      "sha256": "1b53e4b3ad4c557ef20230cb717def5d2d49005cab3a995d152baba6e262414a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/result.json",
+      "size": 13612,
+      "sha256": "f291342d2ce91c5cc660d2c188d1f48d51cf0bc7a33f220d4862421c6b92f91a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/train_predictions.npz",
+      "size": 408410,
+      "sha256": "af4f3344f5e5cdbdf5397d72843103197783b108441d609925a6ad1a5de5be15"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/history.json",
+      "size": 91706,
+      "sha256": "ed6b247c1927ebe1268a41322d72ca6be162ef18868dcfef016ba83c77406dd3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/best_checkpoint.pt",
+      "size": 1957968,
+      "sha256": "7d5ed966dc961aada3c348bb61ba2056daba38641986afb36b66dbe302eff162"
+    }
+  ]
+}

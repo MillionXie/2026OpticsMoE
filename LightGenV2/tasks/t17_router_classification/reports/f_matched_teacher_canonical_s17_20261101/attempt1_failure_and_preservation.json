@@ -1,0 +1,42 @@
+{
+  "source_commit": "d0f0620bd22cc12830a115d88954ff7602d3cc80",
+  "error": "Teacher hard-supervised coordinate closure incorrectly retained KD coefficient without teacher targets; guard raised before first LBFGS update",
+  "fix_source_commit": "111ad94c75625dea7b07804ee6a4c8e0eba3b0d1",
+  "failed_run_preserved": true,
+  "head_update_completed_before_failure": false,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_teacher_canonical_s17_20261101/teacher/metadata.json",
+      "size": 8619,
+      "sha256": "bc8c550d14704abb60b8c4ae1cd99170b3b94bdfa0138f9890477f47c37681f7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_teacher_canonical_s17_20261101/teacher/test_features.npz",
+      "size": 5980247,
+      "sha256": "147b37ab759ae14b3fbea094a7c49d8eeeee14605603b8b85bf1d892b7b040f0",
+      "identical_local_verified_cache": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_teacher_canonical_attempt2_s17_20261101\\teacher\\test_features.npz"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_teacher_canonical_s17_20261101/teacher/train_features.npz",
+      "size": 17927409,
+      "sha256": "24bb13924612cfbc8f9fefdfe95ca33e7b87e6819aeed9589c39f61c54ba41e5",
+      "identical_local_verified_cache": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_teacher_canonical_attempt2_s17_20261101\\teacher\\train_features.npz"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_teacher_canonical_s17_20261101/teacher/val_features.npz",
+      "size": 5977730,
+      "sha256": "1ef239fc543120e7d3afb5e8bcf62c7376f009038124758e7f738244e93b9ffc",
+      "identical_local_verified_cache": "LightGenV2\\tasks\\t17_router_classification\\runs\\simulation\\f_matched_teacher_canonical_attempt2_s17_20261101\\teacher\\val_features.npz"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_teacher_canonical_s17_20261101/teacher/cache_manifest.json",
+      "size": 876,
+      "sha256": "7fb4103b535d22a95aefcf9979af7fcd17cfe8d035a54677c71f23ce8854c052"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_teacher_canonical_s17_20261101/teacher/best_checkpoint.pt",
+      "size": 1958032,
+      "sha256": "07717dd6ef3fb26b19ae427f3a3f3776c979f3e9c4479ab3fa6a18d34838522f"
+    }
+  ]
+}

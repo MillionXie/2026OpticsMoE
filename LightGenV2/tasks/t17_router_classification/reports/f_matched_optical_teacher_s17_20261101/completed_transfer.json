@@ -1,0 +1,120 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/val_predictions.npz",
+      "size": 138075,
+      "sha256": "8942364863faf8dc4a9f66eb81d0f56b18f4d2f7f85467a46e6605cab3b408ad"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/last_checkpoint.pt",
+      "size": 5859270,
+      "sha256": "f5ef4c7d4427314e6459632d5bc54abaead23358bfb97028f8bf0b126563a672"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/test_teacher_logits.npz",
+      "size": 584660,
+      "sha256": "5908fb1afcaafde176f1611e8777324a96713c3f614fdf620002417096bac6a4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/metadata.json",
+      "size": 6593,
+      "sha256": "09a3c4238534822e52c7f070da76faa2cf35e61e1fa8aa67ca6cdd1442746dc6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/train_teacher_logits.npz",
+      "size": 1746828,
+      "sha256": "483c5f0c2fff8104f3da00c3e79d28a8a6bf745e426897b7dcb81606a45068bd"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/selection_lock.json",
+      "size": 228,
+      "sha256": "22075e5aa84381299621b2816bd9eaca73022d309cd8a72a902c583aad66af25"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/status.json",
+      "size": 13653,
+      "sha256": "1475d4c05aa41a89e777a9595d82751a6bb631d4d56d9c849b04a5b932bfb897"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/test_predictions.npz",
+      "size": 138273,
+      "sha256": "1b53e4b3ad4c557ef20230cb717def5d2d49005cab3a995d152baba6e262414a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/result.json",
+      "size": 13612,
+      "sha256": "e1ddef01194a1fa0262aa56affcbc70379b235838766c3f46d66042f7203f84f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/train_predictions.npz",
+      "size": 408410,
+      "sha256": "af4f3344f5e5cdbdf5397d72843103197783b108441d609925a6ad1a5de5be15"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/history.json",
+      "size": 219529,
+      "sha256": "e65996f87403e0734a92c82b02ef6e6a9ee7109521139e9f378af0e9435c3022"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/best_checkpoint.pt",
+      "size": 5859270,
+      "sha256": "80b920604a5ebb4e60c1a0c4c5373b02fee95b3797febf176d3164b99d362576"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/teacher_cache_manifest.json",
+      "size": 835,
+      "sha256": "c82da1eb2dc811697e1ad0e015cf3db4226935b73f50458e0c2f9ecaf87764d0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/val_predictions.npz",
+      "size": 138075,
+      "sha256": "8942364863faf8dc4a9f66eb81d0f56b18f4d2f7f85467a46e6605cab3b408ad"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/last_checkpoint.pt",
+      "size": 5795703,
+      "sha256": "e2eed4b02691ee20e1b6b8ee327d7e9cf3c6f132e8aa9bf763d94b42063fe51d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/metadata.json",
+      "size": 6593,
+      "sha256": "e2fd97359dba71e6595031907527342706369066dab96963d621c3ccaf8d1335"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/selection_lock.json",
+      "size": 228,
+      "sha256": "327ef3b97cc4584203e89d38b26efcba56d9e41c3c336bc481d9488caae06368"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/status.json",
+      "size": 13653,
+      "sha256": "59f8ce87f75fbd061582f4298ba860aa220e22591a63a8f6125d18e02b0ac96a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/test_predictions.npz",
+      "size": 138273,
+      "sha256": "1b53e4b3ad4c557ef20230cb717def5d2d49005cab3a995d152baba6e262414a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/result.json",
+      "size": 13612,
+      "sha256": "f291342d2ce91c5cc660d2c188d1f48d51cf0bc7a33f220d4862421c6b92f91a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/train_predictions.npz",
+      "size": 408410,
+      "sha256": "af4f3344f5e5cdbdf5397d72843103197783b108441d609925a6ad1a5de5be15"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/history.json",
+      "size": 91706,
+      "sha256": "ed6b247c1927ebe1268a41322d72ca6be162ef18868dcfef016ba83c77406dd3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/best_checkpoint.pt",
+      "size": 1957968,
+      "sha256": "7d5ed966dc961aada3c348bb61ba2056daba38641986afb36b66dbe302eff162"
+    }
+  ]
+}

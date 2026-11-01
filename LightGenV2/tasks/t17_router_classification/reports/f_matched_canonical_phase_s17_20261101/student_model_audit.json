@@ -1,0 +1,20 @@
+{
+  "stage": "student",
+  "strict_4_model_tensors": true,
+  "inference_parameters": 487204,
+  "inference_Linear": 1,
+  "CNN": 0,
+  "actual_main_layers": 2,
+  "actual_top_k": 2,
+  "full2000canonical_TEST_predictions_exact": true,
+  "max_probability_difference": 0.0,
+  "teacher8_view_cache_replay": null,
+  "best_last_update_L2": {
+    "first_phase": 1.9720820188522339,
+    "global_phase": 15.009564399719238,
+    "router_phase": 10.361454963684082,
+    "shared_head.weight": 6.0820393562316895
+  },
+  "teacher_architecture_equals_student": true,
+  "metadata_source_commit": "32fe5c1f3ad7a9bcfecf8cdf3676345810086e64"
+}

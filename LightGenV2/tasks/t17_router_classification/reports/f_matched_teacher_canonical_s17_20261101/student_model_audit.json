@@ -1,0 +1,14 @@
+{
+  "strict_4_state": true,
+  "parameters": 487204,
+  "Linear": 1,
+  "CNN": 0,
+  "phase_bitwise_parent": true,
+  "full2000_TEST_prediction_exact": true,
+  "max_probability_difference": 1.4185905456542969e-05,
+  "TEST_hard_GT_in_current_loss": false,
+  "full8000_canonical_teacher_logits_replay": {
+    "max_abs": 0.0,
+    "TEST_GT_not_used": true
+  }
+}

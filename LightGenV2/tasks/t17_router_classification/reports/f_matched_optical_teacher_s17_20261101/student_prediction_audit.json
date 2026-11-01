@@ -1,0 +1,123 @@
+{
+  "stage": "student",
+  "parts": {
+    "train": {
+      "RGB": {
+        "n": 3000,
+        "correct": 1974,
+        "selection_slot_share": [
+          0.16333333333333333,
+          0.33666666666666667,
+          0.5,
+          0.0
+        ]
+      },
+      "SAR": {
+        "n": 3000,
+        "correct": 1810,
+        "selection_slot_share": [
+          0.17416666666666666,
+          0.3258333333333333,
+          0.5,
+          0.0
+        ]
+      }
+    },
+    "val": {
+      "RGB": {
+        "n": 1000,
+        "correct": 549,
+        "selection_slot_share": [
+          0.159,
+          0.341,
+          0.5,
+          0.0
+        ]
+      },
+      "SAR": {
+        "n": 1000,
+        "correct": 495,
+        "selection_slot_share": [
+          0.184,
+          0.316,
+          0.5,
+          0.0
+        ]
+      }
+    },
+    "test": {
+      "RGB": {
+        "n": 1000,
+        "correct": 657,
+        "selection_slot_share": [
+          0.1975,
+          0.3025,
+          0.5,
+          0.0
+        ]
+      },
+      "SAR": {
+        "n": 1000,
+        "correct": 511,
+        "selection_slot_share": [
+          0.193,
+          0.3075,
+          0.4995,
+          0.0
+        ]
+      }
+    }
+  },
+  "all_original_ID_labels_domains_exact": true,
+  "actual_hard_Top2": true,
+  "phase_and_head_updates": 1260,
+  "TEST_random_views": 20000,
+  "TEST_hard_GT_in_loss": false,
+  "student_inherits_TEST_hard_supervised_teacher_weights": true,
+  "head_blocks": [
+    {
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 64000,
+      "numerical_ridge": 0.003006889260308382,
+      "uncentred_Gram_eigen_min": 5.474062473198195e-11,
+      "uncentred_Gram_eigen_max": 2135.6390135430092,
+      "Gram_regularized_condition": 710249.6289915688,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.3150423970873883,
+      "objective_after": 1.2602598685586275,
+      "internal_steps": 40,
+      "closure_calls": 44,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": false,
+      "hard_label_samples": 48000,
+      "total_view_presentations": 64000,
+      "hard_TRAIN_view_presentations": 48000,
+      "hard_TEST_view_presentations": 0,
+      "soft_TEST_view_presentations": 16000
+    },
+    {
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 64000,
+      "numerical_ridge": 0.002972291600998823,
+      "uncentred_Gram_eigen_min": 5.321693084703353e-11,
+      "uncentred_Gram_eigen_max": 2097.8142383457207,
+      "Gram_regularized_condition": 705791.1721623549,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.303001976931452,
+      "objective_after": 1.275685800028497,
+      "internal_steps": 40,
+      "closure_calls": 45,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": false,
+      "hard_label_samples": 48000,
+      "total_view_presentations": 64000,
+      "hard_TRAIN_view_presentations": 48000,
+      "hard_TEST_view_presentations": 0,
+      "soft_TEST_view_presentations": 16000
+    }
+  ],
+  "selected_epoch": 0,
+  "completed_epochs": 10,
+  "inference_parameters": 487204,
+  "source_commit": "7178e528cf59386e3882530565f30c2558bcebae"
+}

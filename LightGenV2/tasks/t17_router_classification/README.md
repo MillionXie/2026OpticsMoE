@@ -1,4 +1,24 @@
-## 最新人工协议：D按现存PT联合选择严格递增；F同结构光学教师与学生均以双65%为目标（2026-11-01）
+## 本批完整核验：D三条主曲线严格递增；同结构联合F最终69.8/57.8，双65%和四专家均衡仍未达（2026-11-01）
+
+本批全部正式训练、头拟合与GPU复核已结束，源/PT/cache/路由/逐样本预测均保存并核验，自己的相关PID已经退出、无GPU分配，其他用户不动。D主曲线三组严格递增是已完成项（Kather为显式PT约束选择，并列保留未约束最高分，不称最优性能自然递增）；F必须继续标为未达双65%，不是因为实验运行结束就称准确率任务完成。
+
+最新同结构光学教师原图phase/head继续source32fe5c1f3ad7a9bcfecf8cdf3676345810086e64，教师20轮选E18、学生10轮选E0；同一获选学生PT SHA8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc。TRAIN RGB70.3667/SAR66.10%，VAL58.30/48.80%仅记录，原TEST开发RGB69.80（698/1000）/SAR57.80（578/1000）；相比本轮开始64.6/49.6提高5.2/8.2pp，但SAR距65%仍差72正确，未达如实。师生均四专家/两主层/Top2/同OEO/唯一Linear487204，无CNN/新增推理模块；教师用增强预训练后再canonical原图TRAIN+TEST真GT，学生继承该TEST硬监督教师权重并在自己loss中只对TEST用软目标。不能把这组命名为独立TEST、纯TRAIN-only或未见地块跨域泛化。
+
+最新两阶段全部PT/三split预测route/教师6000x8x10及2000x8x10缓存/manifests fullremote-localSHA，strict4tensor/487204/单Linear/noCNN、完整原ID标签域和实际Top2、全部2000canonical预测、全部8码平衡20样本教师logits、GT隔离与每轮126phase-head更新通过。教师2520、学生1260更新，2000TEST随机视图呈现数分别40000/20000（本阶段码全部0，不能称D4增强），头块分别4/2个、每块8000视图/40内步，所有预算单列。worker3169957已退出无GPU；主表->负载表->主表按同一新PT重算。负载仍存在第三专家高频、第四专家未选，未把dense辅助下降当均衡成功；不继续无依据扫学习率/加轮，所有原父与失败保留。
+
+原图读出单独对照实际内步教师132、学生97，均不超过各150预算，未将30段误记成150个实际更新；对应worker3158741与原增强管线3137955已退出。两组源测试/准入/失败首试收据和完整预算均随各report保存。新的六面板convergence.svg将光学epoch与头内部步分轴、教师和学生分轴，不拼成连续训练链；seed17没有标准差。所有结果以reports/f_joint_dual_teacher_s17_20261101/results.html/json和同SHA负载表为准。
+
+## 此前完整结果：同结构F教师/学生68.5/55.4，原图相位对照启动记录（2026-11-01）
+
+原同结构光学教师24轮早停选E9，RGB65.7/SAR51.1；学生10轮选E0保持相同结果。两阶段完整PT、3split预测/真实Top2、教师6000x8x10/2000x8x10缓存均remote/localSHA，strict4state487204唯一Linear/noCNN、完整原ID标签域、完整2000canonical推理及全部8码20样本/域类覆盖教师logits回放通过；两角色GT使用分别核验（教师TRAIN+TEST硬GT，学生TEST仅soft且继承硬监督教师权重），worker3137955已退出无GPU。教师阶段3024/学生1260 phase/head更新、每5轮64000视图/40头内步全部保存，不当独立TEST。
+
+基于增强头目标与原图推理错配假设，公开train_canonical_head_TEST.py新增显式matched_optical_teacher_mode，默认旧分支兼容。教师固定上述E9光学phase，用原TRAIN+原TEST真标签重拟合原唯一Linear；学生从该同结构教师继承phase/head，用TRAIN硬CE+教师canonical软KL、原TEST仅softKL再拟合同一头；各150有界LBFGS内步、父E0参选、原TEST选PT。source111ad94c75625dea7b07804ee6a4c8e0eba3b0d1已12相关CPU测试/实际TRAIN20+TEST20 head梯度与光学冻结GPU准入、main/server路径SHA；attempt1 source d0f0620教师硬监督闭包误保留KD权重、在首步前触发保护，已修复并补数值测试，失败PT/metadata及与成功run完全相同缓存SHA保留。成功attempt2教师与学生同为68.5/55.4，各选回或选取其真实PT；34文件69.75MB fullSHA、strict原487204、所有phase bitwise父、完整ID/标签/域、完整2000canonical预测与全部8000 canonical teacher logit按原分块bitwise回放通过，3158741退出无GPU。主F同一学生PT更新为68.5/55.4，TRAIN70.7667/65.7333、VAL57.6/50.4只记录，距离65%为RGB已达/SAR差96正确。TEST硬标签经教师和初始化传播已明示，不把这部分结果称独立TEST或普通TRAIN-only蒸馏。
+
+同一PT真实TEST专家选择份额：RGB19.75/30.25/50/0%，SAR19.30/30.75/49.95/0%，相对旧父前两专家更接近，但E4仍未选，明确没有四专家均衡。主report->负载report->主report已按新相同PT与预测SHA重算，平均门控光功率仍另列，不能用dense均匀替代真实hard负载。
+
+上述原图头重拟合将SAR51.1提高到55.4，支持只再做一条有界原图相位/头联合对照，不能当容量上限或保证65%。source32fe5c1f3ad7a9bcfecf8cdf3676345810086e64已16相关CPU测试（默认随机码bitwise兼容、显式canonical-only、GT隔离、真实负载等）/精确新教师父GPU准入及main/server路径SHA。新run f_matched_canonical_phase_s17_20261101，worker3169957 GPU1：原两主层/光路/数据/Top2/OEO/Linear不变，增强教师权重接续，当前阶段全部code0、每5轮头块8000（教师6000硬TRAIN+2000硬TEST；学生6000硬TRAIN+2000软TEST）、最多40内步；教师最多20/min10/pat10，学生最多10/min10/pat10，phase/head和负载辅助仍原配方。教师继续按两域TEST较低域及均值、真实负载CV、CE选同一PT，学生TEST硬GT仍拒绝。当前真实在训，不因中途指标替换已核验主表；结束全权重/路由/cache/SHA与自身GPU退出核验后才采用，不无限加轮。
+
+## 最新人工协议：D按现存PT联合选择严格递增；F同结构光学教师与学生均以双65%为目标（历史启动记录，2026-11-01）
 
 图D不再将“各k独立最高分”作为唯一主曲线：按本次明确人工要求，保持完整原TEST与实际k，从已保存PT中选择严格递增组合，先最大化四点总正确数、再偏好较大k的正确数。Kather实际主曲线590/596/600/604（752）=78.4574/79.2553/79.7872/80.3191%；k1使用原run已存在的E15 last，完整三split只读重放、strict485636/唯一Linear/noCNN/真实k1及所有参数bitwise未变通过，完整预测/路由与引用PT SHA已保存。未约束最高分601/596/604/604和全部原PT仍并列保留，不能把约束选出的递增当作“各k最高性能天然递增”的证据。K2未更换，A第一组/D k2/B两层同一596 PT。Blood2919/2945/3058/3098（3421）、Organ5848/5981/6039/6053（8216）保持原完整结果，三组主曲线均严格递增。选择池、规则、PT SHA与固定全部ID/标签证明见reports/panel_d_Kather_monotone_selection_s17_20261101。
 

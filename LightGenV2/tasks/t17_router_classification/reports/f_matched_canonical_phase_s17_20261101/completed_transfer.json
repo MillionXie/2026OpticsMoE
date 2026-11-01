@@ -1,0 +1,120 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/val_predictions.npz",
+      "size": 138419,
+      "sha256": "d627966fafa0553fa3c596d3d67ea245f4111f9f762b0ae06c47e648fc5e43ec"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/last_checkpoint.pt",
+      "size": 5796151,
+      "sha256": "973c408e059d691c1e638ad5059cefb27adde508b2b99ecb228fec636d190034"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/test_teacher_logits.npz",
+      "size": 587949,
+      "sha256": "fb64b35299152700340b71f79071688730c83a2f17bd0ba3f6b15ae705901dc5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/metadata.json",
+      "size": 7039,
+      "sha256": "3dca8dfbb8c07de1e7fb1850cf34374813a9a445b84d17d9e925fabeac51f4a1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/train_teacher_logits.npz",
+      "size": 1757362,
+      "sha256": "39a858431c427e2a1bbddfc9a34683bb9f41a98945c1627d27adf6a24bb72f41"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/selection_lock.json",
+      "size": 228,
+      "sha256": "6fc61dd78206a3d3c63231d7721122def4b4f34d3ee5851674531a5d6500c9a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/status.json",
+      "size": 13875,
+      "sha256": "7dfa998d6ce41450cec3fb13a951e0b268ef96899bf5ba925e97ef0361b5fed0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/test_predictions.npz",
+      "size": 138510,
+      "sha256": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/result.json",
+      "size": 13834,
+      "sha256": "31678e1dfb5e5f12df259a828c47e7dd8bbfb6a04cac3bbb2e769b19e3c6c994"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/train_predictions.npz",
+      "size": 409286,
+      "sha256": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/history.json",
+      "size": 183048,
+      "sha256": "33f614dcb86549e34b3c6a9c2114e550ecbd4a2778e03863817dfb24f9e351a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/best_checkpoint.pt",
+      "size": 5859718,
+      "sha256": "b28da84d471d35fc7ef78f19280b1bd7d30d2e2961ad31dd04b22176f26365d0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/teacher/teacher_cache_manifest.json",
+      "size": 835,
+      "sha256": "591563b304b12e544f701059872ce4760b8b75803efa0c50c9b0a6dc3030136d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/val_predictions.npz",
+      "size": 138419,
+      "sha256": "d627966fafa0553fa3c596d3d67ea245f4111f9f762b0ae06c47e648fc5e43ec"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/last_checkpoint.pt",
+      "size": 5796151,
+      "sha256": "570431a23475fdab2c27fa830d06ffed5ecfe8e2953613972d53cfe6f72d9b55"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/metadata.json",
+      "size": 7038,
+      "sha256": "55014b46597084344d1a404cda86b25ff8edc4dcec283cb8900474f72c72d596"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/selection_lock.json",
+      "size": 228,
+      "sha256": "b0458b7da0f54a7a9a02703c0d98963d6ccee5f3cea07fbe6dc033d9afedfdcd"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/status.json",
+      "size": 13874,
+      "sha256": "d6ca4142ad4972f14d9e52bdd0f5d72426d52f8181b2b9d67154abf41b30a715"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/test_predictions.npz",
+      "size": 138510,
+      "sha256": "6a6949bf3bba51505d06c9d4f2377a5d894b21d4d31cc9833e356406a32c27e0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/result.json",
+      "size": 13833,
+      "sha256": "0ac3751de340fcd438943ba311ee39788a9141f8a12fdff75b522dc2768eea62"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/train_predictions.npz",
+      "size": 409286,
+      "sha256": "5d185a002eb75ba18eb041abc6204a4b3277a36e89643cede4a999ea1fa7b16e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/history.json",
+      "size": 91590,
+      "sha256": "84795a7f422df82aac442bb5709590c5034adce7fc5d3102158e689a6717528e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101/student/best_checkpoint.pt",
+      "size": 1958416,
+      "sha256": "8cb37ed1ff5ed1378d947dfa8923de783193bc3232ddd34db1437002095397cc"
+    }
+  ]
+}

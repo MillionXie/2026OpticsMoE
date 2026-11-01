@@ -1,0 +1,57 @@
+{
+  "source_commit": "32fe5c1f3ad7a9bcfecf8cdf3676345810086e64",
+  "parent_checkpoint_sha256": "99c532078b7c3d0c38e038dfb60fd9287dd7d43581a2d57396d1d6c7f0a1c4d3",
+  "parent_full_TEST_predictions_exact": true,
+  "parent_full_TEST_probability_max_difference": 1.4185905456542969e-05,
+  "forward_hardTop2_bitwise": true,
+  "all_parameter_updates": {
+    "teacher_TEST_hard": {
+      "first_phase": 0.06562965363264084,
+      "global_phase": 0.09113675355911255,
+      "router_phase": 0.03801308572292328,
+      "shared_head.weight": 0.004422709345817566
+    },
+    "student_TEST_soft": {
+      "first_phase": 0.04141088202595711,
+      "global_phase": 0.05613769590854645,
+      "router_phase": 0.023955104872584343,
+      "shared_head.weight": 0.0025793281383812428
+    }
+  },
+  "balance_router_gradient_nonzero": true,
+  "head_block_phase_frozen": true,
+  "head_block": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 20,
+    "numerical_ridge": 0.002995079171374545,
+    "uncentred_Gram_eigen_min": -4.590897640804867e-13,
+    "uncentred_Gram_eigen_max": 2149.992505713943,
+    "Gram_regularized_condition": 717842.627223761,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 0.8827706337521201,
+    "objective_after": 0.19753253510777283,
+    "internal_steps": 3,
+    "closure_calls": 7,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": true,
+    "hard_label_samples": 20
+  },
+  "teacher_student_same_487204_parameter_architecture": true,
+  "inference_Linear": 1,
+  "Conv": 0,
+  "state_tensors": 4,
+  "TEST_GT_rejected_in_student": true,
+  "teacher_targets_detached": true,
+  "pid": 3169957,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_f_matched_optical_teacher",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_matched_canonical_phase_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_canonical_phase_s17_20261101"
+  ],
+  "time": 1793503835.2832656
+}

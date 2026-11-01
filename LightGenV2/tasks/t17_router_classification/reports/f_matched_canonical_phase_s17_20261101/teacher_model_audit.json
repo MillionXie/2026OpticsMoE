@@ -1,0 +1,41 @@
+{
+  "stage": "teacher",
+  "strict_4_model_tensors": true,
+  "inference_parameters": 487204,
+  "inference_Linear": 1,
+  "CNN": 0,
+  "actual_main_layers": 2,
+  "actual_top_k": 2,
+  "full2000canonical_TEST_predictions_exact": true,
+  "max_probability_difference": 0.0,
+  "teacher8_view_cache_replay": {
+    "train": {
+      "full_ID_label_domain_and_SHA": true,
+      "shape": [
+        6000,
+        8,
+        10
+      ],
+      "all8_codes_20_balanced_samples_replayed": true,
+      "max_logit_difference": 7.82012939453125e-05
+    },
+    "test": {
+      "full_ID_label_domain_and_SHA": true,
+      "shape": [
+        2000,
+        8,
+        10
+      ],
+      "all8_codes_20_balanced_samples_replayed": true,
+      "max_logit_difference": 5.340576171875e-05
+    }
+  },
+  "best_last_update_L2": {
+    "first_phase": 0.10170400887727737,
+    "global_phase": 0.17167112231254578,
+    "router_phase": 0.5133122801780701,
+    "shared_head.weight": 0.6611034274101257
+  },
+  "teacher_architecture_equals_student": true,
+  "metadata_source_commit": "32fe5c1f3ad7a9bcfecf8cdf3676345810086e64"
+}

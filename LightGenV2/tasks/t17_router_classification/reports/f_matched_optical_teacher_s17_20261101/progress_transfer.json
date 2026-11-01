@@ -9,13 +9,43 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/status.json",
-      "sha256": "e309029b4a30e699555468370657a34bee6c03866a310ca0f448326a9027b70f",
-      "size": 81
+      "sha256": "1475d4c05aa41a89e777a9595d82751a6bb631d4d56d9c849b04a5b932bfb897",
+      "size": 13653
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/history.json",
-      "sha256": "5ceb6608eaaa594d792562cbe70e71b9568aab2814ce91b7df32f576fffe3878",
-      "size": 81946
+      "sha256": "e65996f87403e0734a92c82b02ef6e6a9ee7109521139e9f378af0e9435c3022",
+      "size": 219529
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/result.json",
+      "sha256": "e1ddef01194a1fa0262aa56affcbc70379b235838766c3f46d66042f7203f84f",
+      "size": 13612
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/teacher_cache_manifest.json",
+      "sha256": "c82da1eb2dc811697e1ad0e015cf3db4226935b73f50458e0c2f9ecaf87764d0",
+      "size": 835
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/metadata.json",
+      "sha256": "e2fd97359dba71e6595031907527342706369066dab96963d621c3ccaf8d1335",
+      "size": 6593
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/status.json",
+      "sha256": "59f8ce87f75fbd061582f4298ba860aa220e22591a63a8f6125d18e02b0ac96a",
+      "size": 13653
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/history.json",
+      "sha256": "ed6b247c1927ebe1268a41322d72ca6be162ef18868dcfef016ba83c77406dd3",
+      "size": 91706
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/student/result.json",
+      "sha256": "f291342d2ce91c5cc660d2c188d1f48d51cf0bc7a33f220d4862421c6b92f91a",
+      "size": 13612
     }
   ]
 }

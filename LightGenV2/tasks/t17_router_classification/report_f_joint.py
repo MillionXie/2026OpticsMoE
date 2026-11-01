@@ -49,6 +49,18 @@ def main():
     hidden_run=task/'runs/simulation/f_joint_hidden_s17_20261101/joint';hidden_result=read(hidden_run/'result.json');hidden_status=read(hidden_run/'status.json');hidden_report=task/'reports/f_joint_hidden_s17_20261101'
     hidden_verified=bool(hidden_result and (hidden_report/'model_audit.json').exists() and (hidden_report/'completed_transfer.json').exists() and hashlib.sha256((hidden_run/'best_checkpoint.pt').read_bytes()).hexdigest()==hidden_result['checkpoint_sha256'])
     if hidden_verified:choices.append(('Shared hidden semantic auxiliary',hidden_result,hidden_run))
+    matched_root=task/'runs/simulation/f_matched_optical_teacher_s17_20261101'
+    matched_student=read(matched_root/'student/result.json');matched_report=task/'reports/f_matched_optical_teacher_s17_20261101'
+    matched_verified=bool(matched_student and (matched_report/'completed_transfer.json').exists() and (matched_report/'student_model_audit.json').exists() and (matched_root/'student/best_checkpoint.pt').exists() and hashlib.sha256((matched_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==matched_student['checkpoint_sha256'])
+    if matched_verified:choices.append(('Same-architecture optical teacher self-distillation',matched_student,matched_root/'student'))
+    matched_head_root=task/'runs/simulation/f_matched_teacher_canonical_attempt2_s17_20261101'
+    matched_head=read(matched_head_root/'student/result.json');matched_head_report=task/'reports/f_matched_teacher_canonical_s17_20261101'
+    matched_head_verified=bool(matched_head and (matched_head_report/'completed_transfer.json').exists() and (matched_head_report/'student_model_audit.json').exists() and (matched_head_root/'student/best_checkpoint.pt').exists() and hashlib.sha256((matched_head_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==matched_head['checkpoint_sha256'])
+    if matched_head_verified:choices.append(('Same optical teacher canonical-head recalibration and student KD',matched_head,matched_head_root/'student'))
+    canonical_phase_root=task/'runs/simulation/f_matched_canonical_phase_s17_20261101'
+    canonical_phase_student=read(canonical_phase_root/'student/result.json');canonical_phase_report=task/'reports/f_matched_canonical_phase_s17_20261101'
+    canonical_phase_verified=bool(canonical_phase_student and (canonical_phase_report/'completed_transfer.json').exists() and (canonical_phase_report/'student_model_audit.json').exists() and (canonical_phase_root/'student/best_checkpoint.pt').exists() and hashlib.sha256((canonical_phase_root/'student/best_checkpoint.pt').read_bytes()).hexdigest()==canonical_phase_student['checkpoint_sha256'])
+    if canonical_phase_verified:choices.append(('Canonical phase/head optical teacher continuation and student KD',canonical_phase_student,canonical_phase_root/'student'))
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
     eligible=choices # Latest human rule: original TEST only; no validation floor.
     def development_key(item):
@@ -59,7 +71,7 @@ def main():
     for architecture,source,r in [('LG','RGB+SAR联合',selected)]+[('D2NN',d,read(task/f'runs/simulation/f_cross_domain_s17_20261031/D2NN_{d}/result.json')) for d in ('RGB','SAR')]:
         records[architecture+'_'+source]=r
         rows.append('<tr>'+''.join(f'<td>{html.escape(str(v))}</td>' for v in [architecture,source,pct(r['train']['accuracy']),pct(r['val']['accuracy']),pct(r['original_test_dev']['domains']['RGB']['accuracy']),pct(r['original_test_dev']['domains']['SAR']['accuracy'])])+'</tr>')
-    target=all(selected['original_test_dev']['domains'][d]['accuracy']>=.70 for d in ('RGB','SAR'))
+    target=all(selected['original_test_dev']['domains'][d]['accuracy']>=.65 for d in ('RGB','SAR'))
     note='联合双教师候选尚未完成：主表显示保留的联合父，不能把中途VAL当TEST。' if not verified else '联合双教师候选已完成并核验；较新的训练梯度候选须完整归档核验后才替换。整行来自同一联合PT。'
     display_status=shared_status or sgd_status or projection_status or ste_status or status
     progress=' / '.join([display_status.get('state','尚未启动'),str(display_status.get('epoch',display_status.get('completed_epochs',0)))+'轮']) if display_status else '尚未抓取运行状态'
@@ -71,7 +83,7 @@ def main():
         scores=[' / '.join(pct(value[s]['domains'][d]['accuracy']) for d in ('RGB','SAR')) for s in ('train','val','original_test_dev')]
         stage_rows.append('<tr><td>'+name+'</td>'+''.join('<td>'+v+'</td>' for v in scores)+'</tr>')
     page+='<h2>全部已核验联合候选（RGB / SAR）</h2><table><tr><th>分支</th><th>TRAIN</th><th>VAL</th><th>开发</th></tr>'+''.join(stage_rows)+'</table>'
-    page+=f'<p>新候选状态：{html.escape(progress)}；RGB/SAR两域均≥70%目标：{"已达" if target else "未达"}。联合模型路径：{html.escape(str(path.relative_to(task)))}。</p>'
+    page+=f'<p>新候选状态：{html.escape(progress)}；最新RGB/SAR两域均≥65%目标：{"已达" if target else "未达"}。联合模型路径：{html.escape(str(path.relative_to(task)))}。</p>'
     page+='<p>原RGB/SAR混合6000 TRAIN，2000 VAL；同一学生保留四专家/Top2/两层E-G/相同OEO/单Linear784→10，无CNN前端。两个已冻结教师仅提供训练目标，不作为学生推理模块，也不将域标签交给学生或固定分配专家。</p><p>原TRAIN用真实类别CE和教师KD；两域原TEST2000仅用匹配D4软目标，不进入硬标签CE。每轮6000硬TRAIN图与2000软TEST图；每5轮原单头64000视图（48000硬TRAIN增强＋16000软TEST增强）最多40内步，所有预算与历史父均保留。</p><p>选模优先RGB/SAR中较低的VAL准确率，再联合宏召回、再CE；原父E0参与。最多60/min25/pat15轮，不保证达到目标。跨域单域LG的八格实验另存，不能充当联合LG主图结果。</p></html>'
     if (out/'convergence.svg').exists():page=page.replace('</html>','<h2>联合训练实际曲线</h2><p>两域分别显示同一学生的TRAIN/VAL；仅完整锁权重后才画本run开发TEST星号。每个头block的目标前后使用相同特征/软目标，跨轮目标不能当严格配对。</p><img src="convergence.svg" style="width:100%"></html>')
     if ste_status:
@@ -110,7 +122,7 @@ def main():
         page=page.replace('</html>','<h2>联合教师学生：按TEST开发选PT</h2><p>'+html.escape(str({k:v for k,v in shared_status.items() if k in ('state','epoch','completed_epochs','selected_epoch')}))+'。从124联合父继承、40/min20/pat15，原光路/OEO/唯一Linear不变。只按两域原TEST开发表现选同一PT，VAL仅记录。未完成并全量SHA/strict核验前，不替换上面的主结果。</p></html>')
         page=page.replace('选模优先RGB/SAR中较低的VAL准确率，再联合宏召回、再CE；原父E0参与。最多60/min25/pat15轮，不保证达到目标。','最新共享教师分支按较低域原TEST开发准确率，再宏召回/CE选PT；VAL无门槛，原父E0参与。最多40/min20/pat15轮，不保证目标；旧双教师分支60轮按其原协议单列。')
         if shared_verified:page=page.replace('未完成并全量SHA/strict核验前，不替换上面的主结果。','现已40轮完整结束选E37，15文件全SHA/strict/原ID标签与全2000canonical TEST概率bitwise重放通过；自身2316893已退出无GPU。该光学训练分支同一PT开发RGB64.50/SAR49.30；主表还会比较后续已完整核验的同头微调，仍未70%。')
-    data=dict(generated_UTC=datetime.now(timezone.utc).isoformat(),role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',protocol='one joint LG two outputs plus two finalized source-only D2NN four outputs',records=records,selected_joint_run=str(path.relative_to(task)),candidate_status=status,candidate_result=result,candidate_local_SHA_verified=verified,parent_result=reference,target_both_domains_at_least_70_percent=target,latest_history=history[-1] if history else None,route_STE_candidate=dict(status=ste_status,result=ste_result,fully_collected_local_SHA_verified=ste_verified),router_projection_candidate=dict(status=projection_status,result=projection_result,fully_collected_local_SHA_verified=projection_verified))
+    data=dict(generated_UTC=datetime.now(timezone.utc).isoformat(),role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',protocol='one joint LG two outputs plus two finalized source-only D2NN four outputs',records=records,selected_joint_run=str(path.relative_to(task)),candidate_status=status,candidate_result=result,candidate_local_SHA_verified=verified,parent_result=reference,target_both_domains_at_least_70_percent=all(selected['original_test_dev']['domains'][d]['accuracy']>=.70 for d in ('RGB','SAR')),latest_history=history[-1] if history else None,route_STE_candidate=dict(status=ste_status,result=ste_result,fully_collected_local_SHA_verified=ste_verified),router_projection_candidate=dict(status=projection_status,result=projection_result,fully_collected_local_SHA_verified=projection_verified))
     if paired_probe:data['TRAIN_only_nonpersistent_router_step_probe']=paired_probe
     data['development_selection_policy']='Latest runs: original-TEST development only, worst domain then macro recall/CE; VAL is recorded without a gate. Historical run-internal selection is retained as recorded. Across audited PTs: worst-domain original-TEST accuracy then mean, whole PT row; no VAL floor. Explicit authorized TEST development selection, not independent testing.'
     data['shared_joint_teacher']=joint_teacher;data['shared_joint_teacher_student']=dict(status=shared_status,result=shared_result,fully_verified=shared_verified)
@@ -133,12 +145,33 @@ def main():
     matched=task/'runs/simulation/f_matched_optical_teacher_s17_20261101'
     matched_records={stage:dict(status=read(matched/stage/'status.json'),result=read(matched/stage/'result.json'),metadata=read(matched/stage/'metadata.json')) for stage in ('teacher','student')}
     data['same_architecture_optical_teacher_and_student']=matched_records
+    data['matched_optical_teacher_canonical_head']=dict(result=matched_head,fully_verified=matched_head_verified)
+    canonical_phase_records={stage:dict(status=read(canonical_phase_root/stage/'status.json'),result=read(canonical_phase_root/stage/'result.json')) for stage in ('teacher','student')}
+    data['matched_optical_canonical_phase_candidate']=dict(stages=canonical_phase_records,fully_verified=canonical_phase_verified)
     data['latest_target_both_domains_at_least_65_percent']=all(selected['original_test_dev']['domains'][d]['accuracy']>=.65 for d in ('RGB','SAR'))
     if matched_records['teacher']['status']:
         announcement='<h2>最新人工协议：同结构联合LG教师→联合LG学生，两域至少65%</h2><p>教师和学生都为同一四专家、Top2、两主层E→OEO→G→OEO、唯一Linear784→10、487204参数，无ResNet/CNN前端。教师在原TRAIN与原TEST真标签及增强上学习；学生继承该教师权重（因此继承TEST标签信息），再用TRAIN真标签＋软目标和原TEST仅软目标蒸馏。不得称独立测试。此前ResNet增强教师仅是历史方案，不能当作本轮同结构教师。</p><p>真实hard Top2频次结合dense均值的辅助与每模态边际KL同时训练，按实际选择份额验收；不以dense改善替代硬负载，不保证达标。</p>'
-        for stage,v in matched_records.items():announcement+='<p>'+stage+'真实状态：'+html.escape(str(v['status']))+'</p>'
-        announcement+='<p>新候选完整权重/逐样本/SHA审计前，主表仍保留已核验64.6%/49.6%；距65%分别差4/154正确，各域1000。VAL仅记录，不选模。新教师最多40轮、学生最多20轮，父E0参选。</p>'
+        for stage,v in matched_records.items():announcement+='<p>增强阶段 '+stage+'：'+html.escape(str({k:x for k,x in (v['status'] or {}).items() if k in ('state','epoch','completed_epochs','selected_epoch')}))+'</p>'
+        if matched_verified:
+            values=matched_student['original_test_dev']['domains'];announcement+='<p>增强阶段同结构学生已完整备份/strict/原ID标签/实际Top2和canonical重放核验：RGB '+pct(values['RGB']['accuracy'])+' / SAR '+pct(values['SAR']['accuracy'])+'；后续原图头拟合与相位继续的最新结果见上方主表。原64.6/49.6父与所有失败保留，主表按原TEST开发较低域再均值选择同一PT。未达项目如实保留。</p>'
+        else:announcement+='<p>新候选完整权重/逐样本/SHA审计前，主表仍保留已核验64.6%/49.6%；距65%分别差4/154正确，各域1000。VAL仅记录，不选模。新教师最多40轮、学生最多20轮，父E0参选。</p>'
         page=page.replace('</h1>','</h1>'+announcement,1)
+    latest='<h2>当前已完整核验的同一联合LG</h2><table><tr><th>模态</th><th>TRAIN</th><th>VAL（仅记录）</th><th>原TEST开发</th><th>距65%尚差正确数/1000</th></tr>'
+    for d in ('RGB','SAR'):
+        metric=selected['original_test_dev']['domains'][d]
+        latest+='<tr><td>'+d+'</td>'+''.join('<td>'+pct(selected[s]['domains'][d]['accuracy'])+'</td>' for s in ('train','val','original_test_dev'))+'<td>'+str(max(0,650-metric['correct']))+'</td></tr>'
+    latest+='</table><p>PT SHA '+html.escape(selected['checkpoint_sha256'])+'。'+html.escape(str(path.relative_to(task)))+'。采用同一PT，不逐域拼接。</p>'
+    if (task/'reports/f_matched_optical_teacher_s17_20261101/convergence.svg').exists():latest+='<p>各训练分支与冻结光学的头拟合分别画轴，不拼成连续epoch；星号为完成分支选中的PT。</p><img src="../f_matched_optical_teacher_s17_20261101/convergence.svg" style="width:100%">'
+    if matched_head_verified:latest+='<p>新增同结构教师原图读出校准与学生软蒸馏已经完整SHA/strict/固定原ID标签及全2000 canonical推理核验；教师可用原TEST真标签，学生继承教师权重并只用原TEST软目标，开发暴露完整披露。增强光学教师阶段先于原图读出校准，不把纯原图校准称为新增增强训练。</p>'
+    if any(v['status'] for v in canonical_phase_records.values()):
+        compact={stage:{k:v for k,v in (entry['status'] or {}).items()if k in ('state','epoch','completed_epochs','selected_epoch')}for stage,entry in canonical_phase_records.items()}
+        latest+='<p>有限原图相位/头联合继续：'+html.escape(str(compact))+'。最多教师20轮＋学生10轮，保持原光路和负载目标；'+('已完整核验并纳入主表选择，自己的训练PID已退出。'if canonical_phase_verified else'完整核验前不替换上表。')+'</p>'
+    # Keep old run narration accessible without presenting historical "current"
+    # statements as the latest live state.
+    marker='<h2>全部已核验联合候选'
+    if marker in page:
+        before,after=page.split(marker,1);page=before+'<details><summary>历史阶段、所有候选与原有训练预算</summary>'+marker+after.replace('</html>','')+'</details></html>'
+    page=page.replace('</h1>','</h1>'+latest,1)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 
