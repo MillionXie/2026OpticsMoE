@@ -175,3 +175,4 @@
 !test_lgvq_mean_pipeline_20261101.py
 !audit_lgvq_front_scopes_20261101.py
 !build_lgvq_front_scopes_20261101.mjs
+!derive_lgvq_late_telemetry_20261101.py

@@ -120,6 +120,7 @@ for(let r=6;r<=21;r++){
 }
 put(main,23,[['LG使用Qwen参考token分子；大模型各用自身实际token分子。CLIP/YOLO无适用语言分子，不编造tokens/s。']]);
 put(main,24,[['LG能耗为既有固定组件分时估算；baseline总J为GPU实测积分＋338.2W固定主机，不是整机实测。']]);
+put(main,25,[['四配置各自独立三轮，版本间差额也包含运行波动，不强制结果单调；单项开销见阶段均值与等待记录。']]);
 title(main,'A27','四版本计算拆分');
 put(main,29,[['版本','CPU均值P/ms','平均收尾Q/ms','Q÷32/ms','P＋Q÷32/ms','三轮样本SD/ms']]);header(main,29,6);
 for(let v=0;v<4;v++){
@@ -141,7 +142,7 @@ cell.values=[[saved+1]];wb.recalculate();close(main.getRange('E6').values[0][0],
 const oldPower=raw.getRange('B21').values[0][0],oldJ=main.getRange('G6').values[0][0],counted=Array.from({length:3},(_,i)=>raw.getRange('G'+(6+i)).values[0][0]).reduce((a,b)=>a+b,0)/3;
 raw.getRange('B21').values=[[oldPower+1]];wb.recalculate();close(main.getRange('G6').values[0][0],oldJ+counted);raw.getRange('B21').values=[[oldPower]];wb.recalculate();close(main.getRange('G6').values[0][0],oldJ);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:2000});ok(!errors.ndjson.includes('"kind":"match"'),'Formula errors');
-const views=[['主表','A1:K24','main.png'],['主表','A27:H40','formula.png'],['阶段均值','A1:J43','stages_v01.png'],['阶段均值','K5:R38','stages_v23.png'],['实测与等待','A1:K25','measured.png'],['实测与等待','A27:H54','waiting.png'],['Baseline原值','A1:K13','baselines.png'],['384场估算时间轴','A1:F13','timeline.png']];
+const views=[['主表','A1:K25','main.png'],['主表','A27:H40','formula.png'],['阶段均值','A1:J43','stages_v01.png'],['阶段均值','K5:R38','stages_v23.png'],['实测与等待','A1:K25','measured.png'],['实测与等待','A27:H54','waiting.png'],['Baseline原值','A1:K13','baselines.png'],['384场估算时间轴','A1:F13','timeline.png']];
 for(const [sheetName,range,name] of views){const png=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(OUT,name),new Uint8Array(await png.arrayBuffer()));}
 await(await SpreadsheetFile.exportXlsx(wb)).save(BOOK);
 await fs.writeFile(path.join(OUT,'builder_checks01.json'),JSON.stringify({status:'exported_pending_visual_and_saved_XML_QA',sha256:sha(BOOK),audit_sha256:sha(input),baseline_source_sha256:sha(baseline),formula_perturbations_restored:true,baseline_trials_unchanged:36,LG_scopes:4,rounds:12,extra_warm_fields_each:3,mean_stage_estimate_not_measured_E2E:true},null,2),{flag:'wx'});

@@ -63,16 +63,26 @@ def main():
     for v in range(4):
         for repeat in (1,2,3):
             name=f'v{v}_repeat{repeat:02d}';leaf=OUT/'raw'/name
-            report=read(leaf/'compute_report.json');raw=read(leaf/'raw_operator_records.json')
-            kernels=read(leaf/'kernel_phase_records.json');numeric=read(leaf/'numeric_audit.json')
+            derived=name=='v1_repeat01' and (leaf/'CPU_derivation_receipt01.json').exists()
+            report_file='derived_compute_report01.json' if derived else 'compute_report.json'
+            report=read(leaf/report_file);raw=read(leaf/'raw_operator_records.json')
+            kernels=read(leaf/('derived_kernel_phase_records01.json' if derived else 'kernel_phase_records.json'))
+            numeric=read(leaf/('derived_numeric_audit01.json' if derived else 'numeric_audit.json'))
             identity=read(leaf/'compute_identity.json');status=read(leaf/'status.json')
             parent=read(leaf/'parent_CPU_admission.json')
             assert identity['explicit_extra_warm_fields']==3 and identity['fields']==32
             assert identity['variant']==v and identity['SLM_hz']==1886
             assert numeric['all_formal_scores_bitwise_equal'] and numeric['warm_scores_bitwise_equal']
             assert numeric['equal_scores']==512 and numeric['maximum_absolute_difference']==0
-            assert status['status']=='complete' and parent['status']=='passed'
-            assert parent['report_sha256']==sha(leaf/'compute_report.json')
+            if derived:
+                derived_receipt=read(leaf/'CPU_derivation_receipt01.json')
+                assert status['status']=='failed' and derived_receipt['status']=='complete_separate_CPU_derivation'
+                assert derived_receipt['no_invalid_power_inside_formal_window'] and derived_receipt['no_Torch_or_GPU']
+                assert derived_receipt['report_sha256']==sha(leaf/report_file)
+                assert all(sha(leaf/name)==digest for name,digest in derived_receipt['original_files_before_SHA256'].items())
+            else:
+                assert status['status']=='complete' and parent['status']=='passed'
+            assert parent['report_sha256']==sha(leaf/report_file)
             with np.load(leaf/'outputs.npz',allow_pickle=False) as f:
                 for key,expected_array in [('prediction',expected_prediction),('warm_prediction',expected_warm)]:
                     actual=f[key];assert actual.shape==expected_array.shape and actual.dtype==expected_array.dtype and actual.tobytes()==expected_array.tobytes()
@@ -153,7 +163,7 @@ def main():
                                actual_FFT_board_J16=real_joules/32,
                                actual_FFT_board_mean_W=real_joules/real_seconds,
                                component_energy_estimate=energy,
-                               frontend_measurements=front,report_sha256=sha(leaf/'compute_report.json'),
+                               frontend_measurements=front,report_sha256=sha(leaf/report_file),separate_CPU_derivation=derived,
                                raw_sha256=sha(leaf/'raw_operator_records.json')))
     variants=[]
     for v in range(4):
