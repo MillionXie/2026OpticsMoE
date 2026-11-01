@@ -57,6 +57,14 @@ def validate_session(ledger,config,calibration,dark,gain):
     if s['amplitude_native_shape']!=[1080,1920]or s['phase_native_shape']!=[1200,1920]:raise ValueError('Panel identity mismatch')
 
 
+def cohort_summary(role,count):
+    if role not in ('train','dev','test','calibration')or type(count)is not int or count<0:
+        raise ValueError('Explicit role and actual model-frame count required')
+    return dict(cohort_role=role,model_CCD=count,model_TRAIN_CCD=count if role=='train'else 0,
+                model_DEV_CCD=count if role=='dev'else 0,model_TEST_CCD=count if role=='test'else 0,
+                TEST_used=role=='test',TEST_selection_evaluation_only=role=='test',TEST_gradients=False)
+
+
 def await_payload(folder,run,seconds,pump):
     deadline=time.monotonic()+seconds
     while not(folder/'input.ready').exists():
@@ -75,7 +83,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
     other=[root/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/.t18_sdk_owner.lock',root/'LightGenV2/hardware_common/shs/results/phase_sdk_owner.lock']
     if any(p.exists()for p in other):raise RuntimeError('Another device owner exists')
     fd=os.open(own,os.O_WRONLY|os.O_CREAT|os.O_EXCL);os.write(fd,json.dumps(dict(pid=os.getpid(),out=str(out))).encode());os.close(fd)
-    rows=[];accepted=[]
+    rows=[];accepted=[];role='calibration'
     try:
         warp=mapping(config);inverse=json.loads((calibration/'amplitude_inverse.json').read_text())['drive']
         admission=json.loads((calibration/'report.json').read_text())
@@ -131,9 +139,9 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
                         frame_provenance='physical_linear_camera',native_frame_sha256=row['native_SHA256'],canonical_raw_sha256=array_sha(canonical),capture_UTC=row['capture_UTC'])
                     receipt=ledger.accept(stage,request,canonical,metadata,dark,gain,admission=admission);accepted.append(dict(sample_id=request['sample_id'],receipt_sha256=identity(receipt)))
                     (folder/'capture.ready').touch(exist_ok=False)
-        put(out/'report.json',dict(complete=True,accepted=accepted,model_CCD=len(accepted),cohort_role=role,model_TRAIN_CCD=len(accepted)if role=='train'else 0,model_DEV_CCD=len(accepted)if role=='dev'else 0,canary_frames=2,raw_frames=len(rows),SDK_released=True,TEST_used=False,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
+        put(out/'report.json',dict(complete=True,accepted=accepted,**cohort_summary(role,len(accepted)),canary_frames=2,raw_frames=len(rows),SDK_released=True,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
     except BaseException as error:
-        put(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),frames_saved=len(rows),model_TRAIN_CCD=len(accepted),automatic_retry=False));raise
+        put(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),frames_saved=len(rows),**cohort_summary(role,len(accepted)),automatic_retry=False));raise
     finally:
         assert json.loads(own.read_text())['pid']==os.getpid();own.unlink();put(out/'release.json',dict(pid=os.getpid(),own_lock_released=True,closed_context=True))
 

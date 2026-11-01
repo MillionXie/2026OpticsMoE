@@ -29,3 +29,15 @@ def test_streaming_capture_wait_is_bounded_and_aborts(tmp_path):
     (tmp_path/'input_abort.json').write_text(json.dumps(dict(reason='fixture_failure')))
     with pytest.raises(RuntimeError):await_payload(folder,tmp_path,1,lambda:None)
     (folder/'input.ready').touch();await_payload(folder,tmp_path,0,lambda:None)
+
+
+def test_explicit_TEST_frame_counts_never_become_TRAIN_or_DEV():
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_capture import cohort_summary
+    import pytest
+    for role in ('train','dev','test','calibration'):
+        out=cohort_summary(role,7)
+        assert out['model_CCD']==7 and out['TEST_gradients']is False
+        assert out['model_TRAIN_CCD']==(7 if role=='train'else 0)
+        assert out['model_TEST_CCD']==(7 if role=='test'else 0)
+        assert out['TEST_used']==(role=='test')
+    with pytest.raises(ValueError):cohort_summary('unknown',7)
