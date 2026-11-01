@@ -27,9 +27,15 @@ class NativeRunner:
     Caller retains the original frontend loader, LoRA/sampler/generator contract.
     This returns conditions only, not a replacement SDXL renderer or device driver.
     """
-    def __init__(self,qwen,processor,head,reference_root,*,frontend_sha256,head_sha256,export_features=False):
-        if frontend_sha256!=F6 or head_sha256!=F9 or not head.joint_image_context:
-            raise ValueError('Require F6 and the F9 joint-image head')
+    def __init__(self,qwen,processor,head,reference_root,*,frontend_sha256,head_sha256,export_features=False,middle8_binding=None):
+        if middle8_binding is None:
+            if frontend_sha256!=F6 or head_sha256!=F9 or not head.joint_image_context:
+                raise ValueError('Require F6 and the F9 joint-image head')
+        else:
+            from .scene_lab_middle8 import checked_binding
+            checked_binding(middle8_binding)
+            if frontend_sha256!=F6 or head_sha256!=middle8_binding['generator_sha256']or head.joint_image_context:
+                raise ValueError('Exact admitted middle8 head required; never substitute old F9')
         if any(p.requires_grad for m in(qwen,head)for p in m.parameters()):raise ValueError('Frozen modules required')
         if any(m.pairs!=1 for m in qwen.model.hybrid.values()):raise ValueError('One E/G pair per modality')
         self.qwen,self.processor,self.head=qwen,processor,head

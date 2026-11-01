@@ -1,5 +1,58 @@
 # F9光路接口与现场校准（尚非完整实测放行包）
 
+## 2026-11-01：F6／64块8步新版本的预部署代码（未交接新PT、未采集）
+
+旧F9十二步入口及全部历史CCD、权重和图仍原样保留。新八步版使用
+`scene_lab_middle8_profile.json`、`scene_lab_middle8`与`scene_lab_middle8_runtime`，
+不是把旧F9入口的SHA守卫去掉后任意加载。静态合同为F6相位父、vision6/lang4、
+单E/G、原UNet经显式depth loader实际保留64块、8步
+`[958,859,727,595,463,364,232,100]`、CFG7.5/IP.25、输入256／conditioning1024／输出512，
+`joint_image_context=false`。现有完整渲染函数、原VAE、LoRA合并及量化合同不变。
+
+当前数据目录为服务器任务`runs/simulation/scene_expanded_reviewed_TRAIN_TEST500_20261101`。
+`pairs.json` SHA为`c2e30cbdbd871094df8827c78f4a02bc23305a0e39898ab53c6acf4178835fd0`，
+`inference_inputs.json` SHA为`f132238c3a59efb1308649909c96ce3669e02c7420d598bb29183536720f9f47`。
+完整624 TRAIN／76视图／44款、500 TEST／26视图／18款，产品与像素角色分离，无validation。
+TRAIN目标仅作原数据身份核查，采集请求过滤为公共输入；TEST只允许公共输入、评估与选PT，
+不进入本线程梯度。新账本`scene_lab_middle8_ledger_v1`明确保存test角色，不伪装为旧DEV128；
+旧F9账本仍拒绝TEST。DATA流与采集入口仅增加按schema分派，原收据、逐样本相位／输入SHA、
+完整前缀放行、单SDK及禁止理想CCD回退均保留。
+
+不需要PT的准入检查：
+
+```text
+python -m LightGenV2.tasks.t12_text_to_image.scene_lab_middle8 --mode check-data --data <上方数据目录>
+python -m pytest LightGenV2/tasks/t12_text_to_image/tests/test_scene_lab_middle8.py -q
+```
+
+实际模型入口必须另收`scene_lab_middle8_binding_v1` JSON：静态profile、正式选中
+`generator_sha256`、生成器训练源码`source_commit`、原`compression_profile`、匹配
+`SIM_manifest_sha256`及显式`approved_for_physical_deployment=true`。缺项／空SHA／未批准均拒绝。
+运行适配器的发布源码另由环境变量`T12_SOURCE_COMMIT`记录，不能将其与训练源码混为一谈。
+`check-binding`只验证JSON合同，不表示已加载实际PT。实际加载再逐文件SHA、严格head state、
+采样／microconditioning／depth descriptor与原report核对；尚未收到本轮正式PT或SIM验收文件。
+
+准备好的运行模式（均需上述已批准binding；本轮没有启动）：
+
+- `scene_lab_middle8_runtime --mode init --binding <binding.json> --ledger <全新账本> --session <已准入现场session.json> --data <当前数据> --role train|test`
+- `--mode prepare`按单层完整cohort生成六阶段原生输入；`--mode features`在全部实测后导出对应角色特征。
+  两者显式传入`--checkpoint --qwen --frontend --frontend-features --cache --references --out`。
+- `--mode render-sim|render-exp`传入原渲染资产路径、当前`--data/--prompt-revision`、
+  `--lg-frontend/--lg-features --fuse-task-lora`；仅render-exp另需`--ledger`。
+  内部将depth GraphObserver与实测CCD observer显式顺序组合，不让任一覆盖另一；
+  必须实际64块及全500输出。外部报告明确为TEST选模开发指标。
+
+新入口保留已授权部署GPU1 UUID`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`；
+前缀／特征采用.25显存上限，完整渲染沿用旧现场入口.5。运行前仍须核查资源，不是预留或隔离。
+不调用仿真`renderer.main()`的A100固定GPU6准入，不争其他窗口GPU。
+新TRAIN条件拟合已有显式角色及同PT/F6目标缓存守卫，但实际拟合预算、可训练张量和
+适配子权重的完整重载／配对SIM验收仍须随正式新PT确认，不得运行旧F9固定7791616参数的fit入口。
+
+本轮现场仅查询设备枚举、进程和持久文件：Dhyana400BSI V3枚举OK，未开启SDK取流，
+未当作当天光场信号通过；旧几何／曝光／LUT均未修改。详情在本任务
+`runs/hardware/scene_middle8_preparation_20261101`。CPU合同自检与旧入口回归不代表实际新PT
+严格加载、GPU前向、质量达标或新采集已开始。旧R2的132TRAIN／48DEV资产清单不用于此新版本。
+
 ## 2026-10-31 本轮完整收尾：数值可进5%，最终图像质量未全放行
 
 本轮不再追加训练。完整结果见原run

@@ -6,7 +6,7 @@ files or the two prepared-input files belonging to the fixed ledger may move.
 import argparse,hashlib,io,json,struct,sys,time,zlib
 from pathlib import Path
 import numpy as np
-from .scene_lab_protocol import Ledger,STAGES,identity,array_sha,encode,put
+from .scene_lab_protocol import Ledger,STAGES,identity,array_sha,encode,put,open_ledger
 
 MAGIC=b'T12DATA1\n';LIMIT=8<<20
 
@@ -133,7 +133,7 @@ def receive(ledger,stage,direction,stream,start_index=0):
         if not ready.exists():ready.touch(exist_ok=False)
         count+=1
         if count==1 or count%32==0:print(json.dumps(dict(received=count,total=len(ledger.requests),stage=stage,direction=direction)),flush=True)
-    path=ledger.root.parent/(stage+'_'+direction+'_data_stream_complete.json');report=dict(complete=True,count=count,stage=stage,direction=direction,ledger_SHA256=ledger.key,SDK=False,GPU=False,TEST_used=False)
+    path=ledger.root.parent/(stage+'_'+direction+'_data_stream_complete.json');report=dict(complete=True,count=count,stage=stage,direction=direction,ledger_SHA256=ledger.key,SDK=False,GPU=False,TEST_used=ledger.session.get('cohort_role')=='test')
     if path.exists():
         if json.loads(path.read_text())!=report:raise ValueError('Changed completion report')
     else:put(path,report)
@@ -142,7 +142,7 @@ def receive(ledger,stage,direction,stream,start_index=0):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--mode',choices=('send','receive','prefix'),required=True);p.add_argument('--direction',choices=('inputs','outputs'),required=True);p.add_argument('--stage',choices=STAGES,required=True);p.add_argument('--ledger',type=Path,required=True);p.add_argument('--wait-seconds',type=float,default=240);p.add_argument('--start-index',type=int,default=0);a=p.parse_args()
     if not 0<a.wait_seconds<=600:raise ValueError('Bounded wait required')
-    c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests'])
+    ledger=open_ledger(a.ledger)
     # This is DATA transport, not permission to execute a model or open devices.
     # Current sample bytes/tickets/receipts are verified below. Rehashing every
     # earlier stage here made a prefix query exceed its SSH timeout on busy disks.

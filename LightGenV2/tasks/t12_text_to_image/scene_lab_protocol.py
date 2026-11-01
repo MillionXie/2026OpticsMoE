@@ -50,7 +50,7 @@ class _StageAdmission:
 
 
 class Ledger:
-    def __init__(self,root,session,models,requests,*,create=False):
+    def __init__(self,root,session,models,requests,*,create=False,middle8_binding=None):
         self.root=Path(root);self.session=session;self.models=models;self.requests=requests
         if session.get('schema')!='scene_lab_session_v1' or not session.get('calibration_approved'):
             raise ValueError('A reviewed, explicit session is required; no inherited defaults')
@@ -68,7 +68,8 @@ class Ledger:
         for k in required:
             if k.endswith('_sha256')and(len(session[k])!=64 or any(x not in '0123456789abcdef'for x in session[k])):raise ValueError(k)
         role=session.get('cohort_role','train')
-        if role not in ('train','dev'):raise ValueError('Only TRAIN or explicit evaluation-only DEV; never TEST')
+        allowed=('train','dev')if middle8_binding is None else('train','test')
+        if role not in allowed:raise ValueError('Only explicitly admitted cohort roles; old F9 never admits TEST')
         if role=='dev':
             manifest=session.get('evaluation_manifest_sha256','')
             if session.get('evaluation_only')is not True or len(manifest)!=64 or any(x not in '0123456789abcdef'for x in manifest):
@@ -77,10 +78,17 @@ class Ledger:
             raise ValueError('This ledger requires unique requests from its one explicit cohort role')
         if any(set(r)-{'sample_id','split','reference','reference_sha256','prompt','seed','category'}for r in requests):
             raise ValueError('No targets/masks/hidden/features/SKU captions in requests')
-        if set(models)!={'F9','F6','source_commit'}or any(len(models[k])!=64 for k in('F9','F6')):raise ValueError('Frozen model identities required')
+        if middle8_binding is None:
+            if set(models)!={'F9','F6','source_commit'}or any(len(models[k])!=64 for k in('F9','F6')):raise ValueError('Frozen model identities required')
+        else:
+            from .scene_lab_middle8 import checked_ledger
+            checked_ledger(session,models,requests,middle8_binding)
         self.contract=dict(schema='scene_lab_ledger_v1',session=session,models=models,requests=requests,
                            encoding='round255_amplitude_floor256_total_phase_v1',stages=STAGES,
                            acquisition_recomputes_prefix=True,inference_Qwen_calls_per_request=1)
+        self.middle8_binding=middle8_binding
+        if middle8_binding is not None:
+            self.contract.update(schema='scene_lab_middle8_ledger_v1',middle8_binding=middle8_binding)
         self.key=identity(self.contract)
         if create:
             self.root.mkdir(parents=True,exist_ok=False);put(self.root/'contract.json',self.contract)
@@ -212,3 +220,15 @@ class Ledger:
         if tuple(order)!=STAGES:raise ValueError('All six measured stages required')
         if receipt_chain is not None:receipt_chain.extend(verified[stage][0]for stage in STAGES)
         return result
+
+
+def open_ledger(root):
+    """Explicit new-schema dispatch; never reinterpret an old F9 ledger."""
+    root=Path(root);c=json.loads((root/'contract.json').read_text(encoding='utf-8'))
+    schema=c.get('schema')
+    if schema not in ('scene_lab_ledger_v1','scene_lab_middle8_ledger_v1'):
+        raise ValueError('Unknown acquisition ledger schema')
+    binding=c.get('middle8_binding')
+    if (schema=='scene_lab_middle8_ledger_v1')!=(binding is not None):
+        raise ValueError('New profile cannot be stripped or smuggled into old F9')
+    return Ledger(root,c['session'],c['models'],c['requests'],middle8_binding=binding)

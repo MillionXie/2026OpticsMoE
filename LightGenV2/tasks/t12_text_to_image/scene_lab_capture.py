@@ -13,7 +13,7 @@ import traceback
 import numpy as np
 from PIL import Image
 from .scene_lab_hardware import Bench, native, orientations
-from .scene_lab_protocol import Ledger, STAGES, array_sha, identity, put, sha
+from .scene_lab_protocol import Ledger, STAGES, array_sha, identity, put, sha, open_ledger
 from .scene_lab_sdk_canary import signal_pair
 
 
@@ -82,10 +82,9 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
         if not admission['passed']or admission['orientation']!='identity':raise ValueError('Spatial/radiometric calibration not admitted')
         ledger=None;dark=np.load(calibration/'dark.npy',allow_pickle=False);gain=np.load(calibration/'gain_map.npy',allow_pickle=False)
         if ledger_root is not None:
-            c=json.loads((Path(ledger_root)/'contract.json').read_text())
-            ledger=Ledger(ledger_root,c['session'],c['models'],c['requests']);validate_session(ledger,config,calibration,dark,gain);admission=ledger.admit_stage(stage)
+            ledger=open_ledger(ledger_root);validate_session(ledger,config,calibration,dark,gain);admission=ledger.admit_stage(stage)
         role=ledger.requests[0]['split'] if ledger is not None else'calibration'
-        put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,cohort_role=role,TRAIN_only=role=='train',DEV_evaluation_only=role=='dev',TEST_used=False,
+        put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,cohort_role=role,TRAIN_only=role=='train',DEV_evaluation_only=role=='dev',TEST_used=role=='test',TEST_gradients=False,TEST_selection_evaluation_only=role=='test',
             parameter_changes=False,camera_process_isolated=camera_process,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
         factory=None
         if camera_process:
