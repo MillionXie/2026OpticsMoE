@@ -1,0 +1,91 @@
+{
+  "source_commit": "ddf192128f8ca98d27ce0379cb70717a6652ad0e",
+  "parent_checkpoint_sha256": "24787a8c0bafc54a2f3750c20364a12268b93c889239cd5b3f030f5cbef5352c",
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "samples": {
+    "TRAIN_RGB": 10,
+    "TRAIN_SAR": 10,
+    "TEST_RGB": 10,
+    "TEST_SAR": 10
+  },
+  "initial_canonical_and_STE_hard_forward_bitwise": true,
+  "real_mixed_four_group_updates": {
+    "teacher": {
+      "objective_before": 1.1977782249450684,
+      "objective_after_one_step": 1.1183083057403564,
+      "all_four_expert_gradient_L2": [
+        0.0645015612244606,
+        0.06648126244544983,
+        0.14462922513484955,
+        0.03854157030582428
+      ],
+      "all_four_expert_raw_update_L2": [
+        0.12633967399597168,
+        0.12649327516555786,
+        0.12661141157150269,
+        0.12345889210700989
+      ],
+      "router_bitwise_frozen": true,
+      "TEST_hard_GT_in_loss": true,
+      "teacher_detached": true
+    },
+    "student": {
+      "objective_before": 0.830939769744873,
+      "objective_after_one_step": 0.7715659141540527,
+      "all_four_expert_gradient_L2": [
+        0.08462444692850113,
+        0.060830846428871155,
+        0.09147848188877106,
+        0.03771242871880531
+      ],
+      "all_four_expert_raw_update_L2": [
+        0.10557344555854797,
+        0.1046803891658783,
+        0.10023671388626099,
+        0.10459581762552261
+      ],
+      "router_bitwise_frozen": true,
+      "TEST_hard_GT_in_loss": false,
+      "teacher_detached": true
+    }
+  },
+  "head_block": {
+    "initial_objective": 0.7715657100666219,
+    "final_objective": 0.32159258479278274,
+    "internal_steps": 3,
+    "closure_calls": 5,
+    "unique_TRAIN_images": 20,
+    "unique_original_TEST_images": 20,
+    "TEST_hard_GT_in_loss": false,
+    "all_phases_bitwise_frozen": true,
+    "exported_float32_same_Linear": true,
+    "coordinate_statistics": {
+      "mode": "TRAIN_Gram_cholesky",
+      "numerical_ridge": 0.002602574735334635,
+      "uncentred_Gram_eigen_min": -6.748360701347443e-14,
+      "uncentred_Gram_eigen_max": 1019.8816859433564,
+      "Gram_regularized_condition": 391875.1207017315,
+      "feature_transform_absent_from_inference": true,
+      "original_population": "original TRAIN plus explicitly exposed original TEST",
+      "TRAIN_only": false,
+      "total_original_images": 40
+    }
+  },
+  "TEST_GT_isolation_rejection": true,
+  "parameters": 487204,
+  "state_tensors": 4,
+  "inference_Linear": 1,
+  "CNN": 0,
+  "all_original_data_unchanged": true,
+  "pid": 3392620,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_f_four_metric",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_four_metric_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101"
+  ],
+  "time": 1793509816.7204452
+}

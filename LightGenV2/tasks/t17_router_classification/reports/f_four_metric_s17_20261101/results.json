@@ -1,0 +1,669 @@
+{
+  "generated_UTC": "2026-11-01T05:11:40.509552+00:00",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "goal": "Same PT original TRAIN RGB/SAR and original TEST RGB/SAR all >=65%; fixed verified balanced optical router",
+  "selection": "minimum of four original group accuracies, then their mean, then CE; VAL only recorded",
+  "stages": {
+    "teacher": {
+      "status": {
+        "state": "training",
+        "epoch": 4,
+        "selected_epoch": 0,
+        "minimum_four_accuracy": 0.5716666666666667,
+        "pid": 3392620
+      },
+      "result": null,
+      "last_history": {
+        "epoch": 4,
+        "train": {
+          "n": 6000,
+          "correct": 3498,
+          "accuracy": 0.583,
+          "balanced_accuracy": 0.583,
+          "cross_entropy": 1.190172553062439,
+          "confusion_matrix": [
+            [
+              308,
+              7,
+              9,
+              34,
+              21,
+              62,
+              90,
+              55,
+              12,
+              2
+            ],
+            [
+              4,
+              318,
+              5,
+              14,
+              3,
+              97,
+              108,
+              17,
+              17,
+              17
+            ],
+            [
+              32,
+              25,
+              77,
+              63,
+              30,
+              97,
+              139,
+              95,
+              39,
+              3
+            ],
+            [
+              22,
+              6,
+              16,
+              287,
+              30,
+              66,
+              56,
+              41,
+              74,
+              2
+            ],
+            [
+              15,
+              0,
+              6,
+              56,
+              418,
+              7,
+              27,
+              56,
+              15,
+              0
+            ],
+            [
+              8,
+              43,
+              16,
+              28,
+              9,
+              392,
+              52,
+              28,
+              17,
+              7
+            ],
+            [
+              26,
+              10,
+              9,
+              58,
+              21,
+              36,
+              377,
+              60,
+              3,
+              0
+            ],
+            [
+              13,
+              6,
+              5,
+              38,
+              21,
+              20,
+              88,
+              401,
+              4,
+              4
+            ],
+            [
+              10,
+              6,
+              5,
+              32,
+              8,
+              32,
+              5,
+              8,
+              491,
+              3
+            ],
+            [
+              0,
+              73,
+              1,
+              2,
+              2,
+              48,
+              3,
+              31,
+              11,
+              429
+            ]
+          ],
+          "router": {
+            "mean_power": [
+              0.22374063730239868,
+              0.2639581561088562,
+              0.23701506853103638,
+              0.27528616786003113
+            ],
+            "std_power": [
+              0.25353389978408813,
+              0.2568502128124237,
+              0.24682515859603882,
+              0.2446984499692917
+            ],
+            "selected_fraction": [
+              0.43933333333333335,
+              0.5173333333333333,
+              0.483,
+              0.5603333333333333
+            ],
+            "top2_pair_fraction": {
+              "0-1": 0.146,
+              "0-2": 0.19483333333333333,
+              "0-3": 0.0985,
+              "1-2": 0.09883333333333333,
+              "1-3": 0.2725,
+              "2-3": 0.18933333333333333
+            },
+            "fraction_outside_most_common_pair": 0.7275,
+            "effective_experts_from_mean_power": 3.9731034518689237,
+            "mean_per_sample_effective_experts": 1.9899300336837769,
+            "expert_numbering": "zero-based 0..3",
+            "samples": 6000
+          },
+          "domains": {
+            "RGB": {
+              "n": 3000,
+              "correct": 1783,
+              "accuracy": 0.5943333333333334,
+              "router": {
+                "mean_power": [
+                  0.20334798097610474,
+                  0.1781345009803772,
+                  0.28560295701026917,
+                  0.33291468024253845
+                ],
+                "std_power": [
+                  0.2540779113769531,
+                  0.2367289811372757,
+                  0.24514023959636688,
+                  0.23532503843307495
+                ],
+                "selected_fraction": [
+                  0.392,
+                  0.3626666666666667,
+                  0.5773333333333334,
+                  0.668
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.126,
+                  "0-2": 0.16233333333333333,
+                  "0-3": 0.10366666666666667,
+                  "1-2": 0.043666666666666666,
+                  "1-3": 0.193,
+                  "2-3": 0.37133333333333335
+                },
+                "fraction_outside_most_common_pair": 0.6286666666666667,
+                "effective_experts_from_mean_power": 3.7667120296259076,
+                "mean_per_sample_effective_experts": 1.9938946962356567,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 3000
+              }
+            },
+            "SAR": {
+              "n": 3000,
+              "correct": 1715,
+              "accuracy": 0.5716666666666667,
+              "router": {
+                "mean_power": [
+                  0.2441328465938568,
+                  0.34978124499320984,
+                  0.18842779099941254,
+                  0.21765781939029694
+                ],
+                "std_power": [
+                  0.25134775042533875,
+                  0.24733443558216095,
+                  0.238802969455719,
+                  0.24029172956943512
+                ],
+                "selected_fraction": [
+                  0.4866666666666667,
+                  0.672,
+                  0.38866666666666666,
+                  0.45266666666666666
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.166,
+                  "0-2": 0.22733333333333333,
+                  "0-3": 0.09333333333333334,
+                  "1-2": 0.154,
+                  "1-3": 0.352,
+                  "2-3": 0.007333333333333333
+                },
+                "fraction_outside_most_common_pair": 0.648,
+                "effective_experts_from_mean_power": 3.7760396410411534,
+                "mean_per_sample_effective_experts": 1.9859651327133179,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 3000
+              }
+            }
+          },
+          "domain_mean_accuracy": 0.583
+        },
+        "original_test_development_selection": {
+          "n": 2000,
+          "correct": 1312,
+          "accuracy": 0.656,
+          "balanced_accuracy": 0.656,
+          "cross_entropy": 0.9920029044151306,
+          "confusion_matrix": [
+            [
+              129,
+              2,
+              6,
+              18,
+              5,
+              11,
+              20,
+              4,
+              5,
+              0
+            ],
+            [
+              2,
+              94,
+              0,
+              4,
+              1,
+              46,
+              34,
+              11,
+              2,
+              6
+            ],
+            [
+              29,
+              2,
+              44,
+              30,
+              10,
+              14,
+              33,
+              27,
+              11,
+              0
+            ],
+            [
+              10,
+              1,
+              1,
+              116,
+              4,
+              10,
+              36,
+              10,
+              12,
+              0
+            ],
+            [
+              8,
+              0,
+              0,
+              15,
+              153,
+              3,
+              8,
+              12,
+              1,
+              0
+            ],
+            [
+              2,
+              3,
+              5,
+              11,
+              7,
+              132,
+              22,
+              11,
+              7,
+              0
+            ],
+            [
+              9,
+              0,
+              4,
+              10,
+              0,
+              11,
+              151,
+              12,
+              3,
+              0
+            ],
+            [
+              5,
+              1,
+              0,
+              8,
+              4,
+              9,
+              28,
+              143,
+              2,
+              0
+            ],
+            [
+              3,
+              1,
+              0,
+              10,
+              1,
+              7,
+              2,
+              3,
+              173,
+              0
+            ],
+            [
+              0,
+              7,
+              0,
+              0,
+              0,
+              9,
+              1,
+              2,
+              4,
+              177
+            ]
+          ],
+          "router": {
+            "mean_power": [
+              0.24602869153022766,
+              0.2700290083885193,
+              0.24896879494190216,
+              0.23497344553470612
+            ],
+            "std_power": [
+              0.2562181353569031,
+              0.2570229172706604,
+              0.247826486825943,
+              0.24481278657913208
+            ],
+            "selected_fraction": [
+              0.4815,
+              0.53,
+              0.507,
+              0.4815
+            ],
+            "top2_pair_fraction": {
+              "0-1": 0.1755,
+              "0-2": 0.228,
+              "0-3": 0.078,
+              "1-2": 0.115,
+              "1-3": 0.2395,
+              "2-3": 0.164
+            },
+            "fraction_outside_most_common_pair": 0.7605,
+            "effective_experts_from_mean_power": 3.989726295743661,
+            "mean_per_sample_effective_experts": 1.986674427986145,
+            "expert_numbering": "zero-based 0..3",
+            "samples": 2000
+          },
+          "domains": {
+            "RGB": {
+              "n": 1000,
+              "correct": 685,
+              "accuracy": 0.685,
+              "router": {
+                "mean_power": [
+                  0.24059243500232697,
+                  0.20575076341629028,
+                  0.27375584840774536,
+                  0.27990081906318665
+                ],
+                "std_power": [
+                  0.261565238237381,
+                  0.24262288212776184,
+                  0.2469213455915451,
+                  0.2452850043773651
+                ],
+                "selected_fraction": [
+                  0.46,
+                  0.42,
+                  0.553,
+                  0.567
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.195,
+                  "0-2": 0.198,
+                  "0-3": 0.067,
+                  "1-2": 0.04,
+                  "1-3": 0.185,
+                  "2-3": 0.315
+                },
+                "fraction_outside_most_common_pair": 0.685,
+                "effective_experts_from_mean_power": 3.944698285135213,
+                "mean_per_sample_effective_experts": 1.9924145936965942,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 1000
+              }
+            },
+            "SAR": {
+              "n": 1000,
+              "correct": 627,
+              "accuracy": 0.627,
+              "router": {
+                "mean_power": [
+                  0.2514651119709015,
+                  0.3343077003955841,
+                  0.22418157756328583,
+                  0.19004572927951813
+                ],
+                "std_power": [
+                  0.2506371736526489,
+                  0.2549368739128113,
+                  0.2462439239025116,
+                  0.23593252897262573
+                ],
+                "selected_fraction": [
+                  0.503,
+                  0.64,
+                  0.461,
+                  0.396
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.156,
+                  "0-2": 0.258,
+                  "0-3": 0.089,
+                  "1-2": 0.19,
+                  "1-3": 0.294,
+                  "2-3": 0.013
+                },
+                "fraction_outside_most_common_pair": 0.706,
+                "effective_experts_from_mean_power": 3.8259776134047283,
+                "mean_per_sample_effective_experts": 1.9809343814849854,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 1000
+              }
+            }
+          },
+          "domain_mean_accuracy": 0.656
+        },
+        "selected_epoch": 0,
+        "selected_stage": "initial_group_head_fit",
+        "minimum_four_accuracy": 0.5716666666666667,
+        "development_expert_usage": {
+          "RGB": {
+            "images": 1000,
+            "total_expert_selections": 2000,
+            "expert_selection_counts": [
+              460,
+              420,
+              553,
+              567
+            ],
+            "per_image_selection_frequency": [
+              0.46,
+              0.42,
+              0.553,
+              0.567
+            ],
+            "selection_slot_share": [
+              0.23,
+              0.21,
+              0.2765,
+              0.2835
+            ],
+            "post_Top2_mean_power": [
+              0.24059233301877975,
+              0.20575079530477525,
+              0.2737560296356678,
+              0.2799008413553238
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.24356847515702248,
+              0.2416885994374752,
+              0.25661671698093413,
+              0.25812620790302754
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.9944342025969883,
+            "effective_experts": 3.9692554283082395,
+            "selection_share_CV": 0.12368508398347797,
+            "maximum_share_deviation_from_uniform": 0.04000000000000001,
+            "pair_counts": {
+              "1+2": 195,
+              "1+3": 198,
+              "1+4": 67,
+              "2+3": 40,
+              "2+4": 185,
+              "3+4": 315
+            },
+            "pair_frequencies": {
+              "1+2": 0.195,
+              "1+3": 0.198,
+              "1+4": 0.067,
+              "2+3": 0.04,
+              "2+4": 0.185,
+              "3+4": 0.315
+            },
+            "fraction_outside_most_common_pair": 0.685
+          },
+          "SAR": {
+            "images": 1000,
+            "total_expert_selections": 2000,
+            "expert_selection_counts": [
+              503,
+              640,
+              461,
+              396
+            ],
+            "per_image_selection_frequency": [
+              0.503,
+              0.64,
+              0.461,
+              0.396
+            ],
+            "selection_slot_share": [
+              0.2515,
+              0.32,
+              0.2305,
+              0.198
+            ],
+            "post_Top2_mean_power": [
+              0.25146505495905874,
+              0.33430754342675206,
+              0.22418154865503312,
+              0.19004585474729538
+            ],
+            "pre_Top2_mean_dense_power": [
+              0.2475367054864764,
+              0.267556281812489,
+              0.2515482832491398,
+              0.2333587303124368
+            ],
+            "selected_expert_share_target": [
+              0.25,
+              0.25,
+              0.25,
+              0.25
+            ],
+            "per_image_frequency_uniform_reference": [
+              0.5,
+              0.5,
+              0.5,
+              0.5
+            ],
+            "unused_experts": [],
+            "normalized_selection_entropy": 0.988740913208658,
+            "effective_experts": 3.9380510855352786,
+            "selection_share_CV": 0.17873443988218946,
+            "maximum_share_deviation_from_uniform": 0.07,
+            "pair_counts": {
+              "1+3": 258,
+              "1+2": 156,
+              "2+3": 190,
+              "2+4": 294,
+              "1+4": 89,
+              "3+4": 13
+            },
+            "pair_frequencies": {
+              "1+2": 0.156,
+              "1+3": 0.258,
+              "1+4": 0.089,
+              "2+3": 0.19,
+              "2+4": 0.294,
+              "3+4": 0.013
+            },
+            "fraction_outside_most_common_pair": 0.706
+          }
+        },
+        "unique_TRAIN_images": 6000,
+        "unique_original_TEST_images": 2000,
+        "mixed_original_presentations": 8000,
+        "phase_head_updates": 125,
+        "mean_robust_objective": 1.241582941532135,
+        "router_frozen_bitwise": true,
+        "classification_raw_expert_gradient_L2_sum": [
+          10.535901105031371,
+          11.182005200535059,
+          21.713573895394802,
+          6.145528206601739
+        ],
+        "expert_phase_raw_change_L2": [
+          1.991188883781433,
+          1.9783462285995483,
+          1.7990126609802246,
+          1.9575227499008179
+        ],
+        "seconds": 12.580394983291626
+      }
+    },
+    "student": {
+      "status": null,
+      "result": null,
+      "last_history": null
+    }
+  },
+  "progress_only": true
+}

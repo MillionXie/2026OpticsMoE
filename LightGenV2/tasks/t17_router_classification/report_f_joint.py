@@ -183,6 +183,12 @@ def main():
     if marker in page:
         before,after=page.split(marker,1);page=before+'<details><summary>历史阶段、所有候选与原有训练预算</summary>'+marker+after.replace('</html>','')+'</details></html>'
     page=page.replace('</h1>','</h1>'+latest,1)
+    four=read(task/'reports/f_four_metric_s17_20261101/results.json')
+    if four:
+        data['latest_four_metric_goal']=four
+        data['latest_target_same_PT_TRAIN_TEST_four_at_least_65_percent']=all(selected[split]['domains'][d]['accuracy']>=.65 for split in ('train','original_test_dev')for d in ('RGB','SAR'))
+        message='<h2>最新追加目标：同一PT的TRAIN与开发TEST四项均至少65%</h2><p>此前TEST达标不等于当前目标已完成。原PT的TRAIN52.03/47.57仍低；新的四组联合弱项优化已启动，冻结已均衡router、更新原E/G和同一Linear，按四项最低成绩选同一PT。VAL只记录。教师使用已授权TEST硬GT，学生TEST只软KL，仍是开发拟合。</p><p><a href="../f_four_metric_s17_20261101/results.html">查看真实四项进度与有限预算</a>。未经完整SHA/strict/原ID与四项重放核验，不替换上面的旧PT。</p>'
+        page=page.replace('</h1>','</h1>'+message,1)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 

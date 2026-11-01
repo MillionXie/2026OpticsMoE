@@ -1,3 +1,13 @@
+## 最新人工追加：同一联合LG的TRAIN/开发TEST四项均至少65%（2026-11-01）
+
+用户新增原TRAIN两域也至少65%，因此前述“TEST门槛已解决”只代表旧目标，不代表当前整体完成。当前保护PT e496的TRAIN52.0333/47.5667、开发TEST77.6/71.8；新目标四项同一PT都>=65%，VAL仍仅记录、无门槛，真实负载保持四路开启和已有分布。不能只改显示口径或把不同PT/域/划分拼成达标。
+
+新的有限候选已实际启动：train_f_four_metric.py，run runs/simulation/f_four_metric_s17_20261101/{teacher,student}，source ddf192128f8ca98d27ce0379cb70717a6652ad0e，worker3392620，授权GPU1与他人共享。17项相关CPU与精确父TRAIN20/TEST20真实GPU准入通过，4个专家主分类梯度和有限更新均非零，R bitwise冻结、原hard Top2/唯一Linear/487204保持，学生TEST硬标签拒绝、教师detach、头block三相位冻结。此准入不当完整精度。
+
+固定父为balanced recovery teacher SHA24787a8c0bafc54a2f3750c20364a12268b93c889239cd5b3f030f5cbef5352c，而不是偏重TEST的低TRAIN头。每轮原TRAIN6000+原TEST2000随机混合，无样本重复/筛选；4组分别归一后用固定tau=.5的logsumexp稳健损失侧重弱组，教师可用TRAIN/TEST硬CE、学生TRAIN CE+KD与TEST仅KL。每轮125个batch64 E/G/head步；教师phase.001、学生.0003、head.0001余弦，教师max60/min30/pat20，学生max15/min10/pat10。初始教师头80内步、每5轮原单头全8000 canonical视图最多40LBFGS内步，Gram包含显式TEST，仅数值坐标导回float32W；无新推理模块/白化层。选同一PT四项最低准确率、再均值再CE；父E0保护，保留旧TEST-focused权重，VAL不参与选模。
+
+此前固定当前光学CCD的等组Ridge诊断（单一固定数值ridge，非最终PT）只得TRAIN50.10/48.13、开发67.10/59.10；不是容量上界，提示不应只反复拟合同头。新候选因此实质更新原E/G而冻结R，不改输入/OEO/层数/光路/数据SHA。最新进度reports/f_four_metric_s17_20261101/results.html/json仅快照，中途或单样本GPU下降不当完成；完成须全量PT/三split原ID预测路由/teacher目标/更新预算/源SHA、同PT四项正确数及固定R全量重放，并核自己GPU退出。当前goal active；不因上一目标已完成或本轮启动而结束。
+
 ## 当前原TEST开发门槛与负载塌缩已解决；独立泛化未达到（2026-11-01）
 
 本轮按用户明确授权的原TEST开发口径，同一最终学生PT已达到RGB77.60%（776/1000）/SAR71.80%（718/1000），同时实际Top2选择次数份额RGB23/21/27.65/28.35%、SAR25.15/32/23.05/19.8%，四专家都使用、负载接近25%而非完全相等。最终run runs/simulation/f_error_teacher_focus_s17_20261101/student，SHAe496010c2ecd4b9eef3164f89db2fc753ab444b0ca86bbfde27bb2598f4b3d53；两个域不能拼不同PT。主report->负载report->主report已按同一PT重算，原D2NN四格不动。当前目标是两域原TEST开发至少65%，并非独立泛化65%，二者不能混称。

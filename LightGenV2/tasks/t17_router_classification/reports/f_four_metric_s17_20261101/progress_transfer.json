@@ -1,0 +1,21 @@
+{
+  "snapshot_only": true,
+  "final_PT_not_included": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/metadata.json",
+      "sha256": "ee454445c201cbfcc932e0087b430f9cc0945856c3fe150f20cb4920bd7198a2",
+      "size": 18690
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/status.json",
+      "sha256": "2c4572f6b2a3e01f036d823892eb5dcc944590a61b4c6dbc68d008716501b33b",
+      "size": 128
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_four_metric_s17_20261101/teacher/history.json",
+      "sha256": "cc3317210a52d1c9cdd54a1597cbae2be125bbcc83626f9ab738dad774db90e8",
+      "size": 57266
+    }
+  ]
+}
