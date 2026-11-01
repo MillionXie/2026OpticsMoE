@@ -41,3 +41,15 @@ def test_explicit_TEST_frame_counts_never_become_TRAIN_or_DEV():
         assert out['model_TEST_CCD']==(7 if role=='test'else 0)
         assert out['TEST_used']==(role=='test')
     with pytest.raises(ValueError):cohort_summary('unknown',7)
+
+
+def test_declared_model_signal_stop_does_not_change_or_replace_the_frame():
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_capture import guard_model_signal
+    guard_model_signal(895,0)  # Existing callers retain the old opt-out contract.
+    guard_model_signal(1500,1500)
+    guard_model_signal(12492,1500)
+    with pytest.raises(ValueError,match='before ledger acceptance'):
+        guard_model_signal(881,1500)
+    for invalid in (-1,65536,float('nan'),float('inf')):
+        with pytest.raises(ValueError):guard_model_signal(12000,invalid)
+        with pytest.raises(ValueError):guard_model_signal(invalid,1500)

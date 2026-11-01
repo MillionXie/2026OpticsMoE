@@ -65,6 +65,20 @@ def cohort_summary(role,count):
                 TEST_used=role=='test',TEST_selection_evaluation_only=role=='test',TEST_gradients=False)
 
 
+def guard_model_signal(p99,minimum):
+    """Optional session-declared stop threshold, not a quality/performance score.
+
+    A weak model response needs diagnosis; it is never automatically replaced,
+    brightened or accepted as a valid training observation.
+    """
+    if not np.isfinite(minimum)or not 0<=minimum<=65535:
+        raise ValueError('Invalid declared model signal stop threshold')
+    if not np.isfinite(p99)or p99<0 or p99>65535:
+        raise ValueError('Invalid native model signal statistic')
+    if minimum and p99<minimum:
+        raise ValueError('Low native model signal; preserve raw frame and stop before ledger acceptance')
+
+
 def await_payload(folder,run,seconds,pump):
     deadline=time.monotonic()+seconds
     while not(folder/'input.ready').exists():
@@ -87,9 +101,10 @@ class PersistentPhaseBridge:
     def __exit__(self,*args):return self.owner.__exit__(*args)
 
 
-def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=False,input_wait_seconds=0,persistent_phase_owner=False):
+def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=False,input_wait_seconds=0,persistent_phase_owner=False,minimum_model_native_p99=0):
     import cv2
     from LightGenV2.hardware_common.shs.phase_owner import message_pump
+    guard_model_signal(65535,minimum_model_native_p99)
     out=Path(out);calibration=Path(calibration);out.mkdir(parents=True,exist_ok=False)
     root=Path(__file__).resolve().parents[3]
     own=root/'LightGenV2/tasks/t12_text_to_image/runs/hardware/.t12_scene_device_owner.lock'
@@ -106,7 +121,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
             ledger=open_ledger(ledger_root);validate_session(ledger,config,calibration,dark,gain);admission=ledger.admit_stage(stage)
         role=ledger.requests[0]['split'] if ledger is not None else'calibration'
         put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,cohort_role=role,TRAIN_only=role=='train',DEV_evaluation_only=role=='dev',TEST_used=role=='test',TEST_gradients=False,TEST_selection_evaluation_only=role=='test',
-            parameter_changes=False,camera_process_isolated=camera_process,persistent_phase_owner=persistent_phase_owner,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
+            parameter_changes=False,camera_process_isolated=camera_process,persistent_phase_owner=persistent_phase_owner,minimum_model_native_p99=minimum_model_native_p99,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
         factory=None
         if camera_process:
             from .scene_lab_camera_process import CameraProcess
@@ -151,6 +166,11 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
                         ag=z['amplitude_code'].copy();pg=z['phase_code'].copy()
                         if array_sha(ag)!=ticket['logical_amplitude_code_sha256']or array_sha(pg)!=ticket['logical_phase_code_sha256']:raise ValueError('Pending codes changed')
                     raw,canonical,row=capture(request['sample_id'],ag,pg)
+                    try:guard_model_signal(row['p99'],minimum_model_native_p99)
+                    except ValueError:
+                        put(out/'low_model_signal.json',dict(sample_id=request['sample_id'],native_p99=row['p99'],declared_minimum=minimum_model_native_p99,
+                            raw_frame_preserved=True,ledger_accepted=False,automatic_retry=False,model_or_hardware_parameters_changed=False))
+                        raise
                     metadata=dict(ticket_sha256=identity(ticket),session_sha256=identity(ledger.session),stage=stage,request_sha256=identity(request),
                         canonical_orientation=ledger.session['orientation'],exposure_us=config['exposure_us'],gain=config['gain'],wait_ms=config['wait_ms'],
                         frame_provenance='physical_linear_camera',native_frame_sha256=row['native_SHA256'],canonical_raw_sha256=array_sha(canonical),capture_UTC=row['capture_UTC'])
@@ -164,11 +184,11 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--calibration',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--calibration',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--minimum-model-native-p99',type=float,default=0)
     p.add_argument('--ledger',type=Path);p.add_argument('--stage',choices=STAGES);p.add_argument('--camera-process',action='store_true');p.add_argument('--persistent-phase-owner',action='store_true');p.add_argument('--input-wait-seconds',type=float,default=0);a=p.parse_args()
     if bool(a.ledger)!=bool(a.stage):raise ValueError('ledger and stage required together')
     if not 0<=a.input_wait_seconds<=600:raise ValueError('Bounded input wait required')
-    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage,camera_process=a.camera_process,input_wait_seconds=a.input_wait_seconds,persistent_phase_owner=a.persistent_phase_owner)
+    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage,camera_process=a.camera_process,input_wait_seconds=a.input_wait_seconds,persistent_phase_owner=a.persistent_phase_owner,minimum_model_native_p99=a.minimum_model_native_p99)
 
 
 if __name__=='__main__':main()
