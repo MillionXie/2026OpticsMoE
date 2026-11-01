@@ -9,8 +9,8 @@ from .scene_paper_expanded_data import PROFILE
 def checked_profile(c):
     keys={'schema','prompt_profile','vision_keep','language_keep','UNet_deep_keep','student_steps',
           'parent_generator_sha256','parent_frontend_sha256','electronic_teacher_sha256','pairs_sha256','TRAIN_contexts'}
-    if(set(c)!=keys or c['schema']!='scene_expanded_middle_v1' or c['prompt_profile']!=PROFILE
-       or (c['vision_keep'],c['language_keep'],c['UNet_deep_keep'],c['student_steps'])!=(6,4,9,8)
+    if(set(c)!=keys or (c['schema'],c['UNet_deep_keep'])not in [('scene_expanded_middle_v1',9),('scene_expanded_full_UNet8_v1',10)] or c['prompt_profile']!=PROFILE
+       or (c['vision_keep'],c['language_keep'],c['student_steps'])!=(6,4,8)
        or c['parent_frontend_sha256']!=F6 or type(c['TRAIN_contexts'])is not int or not 1<=c['TRAIN_contexts']<=1520):
         raise ValueError('One original middle graph and actual expanded TRAIN coverage required')
     for key in ['parent_generator_sha256','electronic_teacher_sha256','pairs_sha256']:

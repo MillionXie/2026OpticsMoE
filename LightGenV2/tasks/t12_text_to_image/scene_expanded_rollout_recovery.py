@@ -28,13 +28,16 @@ def coverage_batches(groups,batch_size,epochs,seed=20261101):
 
 def checked_contract(c,state,parent,cache,teacher,source):
     keys={'schema','middle_profile','warm_checkpoint_sha256','reuse_all_TRAIN_contexts'}
-    coverage=c.get('schema')=='scene_expanded_cached_rollout_coverage_v2'
+    full=c.get('schema')=='scene_expanded_cached_rollout_full_UNet_v3'
+    coverage=c.get('schema')=='scene_expanded_cached_rollout_coverage_v2'or full
     if coverage:keys|={'training_batch_size','coverage_epochs'}
-    if (set(c)!=keys or c['schema']not in ['scene_expanded_cached_rollout_v1','scene_expanded_cached_rollout_coverage_v2']
+    if (set(c)!=keys or c['schema']not in ['scene_expanded_cached_rollout_v1','scene_expanded_cached_rollout_coverage_v2','scene_expanded_cached_rollout_full_UNet_v3']
         or c['reuse_all_TRAIN_contexts']is not True
         or coverage and(c['training_batch_size']!=2 or c['coverage_epochs']!=1)):
         raise ValueError('Explicit same-architecture TRAIN-only rollout contract required')
     profile=checked_profile(c['middle_profile'])
+    if full!=(profile['schema']=='scene_expanded_full_UNet8_v1'):
+        raise ValueError('Full70 UNet requires its explicit user-requested recovery recipe')
     if (len(c['warm_checkpoint_sha256'])!=64 or any(x not in '0123456789abcdef'for x in c['warm_checkpoint_sha256'])
         or parent['best_sha256']!=c['warm_checkpoint_sha256'] or not parent['compression_training_performed']
         or state['depth_compression']['profile']!=profile or state['sampling_contract']['steps']!=8
@@ -68,7 +71,8 @@ def main():
     original=base.run
     def run(a):
         a.reuse_all_TRAIN_contexts=True
-        if contract['schema']=='scene_expanded_cached_rollout_coverage_v2':
+        coverage=contract['schema']in['scene_expanded_cached_rollout_coverage_v2','scene_expanded_cached_rollout_full_UNet_v3']
+        if coverage:
             a.training_batch_size=contract['training_batch_size'];a.coverage_epochs=contract['coverage_epochs']
         write(a.output/'recovery_profile.json',contract)
         original(a,admission=lambda *values:checked_contract(contract,*values))
@@ -78,9 +82,11 @@ def main():
             final_TEST_PT_selection_pending=a.stage=='train',epochs=None,actual_paired_updates=a.updates if a.stage=='train' else 0,
             warm_model_training_updates=4992,existing_head_unchanged=True,TEST_used_for_gradient=False,
             all_TRAIN_eligible_including_fixed_monitor=True)
-        if contract['schema']=='scene_expanded_cached_rollout_coverage_v2':
+        if coverage:
             report.update(training_batch_size=2,planned_TRAIN_coverage_epochs=1,complete_TRAIN_coverage_epochs=1 if a.stage=='train' else 0)
             if a.stage=='train':assert report['gradient_TRAIN_contexts']==report['TRAIN_contexts']
+        if contract['schema']=='scene_expanded_cached_rollout_full_UNet_v3':
+            report.update(actual_UNet_blocks=70,UNet_pruning_performed=False,user_requested_full_UNet_capacity=True)
         write(a.output/'report.json',report)
     base.run=run;sys.argv=[sys.argv[0],*remaining]
     try:base.main()
