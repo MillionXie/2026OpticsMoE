@@ -13,6 +13,9 @@ import sys
 
 HERE=Path(__file__).resolve().parent
 OUT=HERE/'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/LG_four_front_scopes_20261101_01'
+V0_ONLY='--V0-final' in sys.argv
+DEST=OUT.parent/'LG_V0_final_20261101_01' if V0_ONLY else OUT
+RECEIPT=OUT/('local_V0_raw_receipt01.json' if V0_ONLY else 'local_raw_receipt01.json')
 COMMIT='151c034c506073d042b5cc77b24a637ca38141bb'
 CPU=('decode','RGB','crop','resize','normalization','patch')
 
@@ -41,14 +44,17 @@ def union(intervals):
 
 
 def main():
-    target=OUT/'independent_CPU_audit01.json'
+    DEST.mkdir(exist_ok=True)
+    target=DEST/'independent_CPU_audit01.json'
     if target.exists():raise ValueError('Accepted audit exists; do not repeat')
-    receipt=read(OUT/'local_raw_receipt01.json')
-    assert receipt['suite']['status']=='complete' and receipt['suite']['mps_released']
+    receipt=read(RECEIPT)
+    assert receipt['suite']['status']==('stopped' if V0_ONLY else 'complete') and receipt['suite']['mps_released']
+    if V0_ONLY:assert (OUT/'raw/human_stop_V0_adoption01.json').exists()
     assert receipt['controller_state'] in ('Z','exited')
     assert receipt['suite']['source_commit']==COMMIT
-    expected=[f'v{v}_repeat{i:02d}' for v in range(4) for i in (1,2,3)]
-    assert receipt['suite']['completed']==expected
+    expected=[f'v{v}_repeat{i:02d}' for v in range(1 if V0_ONLY else 4) for i in (1,2,3)]
+    assert all(name in receipt['suite']['completed'] for name in expected)
+    if not V0_ONLY:assert receipt['suite']['completed']==expected
     for item in receipt['files']:
         p=OUT/'raw'/item['name'];assert p.stat().st_size==item['bytes'] and sha(p)==item['sha256']
     import numpy as np
@@ -57,10 +63,13 @@ def main():
     old_output=old/'raw/lg_repeat01/outputs.npz'
     pinned=next(r['sha256'] for r in old_receipt['files'] if r['name']=='lg_repeat01/outputs.npz')
     assert sha(old_output)==pinned
+    old_inputs=old/'raw/lg_repeat01/input_preparation.json'
+    assert sha(old_inputs)==next(r['sha256'] for r in old_receipt['files'] if r['name']=='lg_repeat01/input_preparation.json')
+    expected_inputs=read(old_inputs)['rows']
     with np.load(old_output,allow_pickle=False) as f:
         expected_prediction=f['prediction'].copy();expected_warm=f['warm_prediction'].copy()
-    rounds=[];group_rows=[]
-    for v in range(4):
+    rounds=[];group_rows=[];source_files=[];compatible_rounds=[]
+    for v in range(1 if V0_ONLY else 4):
         for repeat in (1,2,3):
             name=f'v{v}_repeat{repeat:02d}';leaf=OUT/'raw'/name
             derived=name=='v1_repeat01' and (leaf/'CPU_derivation_receipt01.json').exists()
@@ -87,8 +96,13 @@ def main():
                 for key,expected_array in [('prediction',expected_prediction),('warm_prediction',expected_warm)]:
                     actual=f[key];assert actual.shape==expected_array.shape and actual.dtype==expected_array.dtype and actual.tobytes()==expected_array.tobytes()
             rows=raw['patch'];assert len(rows)==512 and len(raw['host_records'])==35
+            assert read(leaf/'dynamic_CPU_validation.json')['actual_workers']==16
+            assert len({r['worker_thread'] for r in rows})==16
             assert {(r['field'],r['slot']) for r in rows}=={(f,s) for f in range(32) for s in range(16)}
             assert len({r['sample_id'] for r in rows})==512 and all(r['raw_patch_bytes_equal'] for r in rows)
+            inputs=read(leaf/'input_preparation.json')['rows']
+            assert [r['sample_id'] for r in rows]==[r['sample_id'] for r in expected_inputs]
+            assert [(r['sample_id'],r['sha256'],r['original_flat_sha256'],r['original_flat_shape']) for r in inputs]==[(r['sample_id'],r['sha256'],r['original_flat_sha256'],r['original_flat_shape']) for r in expected_inputs]
             assert sum(r['warm'] for r in raw['host_records'])==3
             grouped={}
             for k in kernels:
@@ -167,23 +181,62 @@ def main():
                                component_energy_estimate=energy,
                                frontend_measurements=front,report_sha256=sha(leaf/report_file),separate_CPU_derivation=derived,
                                raw_sha256=sha(leaf/'raw_operator_records.json')))
+            if V0_ONLY:
+                e=dict(status='FIXED_COMPONENT_UNION_PROXY_NOT_METERED',energy_j=energy['total_J16']*32,
+                       energy16_j=energy['total_J16'],controller_j=energy['controller_J16']*32,
+                       electronic_board_j=energy['electronic_J16']*32,optical_devices_j=energy['optical_J16']*32,
+                       controller_union_ms=controller_s*1000,electronic_union_ms=electronic_s*1000,
+                       optical_union_ms=optical_s*1000,
+                       powers_w=dict(controller=41.388,electronic_board=62.842,optical_devices=80.358))
+                work={p:cpu[p]*16 for p in CPU[3:]}
+                work.update(phase_means,tokenizer=tokenizer)
+                contribution={p:cpu[p] for p in CPU[3:]}
+                contribution.update({p:value/32 for p,value in phase_means.items() if p!='emb_text'})
+                contribution.update(tokenizer=0.,emb_text=0.)
+                close(sum(contribution.values()),report['time16_s'])
+                compatible_rounds.append(dict(fields=32,time16_s=report['time16_s'],total_s=report['time16_s']*32,
+                    work_s_per_group=work,equivalent_s_per_group=contribution,component_energy=e,
+                    actual_CPU_wall_s=actualCPU*32,actual_FFT_wall_s=realwall*32,
+                    actual_FFT_ms16=realwall*1000,actual_FFT_board_J16=real_joules/32,
+                    actual_FFT_board_mean_W=real_joules/real_seconds,actual_workers=16,
+                    CPU_work_lower_bound_ms16=P*1000,CPU_mean_ms=P*1000,
+                    backend_mean_tail_ms=Q*1000,amortized_tail_ms=Q/32*1000))
+                source_files.extend(dict(path=str(leaf/file),sha256=sha(leaf/file)) for file in ('compute_report.json','raw_operator_records.json','numeric_audit.json'))
     variants=[]
-    for v in range(4):
+    for v in range(1 if V0_ONLY else 4):
         rs=[r for r in rounds if r['variant']==v]
         variants.append(dict(variant=v,mean_ms16=statistics.mean(r['estimated_ms16'] for r in rs),
                              sample_SD_ms16=statistics.stdev(r['estimated_ms16'] for r in rs),
                              CPU_mean_ms=statistics.mean(r['CPU_mean_ms'] for r in rs),
                              amortized_tail_ms=statistics.mean(r['amortized_tail_ms'] for r in rs),
                              component_energy_J16=statistics.mean(r['component_energy_estimate']['total_J16'] for r in rs)))
-    value=dict(status='independent_CPU_four_scope_triples_passed',published_runtime_commit=COMMIT,
+    value=dict(status='independent_CPU_V0_final_triple_passed' if V0_ONLY else 'independent_CPU_four_scope_triples_passed',published_runtime_commit=COMMIT,
                audit_source_sha256=sha(Path(__file__)),
-               formal_scores_bitwise_equal=6144,warm_scores_bitwise_equal=576,rounds=rounds,variants=variants,
-               estimated_groups=group_rows,raw_receipt_sha256=sha(OUT/'local_raw_receipt01.json'),
+               formal_scores_bitwise_equal=1536 if V0_ONLY else 6144,warm_scores_bitwise_equal=144 if V0_ONLY else 576,rounds=rounds,variants=variants,
+               estimated_groups=group_rows,raw_receipt_sha256=sha(RECEIPT),
                sources_verified=len(receipt['files']),Torch_imported='torch' in sys.modules,
                actual_and_ideal_estimate_separate=True,CPU_load_imbalance_not_charged=True,
                off_CPU_difference_not_claimed_as_pure_disk_wait=True)
     assert not value['Torch_imported']
     with target.open('x') as f:json.dump(value,f,ensure_ascii=True,indent=2,allow_nan=False)
+    if V0_ONLY:
+        baseline=read(old/'workbook_sources01.json')
+        assert sha(old/'workbook_sources01.json')=='ad43903d48df722e8de51ce6ba87d014e299533c7477d78838953040423803a6'
+        phases=set().union(*(r['work_s_per_group'] for r in compatible_rounds))
+        lg=dict(fields=96,rounds=3,time16_s=variants[0]['mean_ms16']/1000,
+                component_energy16_j=variants[0]['component_energy_J16'],source_rounds=compatible_rounds,
+                equivalent_s_per_group={p:statistics.mean(r['equivalent_s_per_group'].get(p,0.) for r in compatible_rounds) for p in phases},
+                work_s_per_group={p:statistics.mean(r['work_s_per_group'].get(p,0.) for r in compatible_rounds) for p in phases})
+        groups=[dict(round=g['repeat'],group=g['field'],CPU_start_ms=(g['field']-1)*rounds[g['repeat']-1]['CPU_mean_ms'],
+                     CPU_ready_ms=g['estimated_CPU_ready_ms'],completion_ms=g['estimated_score_done_ms'],
+                     cumulative_ms16=g['cumulative_average_ms'],actual_CPU_ready_ms=g['actual_CPU_ready_ms'],
+                     actual_FFT_completion_ms=g['actual_FFT_score_done_ms']) for g in group_rows]
+        data=dict(status=value['status'],LG_lab=lg,baselines=baseline['baselines'],trials=baseline['trials'],
+                  common_tokens16=baseline['common_tokens16'],component_powers_w=baseline['component_powers_w'],
+                  SLM_hz=1886,includes_full_frontend_preparation=False,groups=groups,
+                  source_files=source_files,source_commit=COMMIT,measurement_vs_projection=value,
+                  hardware=read(OUT/'raw/environment.json'),adoption='Human selected V0; later configurations excluded')
+        with (DEST/'workbook_sources01.json').open('x') as f:json.dump(data,f,ensure_ascii=True,indent=2,allow_nan=False)
     print(json.dumps(dict(status=value['status'],variants=variants)))
 
 

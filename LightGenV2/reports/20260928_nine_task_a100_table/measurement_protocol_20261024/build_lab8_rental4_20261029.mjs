@@ -12,7 +12,7 @@ const REPO=path.resolve(HERE,'../../../..');
 const runtime=process.env.ARTIFACT_RUNTIME_DIR;
 if(!runtime)throw Error('ARTIFACT_RUNTIME_DIR must point to the bundled dependency junction');
 const {Workbook,SpreadsheetFile}=await import(pathToFileURL(createRequire(path.join(runtime,'loader.cjs')).resolve('@oai/artifact-tool')).href);
-if(process.argv.includes('--lgvq-lab-reference')||process.argv.includes('--lgvq-dynamic')){
+if(process.argv.includes('--lgvq-lab-reference')||process.argv.includes('--lgvq-dynamic')||process.argv.includes('--lgvq-v0-final')){
   await buildLGVQLabReference();
 }else if(process.argv.includes('--lgvq-only-reorganized')||process.argv.includes('--lgvq-standard1886')){
   await buildLGVQOnly(process.argv.includes('--lgvq-standard1886'));
@@ -457,18 +457,20 @@ async function buildLGVQOnly(standard1886=false){
 
 /** Latest requested presentation; original delivered modes above stay immutable. */
 async function buildLGVQLabReference(){
-  const dynamic=process.argv.includes('--lgvq-dynamic');
+  const v0=process.argv.includes('--lgvq-v0-final');
+  const dynamic=process.argv.includes('--lgvq-dynamic')||v0;
   const base=path.join(HERE,'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b');
-  const input=path.join(base,dynamic?'LG_dynamic_FIFO16_20261101_01/workbook_sources01.json':'LGVQ_standard1886_20261030_01/lgvq_reorganized_sources01.json');
-  const out=path.join(base,dynamic?'LG_dynamic_FIFO16_20261101_01':'LGVQ_lab_reference_native_tokens_20261030_01');
-  const book=path.join(out,dynamic?'LGVQ_lab_dynamic_FIFO16_20261101.xlsx':'LGVQ_lab_LG_comparison_20261030.xlsx');
+  const input=path.join(base,v0?'LG_V0_final_20261101_01/workbook_sources01.json':dynamic?'LG_dynamic_FIFO16_20261101_01/workbook_sources01.json':'LGVQ_standard1886_20261030_01/lgvq_reorganized_sources01.json');
+  const out=path.join(base,v0?'LG_V0_final_20261101_01':dynamic?'LG_dynamic_FIFO16_20261101_01':'LGVQ_lab_reference_native_tokens_20261030_01');
+  const book=path.join(out,v0?'LGVQ_V0_final_comparison_20261101.xlsx':dynamic?'LGVQ_lab_dynamic_FIFO16_20261101.xlsx':'LGVQ_lab_LG_comparison_20261030.xlsx');
   const sha=p=>crypto.createHash('sha256').update(fss.readFileSync(p)).digest('hex');
   const ok=(value,message)=>{if(!value)throw Error(message);};
   const close=(a,b)=>ok(typeof a==='number'&&Math.abs(a-b)<=Math.max(1e-7,Math.abs(b)*1e-9),`Different value: ${a} vs ${b}`);
   if(!dynamic)ok(sha(input)==='7c7501e71716a0aa9e28288c7c7141848bc6fc383ad7c7920ea1a5f6196cecd9','Accepted1886 source pin');
   else{
     const audit=JSON.parse(fss.readFileSync(path.join(out,'independent_CPU_audit01.json'),'utf8'));
-    ok(audit.status==='independent_CPU_dynamic_FIFO16_triple_passed'&&audit.numeric_scores_exact===1536&&audit.formal_fields===96&&audit.all_workers_exited&&audit.MPS_released,'New measured triple audit');
+    ok(v0?audit.status==='independent_CPU_V0_final_triple_passed'&&audit.formal_scores_bitwise_equal===1536&&audit.warm_scores_bitwise_equal===144:
+      audit.status==='independent_CPU_dynamic_FIFO16_triple_passed'&&audit.numeric_scores_exact===1536&&audit.formal_fields===96&&audit.all_workers_exited&&audit.MPS_released,'New measured triple audit');
   }
   const repair=process.argv.includes('--repair-own-draft');
   if(fss.existsSync(book)){
@@ -544,6 +546,7 @@ async function buildLGVQLabReference(){
     groups.getRange('A2:H97').values=d.groups.map(x=>[x.round,x.group,x.CPU_start_ms,x.CPU_ready_ms,x.completion_ms,x.cumulative_ms16,x.actual_CPU_ready_ms,x.actual_FFT_completion_ms]);
     groups.getRange('A1:H97').format={font:{name:'Arial',size:10},columnWidth:25,rowHeight:25,verticalAlignment:'center'};header(groups,1,8);groups.getRange('C2:H97').setNumberFormat('0.000000');groups.freezePanes.freezeRows(1);
     put(groups,100,[['实测列以本轮首个CPU步骤起点为0；估算列以FIFO工作排程为0。二者不能混加。']]);
+    if(v0)put(groups,100,[['实测列从本轮正式软件窗口起计，含FFT与OS间隙；估算列为理想阶段均值流水，二者不能混加。']]);
   }
   title(s,'A2','LGVQ：仅对比实验室LightGen');
   put(s,3,[['LG为16视频并行；所有baseline为batch=1端到端，统一每16视频，三轮合并。SLM1886Hz。']]);
@@ -585,6 +588,40 @@ async function buildLGVQLabReference(){
     put(s,43,[['LG的J为固定组件分时估算。真实CPU队列wall、FFT软件耗时、NVML板卡J另见LG明细。']]);
     put(raw,48,[['LG独立CPU核验',sha(path.join(out,'independent_CPU_audit01.json'))]]);
   }
+  if(v0){
+    title(s,'A2','LGVQ：V0定稿与端到端baseline');
+    put(s,3,[['LG采用新V0完整三轮96场，16视频并行均值流水估算；所有baseline为原B1端到端实测，统一每16视频。']]);
+    put(s,6,[['LightGen-II（V0定稿）','A100 PCIe 40GB',100,16]]);
+    title(detail,'A2','V0：阶段均值、平均收尾及能耗');
+    put(detail,3,[['CPU三项取每视频四帧的有效CPU均值，作为16 worker理想均分的每场成本；后段取每16视频场均值。']]);
+    detail.getRange('I1:I66').clear({applyTo:'contents'});
+    put(detail,5,[['阶段','计算设备','r1阶段均值/ms','r2阶段均值/ms','r3阶段均值/ms','三轮阶段均值/ms','摊销贡献/ms每16视频','计入规则']]);header(detail,5,8);
+    for(let i=0;i<24;i++){
+      const r=6+i,key=stages[i][0];
+      if(i<3){
+        put(detail,r,[[stages[i][1],'CPU',...lg.source_rounds.map(x=>x.work_s_per_group[key]*1000/16),null,null,'CPU累计活跃工作÷16÷32；不计分配不均衡和等待']]);
+        f(detail,'F'+r,`=AVERAGE(C${r}:E${r})`);f(detail,'G'+r,`=F${r}`);
+      }else{
+        f(detail,'G'+r,i<5?'=0':`=F${r}/32`);
+        detail.getRange('H'+r).values=[[i<5?'工作量实测非零；在本场图像CPU准备期间完成':stages[i][2]==='固定光周期'?'固定1886Hz光周期；只摊销平均末场收尾':'实测kernel并集均值；只摊销平均末场收尾']];
+      }
+    }
+    put(detail,30,[['V0均值流水总时间',null,...lg.source_rounds.map(x=>x.time16_s*1000),null,null,'CPU均值P＋平均图像就绪后端Q÷32；是估算，不是物理E2E实测']]);
+    f(detail,'F30','=AVERAGE(C30:E30)');f(detail,'G30','=SUM(G6:G29)');
+    put(detail,33,[['CPU三项均值直接相加；不把16个线程工作量之和当并行延迟，也不另加任务分配不均衡。']]);
+    put(detail,35,[['不计文件读取/解码、RGB、中心65%裁剪、quality准备、H2D、返回、CPU调度、FFT、残差和纯fusion/layout。']]);
+    detail.getRange('A69:H77').format={font:{name:'Arial',size:10},rowHeight:25,verticalAlignment:'center'};
+    title(detail,'A69','V0平均收尾公式');
+    put(detail,71,[['计算项','r1/ms','r2/ms','r3/ms','三轮均值/ms']]);header(detail,71,5);
+    for(const [i,[label,key]] of [['CPU均值P','CPU_mean_ms'],['平均图像就绪后端Q','backend_mean_tail_ms'],['收尾摊销Q÷32','amortized_tail_ms']].entries()){
+      const r=72+i;put(detail,r,[[label,...lg.source_rounds.map(x=>x[key]),null]]);f(detail,'E'+r,`=AVERAGE(B${r}:D${r})`);
+    }
+    put(detail,75,[['P＋Q÷32']]);for(const c of ['B','C','D','E'])f(detail,c+'75',`=SUM(${c}72,${c}74)`);
+    put(detail,77,[['三轮样本标准差/ms']]);f(detail,'E77','=STDEV(C30:E30)');
+    detail.getRange('B72:E77').setNumberFormat('0.000000');
+    put(detail,66,[['理想CPU均值P（非实测延迟）',...lg.source_rounds.map(x=>x.CPU_work_lower_bound_ms16),null,'ms每16视频；三项有效CPU总工作÷16÷32']]);f(detail,'E66','=AVERAGE(B66:D66)');
+    put(s,43,[['V0 J为固定组件分时估算；完整FFT软件耗时和NVML板卡J另列，不与光路部署估算混算。']]);
+  }
   const widths=[31,25,22,18,26,25,25,25,28,28,28,28];widths.forEach((x,i)=>s.getRangeByIndexes(0,i,60,1).format.columnWidth=x);
   s.getRange('E6:L18').setNumberFormat('#,##0.000');s.getRange('C28:H40').setNumberFormat('#,##0.000');s.getRange('B53:B57').setNumberFormat('#,##0.000');s.getRange('A6:L6').format.fill='#EDF3F9';
   s.getRange('E6:L18').format.horizontalAlignment='right';raw.getRange('C2:C37').format.horizontalAlignment='center';
@@ -597,16 +634,21 @@ async function buildLGVQLabReference(){
     if(tokens)close(s.getRange('F'+r).values[0][0],tokens/seconds);else ok(s.getRange('F'+r).values[0][0]==='n.a.','No invented tokens');
     expected.push({key:c.key,time_ms16:seconds/groups*1000,tokens_per_s:tokens?tokens/seconds:null,energy_j16:joules/groups});
   }
-  const perturb=(sheet,cell,delta,target,change)=>{const old=sheet.getRange(cell).values[0][0],before=target.values[0][0];sheet.getRange(cell).values=[[old+delta]];wb.recalculate();close(target.values[0][0],change(before));sheet.getRange(cell).values=[[old]];wb.recalculate();close(target.values[0][0],before);};
+  const perturb=(sheet,cell,delta,target,change)=>{const range=sheet.getRange(cell),old=range.values[0][0],oldFormula=range.formulas?.[0]?.[0],before=target.values[0][0];range.values=[[old+delta]];wb.recalculate();close(target.values[0][0],change(before));if(oldFormula)range.formulas=[[oldFormula]];else range.values=[[old]];wb.recalculate();close(target.values[0][0],before);};
   perturb(detail,'B47',1,s.getRange('G7'),b=>b+s.getRange('E7').values[0][0]/1000);
   perturb(detail,'B41',1,s.getRange('G6'),b=>b+detail.getRange('F41').values[0][0]);
   perturb(detail,'B48',1,s.getRange('F6'),b=>b+1000/s.getRange('E6').values[0][0]);
   perturb(raw,'I26',100,s.getRange('F15'),b=>b+100/d.trials.filter(t=>t.key==='kimi_50').reduce((a,t)=>a+t.seconds,0));
   perturb(detail,'G6',1,s.getRange('I7'),()=>s.getRange('E7').values[0][0]/(lg.time16_s*1000+1));
+  if(v0){
+    close(detail.getRange('E75').values[0][0],lg.time16_s*1000);
+    perturb(detail,'C6',1,s.getRange('E6'),b=>b+1/3);
+  }
   const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:1500});ok(!errors.ndjson.includes('"kind":"match"'),'Formula errors');
   await fs.mkdir(out,{recursive:true});
   const views=[['主表','A1:L23','main_preview.png'],['主表','A25:I43','energy_preview.png'],['主表','A46:I59','hardware_tokens_preview.png'],['LG时间与能耗','A1:H35','lg_stages_preview.png'],['LG时间与能耗','A38:H56','lg_energy_preview.png'],['轮次原值','A1:L13','trials_preview.png']];
-  if(dynamic){views[3]=['LG时间与能耗','A1:I35','lg_stages_preview.png'];views.push(['LG时间与能耗','A58:J66','measured_software_preview.png'],['LG96组时间轴','A1:H13','timeline_values_preview.png']);}
+  if(dynamic){views[3]=['LG时间与能耗',v0?'A1:H35':'A1:I35','lg_stages_preview.png'];views.push(['LG时间与能耗','A58:J66','measured_software_preview.png'],['LG96组时间轴','A1:H13','timeline_values_preview.png']);}
+  if(v0)views.push(['LG时间与能耗','A69:H77','mean_formula_preview.png']);
   for(const [sheetName,range,name] of views){const image=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(out,name),new Uint8Array(await image.arrayBuffer()));}
   await(await SpreadsheetFile.exportXlsx(wb)).save(book);
   await fs.writeFile(path.join(out,'builder_checks.json'),JSON.stringify({status:'exported_pending_visual_and_saved_file_QA',sha256:sha(book),source_sha256:sha(input),source:path.relative(REPO,input),builder_source_sha256:sha(fileURLToPath(import.meta.url)),LG_reference:'lab_only',LG_rental_included:false,baselines:expected,baseline_trials:36,LG_time_ms16:lg.time16_s*1000,LG_energy_j16:lg.component_energy16_j,LG_tokens_per_s:d.common_tokens16/lg.time16_s,tokenizer_actual_ms:lg.work_s_per_group.tokenizer*1000,embedding_actual_ms:lg.work_s_per_group.emb_text*1000,formula_perturbations_restored:true,energy_model_unchanged:true,neural_or_GPU_rerun:dynamic,dynamic_FIFO16:dynamic},null,2),{flag:repair?'w':'wx'});
