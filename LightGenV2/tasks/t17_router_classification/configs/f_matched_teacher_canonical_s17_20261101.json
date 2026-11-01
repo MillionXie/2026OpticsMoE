@@ -1,0 +1,15 @@
+{
+  "authorized_gpu_uuids": [
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  ],
+  "jobs": {
+    "teacher": {
+      "parent_checkpoint": "runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "80b920604a5ebb4e60c1a0c4c5373b02fee95b3797febf176d3164b99d362576",
+      "matched_optical_teacher_mode": "teacher_TEST_hard_recalibration"
+    }
+  },
+  "student_after_teacher": "same inference graph and phases, inherit TEST-hard-trained teacher, original TRAIN hard CE plus canonical teacher KD, original TEST soft KL only, no TEST hard CE",
+  "bounded_head_internal_steps_each": 150,
+  "target_both_domains": 0.65
+}

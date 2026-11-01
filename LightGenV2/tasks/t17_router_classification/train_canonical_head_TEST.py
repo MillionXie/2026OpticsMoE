@@ -1,7 +1,8 @@
 """Bounded canonical-view refit of the existing Linear; TEST-development selects.
 
-Optics stay frozen. TRAIN contributes hard CE; optional original TEST contributes
-detached teacher KL only. The numerical coordinates are folded back into W.
+Optics stay frozen. The default student uses TRAIN hard CE and TEST soft KL.
+The explicitly named matched optical TEACHER recalibration may use TEST hard
+labels; its student still rejects them. Coordinates are folded back into W.
 """
 import argparse
 import json
@@ -44,6 +45,14 @@ def initialization_profile(parent,cfg):
     return dict(profile,top_k=requested)
 
 
+def optical_teacher_mode(cfg, profile):
+    mode=cfg.get('matched_optical_teacher_mode')
+    if mode is None:return None
+    if mode not in ('teacher_TEST_hard_recalibration','student_canonical_soft_distillation') or profile['dataset']!='eurosat_original_f' or profile['main_layers']!=2 or profile['architecture']!='LG':
+        raise ValueError('Explicit matched two-main-layer F optical teacher role required')
+    return mode
+
+
 def run_job(cfg, out):
     task=Path(__file__).resolve().parent
     parent_path=task/cfg['parent_checkpoint']
@@ -52,6 +61,11 @@ def run_job(cfg, out):
     profile=initialization_profile(parent,cfg)
     if profile['architecture']!='LG' or profile['main_layers']!=2:raise ValueError('Two-layer original LG required')
     joint=profile['dataset']=='eurosat_original_f'
+    teacher_mode=optical_teacher_mode(cfg,profile)
+    if teacher_mode=='teacher_TEST_hard_recalibration' and parent['metadata'].get('stage')!='teacher':
+        raise ValueError('Recalibration parent must be the completed matched optical teacher')
+    if teacher_mode=='student_canonical_soft_distillation' and parent['metadata'].get('head_refit_profile',{}).get('matched_optical_teacher_mode')!='teacher_TEST_hard_recalibration':
+        raise ValueError('Canonical soft student requires the explicit recalibrated teacher parent')
     model=build_model(profile).cuda().eval();model.load_state_dict(parent['model'],strict=True);model.requires_grad_(False)
     original={k:v.detach().cpu().clone() for k,v in model.state_dict().items()}
     out.mkdir(parents=True,exist_ok=False)
@@ -60,7 +74,7 @@ def run_job(cfg, out):
         source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={n:sha256(task/n) for n in
         [Path(__file__).name,'model_four.py','model_linear_readout.py','model_depth_ccd.py','alternating_readout.py']},
         pid=os.getpid(),data=identity,phase_updates=0,TEST_used_for_selection=True,VAL_gate=False,
-        original_TEST_soft_in_loss=joint,TEST_hard_GT_in_loss=False,canonical_code0_only=True,
+        original_TEST_soft_in_loss=joint and teacher_mode!='teacher_TEST_hard_recalibration',TEST_hard_GT_in_loss=teacher_mode=='teacher_TEST_hard_recalibration',canonical_code0_only=True,
         maximum_internal_iterations=150,optimization_anchor='initial existing head; .001/2 Frobenius square')
     meta['changed_k_initialization']=bool(cfg.get('changed_k_initialization'))
     meta['parent_inference_top_k']=parent['metadata']['profile'].get('top_k',2)
@@ -84,8 +98,22 @@ def run_job(cfg, out):
     if not cfg.get('changed_k_initialization') and not np.array_equal(score.argmax(1),z['predictions']):raise RuntimeError('Canonical cache parent replay mismatch')
     meta['initial_current_k_TEST_development']=initial
     meta['parent_prediction_replay_required']=not bool(cfg.get('changed_k_initialization'))
+    meta['matched_optical_teacher_mode']=teacher_mode
+    meta['student_inherits_TEST_hard_supervised_teacher_weights']=teacher_mode=='student_canonical_soft_distillation'
     teacher=None;mask=None;train_x=x['train'].double();labels=y['train']
-    if joint:
+    if teacher_mode=='teacher_TEST_hard_recalibration':
+        train_x=torch.cat([train_x,x['test'].double()]);labels=torch.cat([y['train'],y['test']])
+        meta['teacher_architecture_identical']=True
+        meta['teacher_optical_phases_pretrained_with_augmented_TRAIN_and_TEST']=True
+    elif teacher_mode=='student_canonical_soft_distillation':
+        # Parent is the same-architecture TEST-hard-trained teacher, SHA-locked
+        # above. Its exact canonical logits are generated from its own CCD/head.
+        # No TEST label is passed to the student's classification objective.
+        with torch.no_grad():teacher=torch.cat([model.shared_head(x[s]) for s in ('train','test')]).double().detach()
+        np.savez_compressed(out/'canonical_teacher_targets.npz',logits=teacher.cpu().numpy(),ids=np.concatenate([arrays[s]['ids'] for s in ('train','test')]),domains=np.concatenate([arrays[s]['domains'] for s in ('train','test')]))
+        train_x=torch.cat([train_x,x['test'].double()]);labels=torch.cat([y['train'],torch.full_like(y['test'],-1)]);mask=labels>=0
+        meta['canonical_teacher_targets_sha256']=sha256(out/'canonical_teacher_targets.npz');meta['teacher_architecture_identical']=True
+    elif joint:
         targets=[]
         for split,filename in [('train','TRAIN_teacher_logits.npz'),('test','SOURCE_TEST_teacher_logits.npz')]:
             path=parent_path.parent/filename
@@ -141,7 +169,8 @@ def run_job(cfg, out):
     result=dict(role=meta['role'],checkpoint_sha256=sha256(out/'best_checkpoint.pt'),selected_iteration=selected,
         completed_head_segments=30,head_internal_iterations=opt.state[coordinate]['n_iter'],head_closure_calls=calls,
         phase_updates=0,all_optical_phases_bitwise_parent=True,parent_checkpoint_sha256=cfg['parent_checkpoint_sha256'],
-        canonical_fit_presentations=calls*len(labels),original_TRAIN_hard_images=len(y['train']),original_TEST_soft_images=len(y['test']) if joint else 0)
+        canonical_fit_presentations=calls*len(labels),original_TRAIN_hard_images=len(y['train']),original_TEST_soft_images=len(y['test']) if joint and teacher_mode!='teacher_TEST_hard_recalibration' else 0,
+        original_TEST_hard_images=len(y['test']) if teacher_mode=='teacher_TEST_hard_recalibration' else 0,matched_optical_teacher_mode=teacher_mode)
     for split,key in [('train','train'),('val','val'),('test','original_test_dev')]:
         result[key],scores=metrics(split);saved={n:v for n,v in arrays[split].items() if n!='ccd_features'}
         np.savez_compressed(out/f'{split}_predictions.npz',**saved,scores=scores,predictions=scores.argmax(1))

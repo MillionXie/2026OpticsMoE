@@ -3,6 +3,7 @@ import pytest
 import torch
 from LightGenV2.tasks.t17_router_classification.train_f_matched_optical_teacher import classification_loss, matched_balance
 from LightGenV2.tasks.t17_router_classification.select_monotone_checkpoints import select_strict_tuple
+from LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST import optical_teacher_mode,fit_objective
 
 
 def test_monotone_selection_preserves_independent_maxima():
@@ -25,3 +26,17 @@ def test_hard_load_surrogate_uses_actual_counts_per_modality():
     loss=matched_balance(dict(route_power=hard,dense_route_power=dense),torch.tensor([0,0,1,1]));loss.backward()
     assert dense.grad[0,0]>dense.grad[0,3] and dense.grad[3,3]>dense.grad[3,0]
     with pytest.raises(ValueError):matched_balance(dict(route_power=dense,dense_route_power=dense),torch.tensor([0,0,1,1]))
+
+
+def test_teacher_recalibration_is_explicit_and_F_only():
+    profile=dict(dataset='eurosat_original_f',main_layers=2,architecture='LG')
+    assert optical_teacher_mode({},profile) is None
+    assert optical_teacher_mode(dict(matched_optical_teacher_mode='teacher_TEST_hard_recalibration'),profile)=='teacher_TEST_hard_recalibration'
+    with pytest.raises(ValueError):optical_teacher_mode(dict(matched_optical_teacher_mode='teacher_TEST_hard_recalibration'),dict(profile,dataset='kather2016'))
+
+
+def test_canonical_soft_student_masks_TEST_GT_and_teacher_gradients():
+    torch.manual_seed(17);x=torch.randn(6,4,dtype=torch.float64);w=torch.randn(3,4,dtype=torch.float64,requires_grad=True);t=torch.randn(6,3,dtype=torch.float64,requires_grad=True);mask=torch.tensor([1,1,1,0,0,0],dtype=torch.bool)
+    y=torch.tensor([0,1,2,-1,-1,-1]);a=fit_objective(w,x,y,w.detach(),t.detach(),mask);ga=torch.autograd.grad(a,w)[0]
+    y[~mask]=999;b=fit_objective(w,x,y,w.detach(),t.detach(),mask);gb=torch.autograd.grad(b,w)[0]
+    assert torch.equal(a,b) and torch.equal(ga,gb) and t.grad is None
