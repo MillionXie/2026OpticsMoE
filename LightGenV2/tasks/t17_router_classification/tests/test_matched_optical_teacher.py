@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import torch
-from LightGenV2.tasks.t17_router_classification.train_f_matched_optical_teacher import classification_loss, matched_balance
+from LightGenV2.tasks.t17_router_classification.train_f_matched_optical_teacher import classification_loss, matched_balance,matched_training_codes
 from LightGenV2.tasks.t17_router_classification.select_monotone_checkpoints import select_strict_tuple
 from LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST import optical_teacher_mode,fit_objective,coordinate_fit_objective
 
@@ -48,3 +48,10 @@ def test_teacher_hard_coordinate_closure_has_no_KD_requirement():
     coordinate=coordinate_fit_objective(w,x,y,w,anchor)
     assert torch.equal(direct,coordinate)
     assert torch.equal(torch.autograd.grad(direct,w)[0],torch.autograd.grad(coordinate,w)[0])
+
+
+def test_default_view_sequence_compatible_and_canonical_mode_explicit():
+    old=np.random.default_rng(17);codes=old.integers(0,8,100);codes[old.random(100)<.5]=0
+    assert np.array_equal(codes,matched_training_codes(np.random.default_rng(17),100))
+    assert not matched_training_codes(np.random.default_rng(17),100,1.).any()
+    with pytest.raises(ValueError):matched_training_codes(np.random.default_rng(17),10,2.)

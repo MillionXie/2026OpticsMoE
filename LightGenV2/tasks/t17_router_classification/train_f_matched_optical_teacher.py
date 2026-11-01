@@ -59,6 +59,12 @@ def selection_key(metrics, usage):
     return min(accuracies), sum(accuracies), -max(v['selection_share_CV'] for v in usage.values()), -metrics['cross_entropy']
 
 
+def matched_training_codes(rng, count, canonical_probability=.5):
+    if not 0<=canonical_probability<=1:raise ValueError('Canonical probability outside [0,1]')
+    codes=rng.integers(0,8,count);codes[rng.random(count)<canonical_probability]=0
+    return codes
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--profile', required=True, type=Path)
@@ -70,6 +76,8 @@ def main():
         raise ValueError('Explicit teacher TEST supervision and student soft-only disclosure required')
     if cfg['teacher']['epochs'] > 40 or cfg['student']['epochs'] > 20:
         raise ValueError('Finite teacher/student budgets required')
+    head_codes=cfg.get('head_block_view_codes',list(range(8)))
+    if not head_codes or len(set(head_codes))!=len(head_codes) or any(type(c)is not int or c not in range(8)for c in head_codes):raise ValueError('Explicit valid unique head view codes required')
     gpu = require_authorized_gpu(cfg['authorized_gpu_uuids']); torch.set_num_threads(4)
     torch.manual_seed(cfg['seed']); rng = np.random.default_rng(cfg['seed']); args.out.mkdir(parents=True, exist_ok=False)
     raw, identity = load_panel_f(cfg['data'])
@@ -118,7 +126,7 @@ def main():
                     for group in opt.param_groups: group['lr']=lr*ratio
                 parts={}; steps=0
                 for split in ('train','test'):
-                    order=rng.permutation(len(fields[split])); codes=rng.integers(0,8,len(order)); codes[rng.random(len(order))<.5]=0
+                    order=rng.permutation(len(fields[split])); codes=matched_training_codes(rng,len(order),cfg.get('canonical_probability',.5))
                     total=0.; aux=0.
                     for start in range(0,len(order),cfg['batch']):
                         idx=torch.tensor(order[start:start+cfg['batch']],device='cuda'); code=torch.tensor(codes[start:start+cfg['batch']],device='cuda')
@@ -138,14 +146,14 @@ def main():
                     features=[];targets=[];ys=[];masks=[];model.eval();before={n:p.detach().clone() for n,p in model.named_parameters() if n!='shared_head.weight'}
                     with torch.no_grad():
                         for split in ('train','test'):
-                            for code in range(8):
+                            for code in head_codes:
                                 for i in range(0,len(fields[split]),cfg['eval_batch']):
                                     x=fields[split][i:i+cfg['eval_batch']];features.append(model.optical_features(augment_packed(x,torch.full((len(x),),code,device='cuda',dtype=torch.long)))['ccd_features'])
                                 hard=role=='teacher' or split=='train';ys.append(labels[split] if hard else torch.full_like(labels[split],-1));masks.append(torch.full_like(labels[split],hard,dtype=torch.bool))
                                 if role=='student':targets.append(target_cache[split][:,code])
                     block=refit_existing_head(model.shared_head,torch.cat(features),torch.cat(ys),anchor,.001,.02,40,torch.cat(targets) if targets else None,.5 if targets else 0.,2.,torch.cat(masks))
                     assert all(torch.equal(p,before[n]) for n,p in model.named_parameters() if n in before)
-                    block.update(total_view_presentations=64000,hard_TRAIN_view_presentations=48000,hard_TEST_view_presentations=16000 if role=='teacher' else 0,soft_TEST_view_presentations=16000 if role=='student' else 0);head_opt.state.clear()
+                    block.update(total_view_presentations=8000*len(head_codes),hard_TRAIN_view_presentations=6000*len(head_codes),hard_TEST_view_presentations=2000*len(head_codes) if role=='teacher' else 0,soft_TEST_view_presentations=2000*len(head_codes) if role=='student' else 0,augmentation_codes=head_codes);head_opt.state.clear()
                 dev,usage=metrics();key=selection_key(dev,usage)
                 if key>best:best=key;selected=epoch;stale=0;save('best_checkpoint.pt',epoch)
                 else:stale+=1
