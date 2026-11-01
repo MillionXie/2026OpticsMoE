@@ -18,8 +18,28 @@ def validate_holder(ready,lock,now):
         raise ValueError('Insufficient remaining white-holder time; no camera init')
 
 
+def audit_vendor_save(camera,path,decoded):
+    """Save the SAME acquired frame via the official SDK, with no new capture."""
+    import ctypes
+    from PIL import Image
+    path=Path(path)
+    if path.exists()or path.with_suffix('.tif').exists():raise FileExistsError('Preserve prior vendor frame audit')
+    m=camera._module
+    request=m.TUCAM_FILE_SAVE(m.TUIMG_FORMATS.TUFMT_TIF.value,str(path).encode('mbcs'),ctypes.pointer(camera._frame))
+    camera._check(m.TUCAM_File_SaveImage(camera._handle(),request),'vendor same-frame TIFF save')
+    candidates=[p for p in (path,path.with_suffix('.tif'),Path(str(path)+'.tif'))if p.is_file()]
+    candidates=list(dict.fromkeys(candidates))
+    if len(candidates)!=1:raise ValueError('Expected exactly one official saved TIFF')
+    file=candidates[0]
+    with Image.open(file)as im:value=np.asarray(im).copy()
+    equal=value.shape==decoded.shape and np.array_equal(value,decoded)
+    return dict(file=file.name,SHA256=sha(file),shape=list(value.shape),dtype=str(value.dtype),
+                mean=float(value.mean()),p99=float(np.percentile(value,99)),maximum=int(value.max()),
+                equals_decoded_array=equal,new_camera_frame=False,settings_written=False)
+
+
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--holder',type=Path,required=True);p.add_argument('--out',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--holder',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--vendor-save-audit',action='store_true');a=p.parse_args()
     cfg=json.loads(a.config.read_text());root=Path(__file__).resolve().parents[3];holder_lock=root/'LightGenV2/tasks/t12_text_to_image/runs/hardware/.t12_scene_device_owner.lock'
     validate_holder(json.loads((a.holder/'ready.json').read_text()),json.loads(holder_lock.read_text()),datetime.now(timezone.utc))
     if(root/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/.t18_sdk_owner.lock').exists():raise RuntimeError('Another camera owner')
@@ -39,6 +59,7 @@ def main():
                 file=a.out/f'white_{i}.npy';camera.capture(file);v=np.load(file,allow_pickle=False)
                 if v.shape!=(2048,2048)or v.dtype!=np.uint16:raise ValueError('Unexpected native format')
                 row=dict(file=file.name,SHA256=sha(file),capture_UTC=datetime.now(timezone.utc).isoformat(),mean=float(v.mean()),p99=float(np.percentile(v,99)),maximum=int(v.max()),saturation_fraction=float((v==65535).mean()))
+                if a.vendor_save_audit:row['official_same_frame_TIFF']=audit_vendor_save(camera,a.out/f'vendor_white_{i}',v)
                 rows.append(row);put(a.out/f'white_{i}_receipt.json',row);print(json.dumps(row),flush=True)
         put(a.out/'report.json',dict(complete=True,rows=rows,clear_white_signal=all(r['mean']>1000 and r['p99']>4000 for r in rows),SDK_released=True,camera_only_process=True,SLM_SDK_initialized=False,model_TRAIN_CCD=0,TEST_used=False))
     except BaseException as error:
