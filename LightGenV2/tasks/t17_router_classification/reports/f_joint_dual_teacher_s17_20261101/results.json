@@ -1,5 +1,5 @@
 {
-  "generated_UTC": "2026-10-31T20:29:09.913240+00:00",
+  "generated_UTC": "2026-11-01T03:14:52.705504+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "protocol": "one joint LG two outputs plus two finalized source-only D2NN four outputs",
   "records": {
@@ -19335,5 +19335,175 @@
       }
     },
     "fully_collected_local_SHA_verified": true
-  }
+  },
+  "same_architecture_optical_teacher_and_student": {
+    "teacher": {
+      "status": {
+        "state": "training",
+        "epoch": 9,
+        "selected_epoch": 9,
+        "pid": 3137955
+      },
+      "result": null,
+      "metadata": {
+        "profile": {
+          "seed": 17,
+          "batch": 64,
+          "eval_batch": 64,
+          "phase_optimizer": "wrapped",
+          "phase_lr": 0.0003,
+          "head_lr": 5e-05,
+          "head_weight_decay": 0.0,
+          "label_smoothing": 0.02,
+          "cosine_lr": true,
+          "early_stop": true,
+          "training_temperature": 1.0,
+          "augmentation": "D4",
+          "authorized_gpu_uuids": [
+            "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+          ],
+          "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+          "profile": "f_matched_optical_teacher_s17_20261101",
+          "dataset": "eurosat_original_f",
+          "architecture": "LG",
+          "num_classes": 10,
+          "main_layers": 2,
+          "layers": 3,
+          "training_scope": "all",
+          "data": {
+            "expected_counts": {
+              "train": 6000,
+              "val": 2000,
+              "test": 2000
+            },
+            "original_f_subset_preserved": true,
+            "trainval": {
+              "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/data.npz",
+              "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/manifest.json",
+              "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+              "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+            },
+            "holdout": {
+              "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/data.npz",
+              "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/manifest.json",
+              "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+              "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60"
+            }
+          },
+          "optical_contract": "Same A/B 4x224 expert, top2 once, E/G main2, global478/canvas518, 17um/532nm/.1m; identical intensity_softsign after every main phase; D3 full478 and same OEO, no Linear",
+          "readout": "LG single Linear784->10; D2NN fixed full-coverage CCD2x5",
+          "classes": [
+            "AnnualCrop",
+            "Forest",
+            "HerbaceousVegetation",
+            "Highway",
+            "Industrial",
+            "Pasture",
+            "PermanentCrop",
+            "Residential",
+            "River",
+            "SeaLake"
+          ],
+          "no_learned_frontend": true,
+          "teacher_used": true,
+          "training_labels": "Teacher: original TRAIN+TEST hard CE, augmented and canonical mixed. Student: TRAIN CE+teacher KD; TEST soft only; inherits same-architecture TEST-hard-trained teacher weights.",
+          "data_license": "Existing original data source metadata MIT; do not label CC BY4.0",
+          "human_A100_authorization_date": "2026-10-31 latest request",
+          "parent_checkpoint": "runs/simulation/canonical_head_TEST_s17_20261101/F_joint/best_checkpoint.pt",
+          "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+          "alternating_head": {
+            "interval_epochs": 5,
+            "inner_steps": 40,
+            "anchor_strength": 0.001,
+            "training_views": "D4_all8"
+          },
+          "domain_route_aux": 0.0,
+          "selection": "original TEST worst-domain accuracy then macro recall/CE, no VAL gate",
+          "teacher": {
+            "epochs": 40,
+            "min_epochs": 20,
+            "patience": 15,
+            "original_TEST_hard_GT_in_loss": true
+          },
+          "selection_mode": "worst_domain_first",
+          "protocol": "one joint RGB+SAR LG, two domain outputs; finalized D2NN four-cell baselines protected",
+          "target": {
+            "RGB_minimum_accuracy": 0.65,
+            "SAR_minimum_accuracy": 0.65,
+            "guaranteed": false
+          },
+          "training_route": "top2_straight_through",
+          "selection_source": "original_TEST_development",
+          "per_modality_balance": {
+            "mode": "actual_hard_load_dot_dense_plus_marginal_KL",
+            "weight": "fixed TRAIN-only physical router gradient calibration: .5 main norm, clip[.001,1]"
+          },
+          "student": {
+            "epochs": 20,
+            "min_epochs": 10,
+            "patience": 10,
+            "original_TEST_hard_GT_in_loss": false
+          }
+        },
+        "data": {
+          "trainval": {
+            "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+            "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+            "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+          },
+          "holdout": {
+            "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+            "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+            "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+          },
+          "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+          "groups_disjoint": true,
+          "paired_modalities_not_jointly_input": true,
+          "counts": {
+            "train": 6000,
+            "val": 2000,
+            "test": 2000
+          }
+        },
+        "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+        "stage": "teacher",
+        "source_commit": "7178e528cf59386e3882530565f30c2558bcebae",
+        "source_sha256": {
+          "train_f_matched_optical_teacher.py": "6c557a1e853f5d66cbb44613134ae28c3fd148785a278d64c62b742aec680ecb",
+          "train_figure_revision.py": "ea65222ce5ec57c6c53a3cdc8ed87088b8a42d906ac4094e3b9bf022d45cce75",
+          "model_four.py": "0bf0747af500e6ac5e449a947eda5a7ece061e1a938e736b4c294790981a7e5b",
+          "model_linear_readout.py": "ea9839da8317e0f172e92e5d23f67bef1529576fd4f0e2a94540f1e57590216f",
+          "model_depth_ccd.py": "d0b36fb9af338d12e7ba764aad554b8479eea3ef6554c99e08873bf1c5ef7c86",
+          "phase_optimizer.py": "2e43c49b0fef68f24e1c077ae3756ec4c62600d450a8c48230c83dc298beb361",
+          "f_load_balance.py": "0e17eff80ac2b9827181bc0ca51ee1d624c9c7e0355d010b59ec9ae54f6b7a0a"
+        },
+        "pid": 3137955,
+        "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+        "command": [
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train_f_matched_optical_teacher.py",
+          "--profile",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_matched_optical_teacher_s17_20261101.json",
+          "--out",
+          "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101"
+        ],
+        "teacher_architecture_identical": true,
+        "inference_parameters": 487204,
+        "TEST_hard_GT_in_current_stage_loss": true,
+        "student_inherits_TEST_hard_supervised_teacher_weights": false,
+        "VAL_gate": false,
+        "initial_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+        "balance_calibration": {
+          "weight": 0.13263313472270966,
+          "source": "20 original TRAIN class-domain-balanced code0",
+          "target_physical_router_norm_ratio": 0.5
+        }
+      }
+    },
+    "student": {
+      "status": null,
+      "result": null,
+      "metadata": null
+    }
+  },
+  "latest_target_both_domains_at_least_65_percent": false
 }

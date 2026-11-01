@@ -1,0 +1,21 @@
+{
+  "snapshot_only": true,
+  "final_PT_not_included": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/metadata.json",
+      "sha256": "09a3c4238534822e52c7f070da76faa2cf35e61e1fa8aa67ca6cdd1442746dc6",
+      "size": 6593
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/status.json",
+      "sha256": "e309029b4a30e699555468370657a34bee6c03866a310ca0f448326a9027b70f",
+      "size": 81
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_matched_optical_teacher_s17_20261101/teacher/history.json",
+      "sha256": "5ceb6608eaaa594d792562cbe70e71b9568aab2814ce91b7df32f576fffe3878",
+      "size": 81946
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 """Twelve A-aligned D points; k2 references are exact protected A checkpoints."""
 import hashlib,html,json
+import numpy as np
 from pathlib import Path
 
 
@@ -37,13 +38,35 @@ def main():
         rows.append('<tr>'+''.join('<td>'+html.escape(str(v))+'</td>' for v in [dataset,k,stage,*scores,percent(current) if current is not None else '—'])+'</tr>')
         extra=task/f'runs/simulation/panel_d_Kather_boundary_refine_s17_20261101/{dataset}/k{k}'
         records.append(dict(**item,status=status,result=result,selected_run=str(folder.relative_to(task)),selected_checkpoint_sha256=result['checkpoint_sha256'] if verified else None,fully_verified=verified,latest_development_selection_accuracy=current,additional_boundary_status=read(extra/'status.json'),additional_boundary_result=read(extra/'result.json')))
+    independent_best_records=json.loads(json.dumps(records))
+    constrained=read(task/'reports/panel_d_Kather_monotone_selection_s17_20261101/constrained_selection.json')
+    if constrained:
+        for entry in constrained['selected']:
+            index=next(i for i,r in enumerate(records) if r['dataset']=='kather2016' and r['k']==entry['k'])
+            folder=task/entry['run'];value=read(folder/'result.json')
+            checkpoint=task/value.get('checkpoint_reference',entry['run']+'/best_checkpoint.pt')
+            if hashlib.sha256(checkpoint.read_bytes()).hexdigest()!=entry['checkpoint_sha256'] or value['original_test_dev']['correct']!=entry['correct']:
+                raise ValueError('Constrained selected PT identity mismatch')
+            pred=np.load(folder/'test_predictions.npz');original=np.load(task/records[index]['selected_run']/'test_predictions.npz')
+            if not all(np.array_equal(pred[key],original[key]) for key in ('ids','labels')):
+                raise ValueError('Constrained curve changed complete TEST sample identity')
+            if not np.all((pred['route_power']>0).sum(1)==entry['k']):raise ValueError('Constrained curve actual k differs')
+            records[index].update(result=value,selected_run=entry['run'],selected_checkpoint_sha256=entry['checkpoint_sha256'],selection_policy='human-requested posthoc strict-monotonic TEST-development PT tuple; not independently best per k',status=dict(state='complete_constrained_checkpoint_selection'))
+        rows=[]
+        for r in records:
+            value=r['result'];scores=[percent(value[s]['accuracy']) for s in ('train','val','original_test_dev')]
+            rows.append('<tr>'+''.join('<td>'+html.escape(str(v))+'</td>' for v in [r['dataset'],r['k'],r['status'].get('state'),*scores,'—'])+'</tr>')
     monotonic={}
     for dataset in plan['datasets']:
         values=[r['result']['original_test_dev']['correct']/r['result']['original_test_dev']['n'] for r in records if r['dataset']==dataset and r['fully_verified']]
         monotonic[dataset]=dict(nondecreasing=all(a<=b for a,b in zip(values,values[1:])),strictly_increasing=all(a<b for a,b in zip(values,values[1:]))) if len(values)==4 else None
     page='''<!doctype html><html lang="zh"><meta charset="utf-8"><title>D统一A的Top-k实验</title><style>body{font:16px/1.7 sans-serif;max-width:1200px;margin:32px auto;padding:0 18px}table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;padding:8px}.note{background:#fff0cf;padding:12px}</style><h1>图D：3数据集×4个真实Top-k</h1><p class="note">ORIGINAL_TEST_EXPOSED_DEVELOPMENT，seed17。原TEST用于选模和训练开发，不是独立TEST。12点中Kather/Blood的k2直接复用A同PT；其余10点单独保留，不为制造递增选择弱权重。</p><p>统一A的[R,G;B,0]、router224、四224专家+gap30拼478/global478/canvas518、两主层E→OEO→G→OEO、同intensity_softsign无LN/ReLU、唯一无偏置Linear784→C。Kather和Blood保持A原数据/划分/去重；Organ保留原官方三划分和11类。</p><table><tr><th>数据</th><th>k</th><th>状态</th><th>获选TRAIN</th><th>VAL（仅记录）</th><th>已核验开发TEST</th><th>中途TEST选模值</th></tr>'''+''.join(rows)+'</table><p>只按TEST开发准确率再CE选PT，VAL不设门槛。最后一列是中途状态，不是完成结果。递增目标：'+html.escape(str(monotonic))+'。</p></html>'
     if (out/'topk.svg').exists():page=page.replace('</html>','<h2>已核验12点</h2><img src="topk.svg" style="width:100%"><p>显示真实正确数及是否严格递增，不画单seed不存在的误差条。训练/头拟合预算不同，不能仅凭曲线宣称k的因果结构优势。</p></html>')
-    out.mkdir(exist_ok=True);(out/'results.html').write_text(page,encoding='utf-8');(out/'results.json').write_text(json.dumps(dict(role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',plan=plan,records=records,nondecreasing_by_k=monotonic),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    if constrained:
+        page=page.replace('其余10点单独保留，不为制造递增选择弱权重。','其余点单独保留。Kather按最新人工要求，从现存PT中联合选择严格递增组合；这不是各k独立最高分曲线。')
+        best=[r['result']['original_test_dev']['correct'] for r in independent_best_records if r['dataset']=='kather2016']
+        page=page.replace('</html>','<h2>Kather选PT规则与未约束最高分</h2><p>主曲线为明确的后验严格递增约束选择；固定完整752张TEST与原标签，每点实际推理k不变。未约束各k最高正确数仍为'+html.escape(str(best))+'，全部原PT保留。主曲线的递增是选模条件，不能用它证明增加k必然提高最优准确率。A第一组与B两层继续复用主曲线同一k2 PT。</p></html>')
+    out.mkdir(exist_ok=True);(out/'results.html').write_text(page,encoding='utf-8');(out/'results.json').write_text(json.dumps(dict(role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',plan=plan,records=records,nondecreasing_by_k=monotonic,independently_best_records=independent_best_records,constrained_checkpoint_selection=constrained),ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 
 
 if __name__=='__main__':main()

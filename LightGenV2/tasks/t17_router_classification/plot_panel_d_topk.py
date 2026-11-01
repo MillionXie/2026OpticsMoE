@@ -13,6 +13,10 @@ def main():
         assert len(points)==4 and all(v['fully_verified'] for v in points)
         correct=[v['result']['original_test_dev']['correct'] for v in points];n=[v['result']['original_test_dev']['n'] for v in points];ys=[100*c/z for c,z in zip(correct,n)]
         ax.plot(range(1,5),ys,'o-',color='#aa4499',linewidth=1.8)
+        if name=='kather2016' and data.get('constrained_checkpoint_selection'):
+            best=[v for v in data['independently_best_records'] if v['dataset']==name]
+            ax.plot(range(1,5),[100*v['result']['original_test_dev']['accuracy'] for v in best],'x--',color='#777777',alpha=.8,label='Independent maxima')
+            ax.plot([],[],'o-',color='#aa4499',label='Monotonic PT tuple');ax.legend(fontsize=7,loc='lower right')
         for k,y,c,z in zip(range(1,5),ys,correct,n):ax.annotate(f'{y:.2f}%\n{c}/{z}',(k,y),xytext=(0,8),textcoords='offset points',ha='center',fontsize=8)
         ax.set(title=title,xlabel='Actual entrance top-k',ylabel='Development accuracy (%)',xticks=[1,2,3,4],xlim=(.7,4.3),ylim=(min(ys)-2,max(ys)+3));ax.grid(alpha=.2)
         trend=data['nondecreasing_by_k'][name]['strictly_increasing'];ax.text(.04,.04,'Strictly increasing: '+str(trend),transform=ax.transAxes,fontsize=9)

@@ -130,6 +130,15 @@ def main():
             usage_rows.append('<tr><td>'+name+'</td><td>'+' / '.join(pct(v) for v in entry['per_image_selection_frequency'])+'</td><td>'+' / '.join(pct(v) for v in entry['selection_slot_share'])+'</td></tr>')
         page=page.replace('</html>','<h2>同一PT的RGB/SAR专家负载</h2><p>'+html.escape(usage['balance_status'])+' 被选频率以图像数为分母，四项合计200%；选择次数占比以2×图像数为分母，合计100%，均衡参考各25%。平均光功率不等于选择频率，两模态分别检查，不能用合并平均掩盖偏载。</p><table><tr><th>模态</th><th>E1/E2/E3/E4被选频率</th><th>选择次数占比</th></tr>'+''.join(usage_rows)+'</table><p><a href="../f_joint_load_balance_s17_20261101/results.html">完整TRAIN/VAL/开发TEST、逐类与Top2组合统计</a></p><img src="../f_joint_load_balance_s17_20261101/expert_usage.svg" style="width:100%"></html>')
     data['router_angle_sgd_candidate']=dict(status=sgd_status,result=sgd_result,fully_collected_local_SHA_verified=sgd_verified)
+    matched=task/'runs/simulation/f_matched_optical_teacher_s17_20261101'
+    matched_records={stage:dict(status=read(matched/stage/'status.json'),result=read(matched/stage/'result.json'),metadata=read(matched/stage/'metadata.json')) for stage in ('teacher','student')}
+    data['same_architecture_optical_teacher_and_student']=matched_records
+    data['latest_target_both_domains_at_least_65_percent']=all(selected['original_test_dev']['domains'][d]['accuracy']>=.65 for d in ('RGB','SAR'))
+    if matched_records['teacher']['status']:
+        announcement='<h2>最新人工协议：同结构联合LG教师→联合LG学生，两域至少65%</h2><p>教师和学生都为同一四专家、Top2、两主层E→OEO→G→OEO、唯一Linear784→10、487204参数，无ResNet/CNN前端。教师在原TRAIN与原TEST真标签及增强上学习；学生继承该教师权重（因此继承TEST标签信息），再用TRAIN真标签＋软目标和原TEST仅软目标蒸馏。不得称独立测试。此前ResNet增强教师仅是历史方案，不能当作本轮同结构教师。</p><p>真实hard Top2频次结合dense均值的辅助与每模态边际KL同时训练，按实际选择份额验收；不以dense改善替代硬负载，不保证达标。</p>'
+        for stage,v in matched_records.items():announcement+='<p>'+stage+'真实状态：'+html.escape(str(v['status']))+'</p>'
+        announcement+='<p>新候选完整权重/逐样本/SHA审计前，主表仍保留已核验64.6%/49.6%；距65%分别差4/154正确，各域1000。VAL仅记录，不选模。新教师最多40轮、学生最多20轮，父E0参选。</p>'
+        page=page.replace('</h1>','</h1>'+announcement,1)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 

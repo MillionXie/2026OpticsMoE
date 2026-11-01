@@ -1,0 +1,88 @@
+{
+  "role": "POSTHOC_ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "policy": "Human-requested strict-increasing checkpoint tuple; maximize total correct subject to actual k order and fixed whole TEST, then prefer larger-k correct counts. Not independent maxima or causal k evidence.",
+  "all_original_best_PT_preserved": true,
+  "full_TEST_ID_and_labels_unchanged": true,
+  "candidates": {
+    "1": [
+      {
+        "k": 1,
+        "run": "runs\\simulation\\panel_d_A_aligned_s17_20261101\\kather2016\\k1",
+        "checkpoint_sha256": "655e8e35026ed038441dce27ac60901e4ac3159a0d27f9536288c87bd66f7fc7",
+        "correct": 601,
+        "n": 752
+      },
+      {
+        "k": 1,
+        "run": "runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last",
+        "checkpoint_sha256": "bd3f5078eafe9c370dd0310ff1de70fe6f75aacf602ef8a4aa9c8b4268197c74",
+        "correct": 590,
+        "n": 752
+      }
+    ],
+    "2": [
+      {
+        "k": 2,
+        "run": "runs\\simulation\\panel_d_Kather_adjacent_head_s17_20261101\\Kather_k2",
+        "checkpoint_sha256": "2ed5a80655a1fdd62b060830e86cabaae7260f4fe4a33838f27c28bb262f60ea",
+        "correct": 596,
+        "n": 752
+      }
+    ],
+    "3": [
+      {
+        "k": 3,
+        "run": "runs\\simulation\\panel_d_Kather_boundary_refine_s17_20261101\\kather2016\\k3",
+        "checkpoint_sha256": "cb1a52ffa60a81577e3c8fa0af535b01d88f97c405322cc265c0bad3ee8029ae",
+        "correct": 604,
+        "n": 752
+      },
+      {
+        "k": 3,
+        "run": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3",
+        "checkpoint_sha256": "f672c3c602714913b8d85867bd89c055f6f11794e7e08d38e68b366af62face3",
+        "correct": 600,
+        "n": 752
+      }
+    ],
+    "4": [
+      {
+        "k": 4,
+        "run": "runs\\simulation\\panel_d_Kather_boundary_refine_s17_20261101\\kather2016\\k4",
+        "checkpoint_sha256": "8b69354a54d8e7b45dbd8088306e662df6012c19a6b47060936edfd3c4a0d01a",
+        "correct": 604,
+        "n": 752
+      }
+    ]
+  },
+  "selected": [
+    {
+      "k": 1,
+      "run": "runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last",
+      "checkpoint_sha256": "bd3f5078eafe9c370dd0310ff1de70fe6f75aacf602ef8a4aa9c8b4268197c74",
+      "correct": 590,
+      "n": 752
+    },
+    {
+      "k": 2,
+      "run": "runs\\simulation\\panel_d_Kather_adjacent_head_s17_20261101\\Kather_k2",
+      "checkpoint_sha256": "2ed5a80655a1fdd62b060830e86cabaae7260f4fe4a33838f27c28bb262f60ea",
+      "correct": 596,
+      "n": 752
+    },
+    {
+      "k": 3,
+      "run": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3",
+      "checkpoint_sha256": "f672c3c602714913b8d85867bd89c055f6f11794e7e08d38e68b366af62face3",
+      "correct": 600,
+      "n": 752
+    },
+    {
+      "k": 4,
+      "run": "runs\\simulation\\panel_d_Kather_boundary_refine_s17_20261101\\kather2016\\k4",
+      "checkpoint_sha256": "8b69354a54d8e7b45dbd8088306e662df6012c19a6b47060936edfd3c4a0d01a",
+      "correct": 604,
+      "n": 752
+    }
+  ]
+}

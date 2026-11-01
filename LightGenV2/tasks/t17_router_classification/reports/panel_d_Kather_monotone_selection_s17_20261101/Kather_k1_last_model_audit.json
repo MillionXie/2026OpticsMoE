@@ -1,0 +1,8 @@
+{
+  "strict": true,
+  "actual_top_k": 1,
+  "all_parameters_bitwise_unchanged": true,
+  "parameters": 485636,
+  "linear_count": 1,
+  "Conv_count": 0
+}

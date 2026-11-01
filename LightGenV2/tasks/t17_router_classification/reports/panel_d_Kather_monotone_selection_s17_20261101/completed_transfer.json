@@ -1,0 +1,40 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last/val_predictions.npz",
+      "size": 40631,
+      "sha256": "f9079253511f488f5524dd3b6b4d47a24a134ad1c314a3295fc9bc8dfde1281d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last/metadata.json",
+      "size": 3083,
+      "sha256": "253fc965b4b7cc8cb0f8db04db2f3b28ec8b1b8693b4cee234ba68a698c2f959"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last/test_predictions.npz",
+      "size": 40594,
+      "sha256": "13b14d9e0cf1096d5edfef1a14548bafd54ed4715d00693b4fcc1d31066bff3d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last/result.json",
+      "size": 6014,
+      "sha256": "5392cabbec462f7335f9daf64036751f8c7a27396bf5d6049fc73e9f7ac5e1dc"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last/train_predictions.npz",
+      "size": 179710,
+      "sha256": "1a6afd7ec7e6f045d9174e1b1d939e1952e0eb12d04f3de8feaab5dd019f0539"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/Kather_k1_last/model_audit.json",
+      "size": 150,
+      "sha256": "df774bd308a659012a9c45f6763fda31e84afd673c83ade5eea258a3a5993daa"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_monotone_selection_s17_20261101/status.json",
+      "size": 44,
+      "sha256": "8f175042ee452e4fc4837a7cd0cd28f0dde4f93a9b6ea30ef6eade989d219990"
+    }
+  ]
+}

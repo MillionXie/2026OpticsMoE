@@ -1,4 +1,12 @@
-## 新共享隐藏语义与Kather相邻k对照均已完成核验；F仍需结构取舍（2026-11-01）
+## 最新人工协议：D按现存PT联合选择严格递增；F同结构光学教师与学生均以双65%为目标（2026-11-01）
+
+图D不再将“各k独立最高分”作为唯一主曲线：按本次明确人工要求，保持完整原TEST与实际k，从已保存PT中选择严格递增组合，先最大化四点总正确数、再偏好较大k的正确数。Kather实际主曲线590/596/600/604（752）=78.4574/79.2553/79.7872/80.3191%；k1使用原run已存在的E15 last，完整三split只读重放、strict485636/唯一Linear/noCNN/真实k1及所有参数bitwise未变通过，完整预测/路由与引用PT SHA已保存。未约束最高分601/596/604/604和全部原PT仍并列保留，不能把约束选出的递增当作“各k最高性能天然递增”的证据。K2未更换，A第一组/D k2/B两层同一596 PT。Blood2919/2945/3058/3098（3421）、Organ5848/5981/6039/6053（8216）保持原完整结果，三组主曲线均严格递增。选择池、规则、PT SHA与固定全部ID/标签证明见reports/panel_d_Kather_monotone_selection_s17_20261101。
+
+用户此次明确要求教师与F架构一致，并将当前准确率目标改为同一联合模型RGB/SAR都至少65%。不增加四层；此前ResNet共享增强教师保留为历史，不冒称光学LG教师。新入口train_f_matched_optical_teacher.py、profile f_matched_optical_teacher_s17_20261101：教师与学生均为原四专家/两主层/真实Top2/同OEO/唯一Linear/487204参数，教师联合使用原TRAIN6000和原TEST2000真标签，固定半数canonical加随机D4增强；学生继承该教师权重，再以TRAIN真CE+KD及原TEST仅softKL蒸馏，必须披露学生继承了TEST硬监督教师的权重，不能称独立TEST。每模态真实hard选择频次stopgrad×dense均值加边际KL训练辅助，系数只由20张原TRAIN类别/模态均衡样本的物理router梯度校准，非VAL/TEST调系数。原父E0保护；按较低域TEST、均值、实际hard负载CV、CE选同一PT，VAL只记录。
+
+source7178e528cf59386e3882530565f30c2558bcebae已12项相关CPU检查、真实20TRAIN/TEST软GPU准入与完整父2000TEST预测重放、全4参数真实更新/头块光学冻结、strict4state单Linear无CNN/教师目标detach/学生TEST硬GT拒绝通过，main/GitHub/server路径SHA已同步。worker3137955已在授权GPU1实际运行教师阶段，最多40/min20/pat15，之后学生最多20/min10/pat10；无新推理结构/参数或固定域专家。每轮126phase/head步，教师每5轮64000硬视图头块，学生64000混合头块（48000硬TRAIN+16000软TEST），均最多40内步；教师8视图缓存保存原ID/标签/域/代码及SHA。当前只是启动/进度，不是最终PT备份或双65%达标；主F仍采用完整核验64.6/49.6同一旧PT，新的完成权重/三split/负载与缓存全SHA审计后才可采用。GPU6其他任务不动，新任务只占原GPU1，阶段结束核自身PID退出。
+
+## 新共享隐藏语义与Kather相邻k对照均已完成核验；F仍需结构取舍（历史阶段，2026-11-01）
 
 F joint_hidden source6448c952000a6a486524220a5f716885f21577dd实际10轮早停，TEST选回E0、四tensor与父完全相同。TRAIN70.80/64.7333、VAL55.90/48.20仅记录、开发64.60/49.60，仍未双70%，负载同父E4两域0。19文件80.59MB best/last/预测route/两logitcache/两hidden.npy/初始化及manifest全remote-localSHA；strict4tensor487204唯一Linear无CNN、完整ID/teacher logits、TRAIN6000x8x256与TEST2000x8x256完整hidden target CPU bitwise回放、原TRAIN-only mean/std/Ridge核验，完整2000canonical TEST概率bitwise回放通过。last光学四参数及外部投影真实更新（投影L2约1.534），额外200704训练参数从未进入推理，头block相位/投影冻结准入通过；1260phase/head/projection更新、20000TEST随机视图、128000混合head视图/80内部步单列。2510849退出无GPU，失败保留，不续训/扫系数。
 
