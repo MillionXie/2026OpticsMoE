@@ -153,7 +153,7 @@ def main():
     assert a.updates>=25 and a.lr>0 and not a.output.exists()and os.environ.get('CUDA_VISIBLE_DEVICES')==GPU and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
     a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0);torch.manual_seed(1042)
     a.no_gradient_checkpointing=True;a.adapt_head=False
-    write(a.output/'execution.json',dict(argv=sys.argv,pid=os.getpid(),source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=digest(Path(__file__))))
+    write(a.output/'execution.json',dict(argv=sys.argv,pid=os.getpid(),source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=digest(Path(__file__)),GPU_UUID=GPU,GPU_name=torch.cuda.get_device_name(0),GPU_memory_total_bytes=torch.cuda.get_device_properties(0).total_memory))
     try:run(a)
     except BaseException:write(a.output/'failure.json',dict(traceback=traceback.format_exc()));raise
 

@@ -19,7 +19,8 @@ import traceback
 
 from PIL import Image, ImageDraw
 
-GPU = 'GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
+from .scene_execution_gpu import configured_gpu
+GPU = configured_gpu()
 SCHEMA = 'abo_white_reference_scene_feasibility_v1'
 
 
