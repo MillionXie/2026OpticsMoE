@@ -1,5 +1,30 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 2026-11-01 用户移除ImageReward验收并授权正式光路部署
+
+以下为最新人工批准，覆盖下文旧ImageReward否决与尚未交接状态；原分数、旧报告及失败图全部保留。
+当前主验收采用CLIP-T、DINO-I、CLIP-I的总体／灯／枕九项原始分数差，
+不再用负ImageReward除以基线绝对值的相对百分数作为部署门。九项差均小于0.02，
+完整70块、八步正式所选权重仍为`aa2d277bd743d4dd831ec33852629dbf3001e772b55a8ac436a0d2a557a06fd8`。
+同4090三独立进程各8B1、含首请求的新计时为电子2741.984ms／LG809.086ms，即3.38899倍；
+六次窗口核验无他人GPU进程，计时PNG与质量图逐项同SHA。额外未知现场H／DMA预算104.90873ms，
+固定六SLM＋CCD为5.165536ms，必要电子保留；这是软件建模时间，不是物理实测。
+
+正式DATA交接包为`scene_expanded_full70_user_approved_lab_handoff_20261101`，
+`report.json` SHA为`1773b71b4737ff3afc5edc3232870f389b8b9ecff5f014c8f1dc2d4359d6edea`，
+`binding.json` SHA为`e8f7b1b3b15f43102700a7a2a9c5642023e47822f9b05f50ffb23bf7dd8b6fee`；
+已核服务器实际PT／F6／数据SHA，完整70块binding准入通过，显式批准物理部署。
+已正式发送原光路聊天`01a14f71-f545-7983-81ff-3a500bf5a208`，对方已确认收到并开始核包和现场状态。
+现场线程负责SDK、真实采集及必要TRAIN校准；本线程不操作SDK，不等待慢peer或重复源训练。
+
+现场微调目标改为同PT、同RGB／prompt／seed的配对SIM／EXP上述九项均值差距不超过4%，
+目标区间为SIM的96%–100%，不以超过仿真为优化目标；自然实测更高须如实保留，不能压低或隐瞒。
+更换或微调PT须记录新SHA，并重新生成该权重的匹配SIM，不能套原权重的SIM分数。
+光路校准仍只用TRAIN；TEST选PT是获准的开发选择指标，未执行TEST梯度更新，不称独立泛化。
+悬浮灯罩、灯在床上、漏书柜／窗和形态改变等真实失败仍保留；固定78目视记录不是全500盲评。
+最终含计时页面为`scene_expanded_full_UNet70_RTX4090_baseline_middle_delivery_20261101/index.html`，
+其旧验收文件保留历史含义，最新部署批准以上述独立交接包为准。正式交接不等于现场验收完成。
+
 ### 2026-11-01 完整70块同4090结果与TRAIN控制诊断
 
 `scene_expanded_full_UNet70_RTX4090_8step_training_20261101`已完成一轮624个TRAIN、B2共312更新，
