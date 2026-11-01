@@ -88,7 +88,8 @@ class Ledger:
                            acquisition_recomputes_prefix=True,inference_Qwen_calls_per_request=1)
         self.middle8_binding=middle8_binding
         if middle8_binding is not None:
-            self.contract.update(schema='scene_lab_middle8_ledger_v1',middle8_binding=middle8_binding)
+            schema='scene_lab_middle8_ledger_v1' if middle8_binding['schema']=='scene_lab_middle8_binding_v1'else 'scene_lab_full_unet8_ledger_v1'
+            self.contract.update(schema=schema,middle8_binding=middle8_binding)
         self.key=identity(self.contract)
         if create:
             self.root.mkdir(parents=True,exist_ok=False);put(self.root/'contract.json',self.contract)
@@ -226,9 +227,12 @@ def open_ledger(root):
     """Explicit new-schema dispatch; never reinterpret an old F9 ledger."""
     root=Path(root);c=json.loads((root/'contract.json').read_text(encoding='utf-8'))
     schema=c.get('schema')
-    if schema not in ('scene_lab_ledger_v1','scene_lab_middle8_ledger_v1'):
+    if schema not in ('scene_lab_ledger_v1','scene_lab_middle8_ledger_v1','scene_lab_full_unet8_ledger_v1'):
         raise ValueError('Unknown acquisition ledger schema')
     binding=c.get('middle8_binding')
-    if (schema=='scene_lab_middle8_ledger_v1')!=(binding is not None):
+    if (schema!='scene_lab_ledger_v1')!=(binding is not None):
         raise ValueError('New profile cannot be stripped or smuggled into old F9')
+    if binding is not None:
+        expected='scene_lab_middle8_binding_v1' if schema=='scene_lab_middle8_ledger_v1'else 'scene_lab_full_unet8_binding_v1'
+        if binding.get('schema')!=expected:raise ValueError('64-block and70-block ledger identities cannot be interchanged')
     return Ledger(root,c['session'],c['models'],c['requests'],middle8_binding=binding)

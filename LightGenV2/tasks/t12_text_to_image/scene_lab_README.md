@@ -1,5 +1,15 @@
 # F9光路接口与现场校准（尚非完整实测放行包）
 
+### 2026-11-01追加：保留64历史，新增完整70块8步的独立准入
+
+用户随后要求少剪UNet并重新训练，仿真端已另发
+`scene_expanded_full_UNet8_v1 / UNet_deep_keep=10`。现场静态合同新增
+`scene_lab_full_unet8_profile.json`；对应binding schema为
+`scene_lab_full_unet8_binding_v1`、账本schema为`scene_lab_full_unet8_ledger_v1`。
+64块原schema仍只准deep_keep9，不能仅把一个块数改成70；两种profile、源depth descriptor、
+实际GraphObserver块数必须一一吻合。共用以下八步接口与相同F6、624TRAIN／500TEST合同，
+不是将64候选49冒称新70训练完成。源头正在训练／验收，新70正式PT仍未交接或准许采集。
+
 ## 2026-11-01：F6／64块8步新版本的预部署代码（未交接新PT、未采集）
 
 旧F9十二步入口及全部历史CCD、权重和图仍原样保留。新八步版使用

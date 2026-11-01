@@ -15,6 +15,8 @@ TEST = 'f132238c3a59efb1308649909c96ce3669e02c7420d598bb29183536720f9f47'
 SAFE = ('sample_id','reference','prompt','seed','reference_id','reference_sha256',
         'category','condition_id','native_caption','reward_caption','prompt_profile')
 PROFILE = json.loads(Path(__file__).with_name('scene_lab_middle8_profile.json').read_text(encoding='utf-8'))
+FULL_PROFILE = json.loads(Path(__file__).with_name('scene_lab_full_unet8_profile.json').read_text(encoding='utf-8'))
+BINDINGS={'scene_lab_middle8_binding_v1':PROFILE,'scene_lab_full_unet8_binding_v1':FULL_PROFILE}
 
 
 def hex_sha(value, length=64):
@@ -24,15 +26,17 @@ def hex_sha(value, length=64):
 def checked_binding(binding, *, require_approval=True):
     keys={'schema','profile','generator_sha256','source_commit','compression_profile',
           'SIM_manifest_sha256','approved_for_physical_deployment'}
-    if (not isinstance(binding,dict) or set(binding)!=keys or binding['schema']!='scene_lab_middle8_binding_v1'
-        or binding['profile']!=PROFILE or not hex_sha(binding['generator_sha256'])
+    if (not isinstance(binding,dict) or set(binding)!=keys or binding['schema']not in BINDINGS
+        or binding['profile']!=BINDINGS[binding['schema']] or not hex_sha(binding['generator_sha256'])
         or not hex_sha(binding['source_commit'],40) or not hex_sha(binding['SIM_manifest_sha256'])
         or type(binding['approved_for_physical_deployment'])is not bool):
         raise ValueError('Exact middle8 graph, source, PT and matching SIM binding required')
     # Mirror the pure source-side2328 profile contract here, so the capture PC
     # never needs to import training/render dependencies just to read a ledger.
     config=checked_compression_profile(binding['compression_profile'])
-    if config['pairs_sha256']!=PAIRS or config['TRAIN_contexts']!=624:
+    expected_schema='scene_expanded_middle_v1' if binding['schema']=='scene_lab_middle8_binding_v1'else 'scene_expanded_full_UNet8_v1'
+    if (config['pairs_sha256']!=PAIRS or config['TRAIN_contexts']!=624
+        or config['schema']!=expected_schema or config['UNet_deep_keep']!=binding['profile']['UNet_deep_keep']):
         raise ValueError('Old R2 TRAIN132/DEV48 or another dataset is not this profile')
     if require_approval and not binding['approved_for_physical_deployment']:
         raise ValueError('Preparation is not physical-deployment acceptance')
@@ -42,9 +46,10 @@ def checked_binding(binding, *, require_approval=True):
 def checked_compression_profile(config):
     keys={'schema','prompt_profile','vision_keep','language_keep','UNet_deep_keep','student_steps',
           'parent_generator_sha256','parent_frontend_sha256','electronic_teacher_sha256','pairs_sha256','TRAIN_contexts'}
-    if (not isinstance(config,dict)or set(config)!=keys or config['schema']!='scene_expanded_middle_v1'
+    depths={'scene_expanded_middle_v1':9,'scene_expanded_full_UNet8_v1':10}
+    if (not isinstance(config,dict)or set(config)!=keys or config['schema']not in depths
         or config['prompt_profile']!=PROFILE['prompt_profile']
-        or (config['vision_keep'],config['language_keep'],config['UNet_deep_keep'],config['student_steps'])!=(6,4,9,8)
+        or (config['vision_keep'],config['language_keep'],config['UNet_deep_keep'],config['student_steps'])!=(6,4,depths[config['schema']],8)
         or config['parent_frontend_sha256']!=F6 or type(config['TRAIN_contexts'])is not int
         or not 1<=config['TRAIN_contexts']<=1520
         or any(not hex_sha(config[k])for k in ('parent_generator_sha256','electronic_teacher_sha256','pairs_sha256'))):

@@ -21,6 +21,12 @@ def binding():
         SIM_manifest_sha256='e'*64,approved_for_physical_deployment=True)
 
 
+def full_binding():
+    b=binding();b['schema']='scene_lab_full_unet8_binding_v1';b['profile']=copy.deepcopy(m.FULL_PROFILE)
+    b['compression_profile'].update(schema='scene_expanded_full_UNet8_v1',UNet_deep_keep=10)
+    return b
+
+
 def rows():
     def row(i,role):
         view=i%(76 if role=='train' else 26)
@@ -74,6 +80,17 @@ def test_capture_side_pure_compression_validator_matches_source_contract():
         changed=dict(config,**{key:value})
         with pytest.raises(ValueError):m.checked_compression_profile(changed)
         with pytest.raises(ValueError):checked_profile(changed)
+
+
+def test_full70_has_its_own_schema_and_cannot_masquerade_as64():
+    from LightGenV2.tasks.t12_text_to_image.scene_expanded_middle import checked_profile
+    b=full_binding();m.checked_binding(b)
+    assert m.checked_compression_profile(b['compression_profile'])==checked_profile(b['compression_profile'])
+    for changed in [dict(b,schema='scene_lab_middle8_binding_v1'),dict(b,profile=binding()['profile']),
+                    dict(b,compression_profile=binding()['compression_profile'])]:
+        with pytest.raises(ValueError):m.checked_binding(changed)
+    s,r,_=state();s['depth_compression']['profile']=b['compression_profile']
+    assert m.checked_state(s,r,b)==s['depth_compression']
 
 
 @pytest.mark.parametrize('key,value',[('joint_image_context',True),('steps',12),('UNet_blocks',70),('CFG',1.),('resolution',1024)])
@@ -213,6 +230,39 @@ def test_new_ledger_explicit_TEST_and_old_F9_rejection(tmp_path):
     assert open_ledger(old.root).key==old.key
     path=new.root/'contract.json';doc=json.loads(path.read_text());doc.pop('middle8_binding');path.write_text(json.dumps(doc))
     with pytest.raises(ValueError):open_ledger(new.root)
+
+
+def test_full70_ledger_cannot_be_relabelled_as64(tmp_path):
+    from LightGenV2.tasks.t12_text_to_image.tests.test_scene_lab_protocol import fixture
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_protocol import Ledger,open_ledger
+    old,_,_=fixture(tmp_path/'old_fixture');_,b=rows();bind=full_binding()
+    session=dict(old.session,cohort_role='test',request_manifest_sha256=m.TEST,TEST_gradients=False,
+                 evaluation_only=True,TEST_used_for_model_selection=True)
+    models=dict(F6=m.F6,generator=bind['generator_sha256'],source_commit=bind['source_commit'])
+    new=Ledger(tmp_path/'full70_fixture',session,models,m.public_requests(b,'test'),create=True,middle8_binding=bind)
+    assert new.contract['schema']=='scene_lab_full_unet8_ledger_v1' and open_ledger(new.root).key==new.key
+    p=new.root/'contract.json';doc=json.loads(p.read_text());doc['schema']='scene_lab_middle8_ledger_v1';p.write_text(json.dumps(doc))
+    with pytest.raises(ValueError):open_ledger(new.root)
+
+
+def test_actual_CPU_module_counts_for64_and70_not_production_weights():
+    if sys.platform=='win32':pytest.skip('Run actual Torch CPU module-count test in the designated compute runtime')
+    import torch
+    from torch import nn
+    from LightGenV2.tasks.t12_text_to_image.scene_depth_probe import prune_unet
+    class Group(nn.Module):
+        def __init__(self,count):
+            super().__init__();self.transformer_blocks=nn.ModuleList([nn.Linear(1,1)for _ in range(count)])
+    class Fixture(nn.Module):
+        def __init__(self):
+            super().__init__();self.groups=nn.ModuleList([Group(n)for n in [2]*5+[10]*6])
+    for depth,expected in [(9,64),(10,70)]:
+        fixture=Fixture();before={n:p.clone()for n,p in fixture.named_parameters()}
+        graph=prune_unet(fixture,depth)
+        assert graph['actual_blocks']==expected
+        if depth==10:
+            assert graph['removed_parameters']==0
+            assert all(torch.equal(v,before[n])for n,v in fixture.named_parameters())
 
 
 def test_native_adapter_requires_new_explicit_binding_not_false_joint_default():

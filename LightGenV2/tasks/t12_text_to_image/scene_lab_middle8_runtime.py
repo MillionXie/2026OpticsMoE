@@ -45,12 +45,14 @@ def initialize(ledger_root, session, binding, data, role):
 
 class ComposedObserver:
     """Install the source depth graph FIRST, then actual-CCD supply, never overwrite either."""
-    def __init__(self,graph,measured=None):self.depth=graph;self.measured=measured
+    def __init__(self,graph,measured=None,*,expected_blocks=64):
+        if expected_blocks not in (64,70):raise ValueError('Only explicitly bound64 or70 blocks')
+        self.depth=graph;self.measured=measured;self.expected_blocks=expected_blocks
 
     def prepare(self,qwen,processor,head,pipe):
         processor=self.depth.prepare(qwen,processor,head,pipe)
-        if self.depth.graph['backend']['actual_blocks']!=64:
-            raise ValueError('Middle8 must really execute the64-block UNet')
+        if self.depth.graph['backend']['actual_blocks']!=self.expected_blocks:
+            raise ValueError('Actual UNet block count differs from this explicit64/70 profile')
         if self.measured is not None:
             processor=self.measured.prepare(qwen,processor,head,pipe)
         return processor
@@ -176,7 +178,8 @@ def render_main(binding,ledger_path,remaining):
         measured=None
         if ledger_path is not None:
             measured=measured_observer(open_ledger(ledger_path),binding,sha(a.data/'inference_inputs.json'))
-        observer=ComposedObserver(GraphObserver(binding['compression_profile']),measured)
+        observer=ComposedObserver(GraphObserver(binding['compression_profile']),measured,
+                                  expected_blocks=binding['profile']['UNet_blocks'])
         a._verified_depth_compression=state['depth_compression'];a.request_observer=observer
         try:
             old_render(a)
