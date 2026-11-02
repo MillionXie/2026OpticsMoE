@@ -1,5 +1,23 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 2026-11-02 四个零任务微调baseline与LG2仿真／实验、Qwen合并
+
+按用户最新要求，正式合并页只纳入ResNet0、InstructPix2Pix、FLUX.2-klein-4B和MagicBrush
+四种本任务未微调对照，另列LG2固定原SIM、最终实验CCD重放及完整Qwen电子系统，共七列。
+ResNet0保留ImageNet预训练骨干，GRU／连接／读出为seed42随机初始化；E68 decoder仍冻结，
+无条件蒸馏、无读出继承。它是零更新连接层对照，不是原生预训练图文生成器；不混入50轮结果。
+LG2实验采用`scene_full70_registered_20261101/post/EXP_fit_pair`完整500例、
+TRAIN电子头校准best `a258766e3be9e02b44d895b5c4eca7bb42396f9d20a4b77fbffd75bba1c5f91d`；
+仿真仍为原aa2，因此明确不是同完整PT的SIM／EXP对比，不改原报告含义。
+
+新页为`runs/simulation/scene_seven_models_20261102/index.html`，包含同500请求的3500张输出，
+4000个图片链接逐SHA核验；同RGB／完整prompt／seed，相关同decoder四列初始噪声一致。
+三指标评分资产相同，21组均值均从3500条原始逐图分数重算核对，无新训练／推理／SDK操作。
+保留原生8／30／100／4步预算及跨卡身份，不报告新速度结论，不纳入ImageReward。
+页面提供类别／描述搜索／分页、总体及灯／枕分项、汇总和逐图CSV、PT与来源SHA。
+浏览器功能及截图已实际检查；完整500人工语义验收仍未完成，不称独立泛化或指令成功率。
+原短轮次和50轮页面、所有图像／评分保持历史原样。
+
 ### 2026-11-02 外部实验室的LG2仿真推理目录交付
 
 按用户指定服务器和`/autodl-tmp/lg2/`交付当前aa2／F6、原624TRAIN／500TEST和全部模型资产。
