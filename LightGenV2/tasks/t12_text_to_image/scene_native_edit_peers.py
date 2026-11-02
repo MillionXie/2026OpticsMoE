@@ -62,7 +62,9 @@ def infer(a):
     if a.model=='flux2_klein4b':
         from diffusers import Flux2KleinPipeline
         pipe=Flux2KleinPipeline.from_pretrained(a.model_path,torch_dtype=torch.bfloat16,local_files_only=True)
-        pipe.enable_model_cpu_offload()
+        if torch.cuda.get_device_properties(0).total_memory>=38*1024**3:
+            pipe.to('cuda');residency='all_components_cuda_on_40GB'
+        else:pipe.enable_model_cpu_offload();residency='model_cpu_offload_on_smaller_GPU'
     elif a.model=='magicbrush':
         if a.ip2p_config is None:raise ValueError('Compatible original IP2P architecture config required')
         pipe=StableDiffusionInstructPix2PixPipeline.from_single_file(a.model_path/'MagicBrush-epoch-52-step-4999.ckpt',
@@ -71,6 +73,7 @@ def infer(a):
     else:
         pipe=StableDiffusionInstructPix2PixPipeline.from_pretrained(a.model_path,torch_dtype=torch.float16,local_files_only=True,safety_checker=None)
         pipe.to('cuda');pipe.scheduler=EulerAncestralDiscreteScheduler.from_config(pipe.scheduler.config)
+    if a.model!='flux2_klein4b':residency='all_components_cuda'
     pipe.set_progress_bar_config(disable=True)
     components={name:m for name,m in pipe.components.items()if isinstance(m,torch.nn.Module)}
     for m in components.values():m.eval().requires_grad_(False)
@@ -84,7 +87,7 @@ def infer(a):
     write(a.output/'loaded_model.json',dict(complete=True,model=a.model,repo=cfg['repo'],revision=assets['revision'],
           component_parameters=counts,total_parameters=sum(counts.values()),trainable_parameters=0,
           upstream_defaults=cfg,actual_output_resolution=512,reference_information_resolution=256,
-          source_packages={n:importlib.metadata.version(n)for n in ['torch','diffusers','transformers','accelerate']}))
+          residency=residency,source_packages={n:importlib.metadata.version(n)for n in ['torch','diffusers','transformers','accelerate']}))
     for i,row in enumerate(rows):
         src=a.data/row['reference']
         if sha(src)!=row['reference_sha256']:raise ValueError('Changed TEST input')
@@ -111,7 +114,7 @@ def infer(a):
         checkpoint_sha256=identity,checkpoint_identity_kind='official_weights_manifest_SHA256_not_task_PT',
         resolution=512,reference_information_resolution=256,prompt_rewritten=False,full_prompt_preserved=True,
         input_image_used=True,TEST_used_for_gradient=False,ImageReward_used=False,new_speed_claim=False,
-        source_commit=os.environ['T12_SOURCE_COMMIT'],seconds=time.monotonic()-began))
+        residency=residency,source_commit=os.environ['T12_SOURCE_COMMIT'],seconds=time.monotonic()-began))
 
 
 def main():
