@@ -32,6 +32,13 @@ Pix2Pix-Turbo单列少量诊断，公开edge／sketch权重不是通用RGB图文
 轮次训练仍复用`scene_resnet_supervised_train --epoch-sweep`，渲染用显式`--evaluation-epoch`。
 具体下载、生成、评分是否完成以实际run为准，未目视的新图不继承旧审核。
 
+用户随后要求“完成了直接评分，不要等待”：已完成500张的每个轮次／原生模型立即单独评分，
+不等其余队列；最终在CPU合并这些逐图分数，不再重复整批GPU评分。
+原GPU生成子进程原样继续，只更换CPU编排父；新续行入口run为
+`scene_resnet_requested_epochs_immediate_workflow_20261102`和
+`scene_native_frozen_peers_A100_immediate_workflow_20261102`，各轮次／模型的原raw身份不变。
+用户同时取消后续Turbo工作；此前已完成的8张诊断保留，不再生成、评分或加入正式baseline表。
+
 前一独立50轮已完成3900更新，7498.646秒；last SHA
 `b5dd35e8ec4806b5e26c0c6f18d2e35d5db270c0fbfa0d52a1cfad77dcc22431`，
 完整500均值0.2968508668／0.3270083824／0.7502903305，GPU已释放；旧页面完整保留，
