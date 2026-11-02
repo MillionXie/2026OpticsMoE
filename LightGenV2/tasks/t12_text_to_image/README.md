@@ -1,5 +1,27 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 2026-11-02 ResNet前端替换对照：保留正式70块／八步生成器
+
+用户确认只替换Qwen前端，保留当前生成器。历史参考已核到T19的
+`abo_conditional_edit_finetune50_formal_s42_20261024`：官方冻结ImageNet ResNet-18
+加可训byte-GRU及小型RGB解码器，固定last50完整2304 TEST为PSNR17.7911541dB、
+SSIM0.7847682，PT SHA`12796ef78426245508e59ef58471ad35d0f2e356a21902ac31041afd903543b6`。
+这是旧参考图＋指令编辑，不能把旧分数直接套到新的512场景生成任务。
+
+新合同`configs/scene_resnet18_fixed70_20261102.json`：复用官方冻结RN18及完整文字byte-GRU，
+输入仍为原RGB256白底参考和两句文字；保留64个空间视觉token，不裁切参考，不截断文字。
+新投影与GRU适配到原77文本／257图像／pooled条件接口；原查询读出初始化自已选head。
+只用原624 TRAIN、76参考视图的已存LG条件做蒸馏监督，不重算Qwen、不使用TEST梯度。
+固定50轮、B8、3900更新；真实四步反向后精确重置模型和优化器再正式fit，只保best／last。
+这是明确的蒸馏前端替换对照，继承已训条件读出和生成器，不能写成无Qwen知识的独立从头baseline，
+也不继承旧T19完整模型小于15M的参数结论。实际加载／反向／训练完成分别以新run收据为准。
+
+推理从原RGB和完整prompt重算RN18／GRU，不加载Qwen或光学前端，不用缓存条件代替正常推理。
+正式aa2权重对应UNet70块和原VAE全部冻结，保持八步网格／CFG7.5／IP.25／conditioning1024／BF16，
+不更改旧正式PT或正在现场部署的版本。每个不同前端候选完整TEST500评分，选PT标作开发指标；
+CLIP-T／DINO-I／CLIP-I作为新结果对照，ImageReward不作验收。仅CPU／接口检查不等于训练或画质通过。
+源码入口为`scene_resnet_frontend`、`scene_resnet_frontend_run --stage cache|fit|render`。
+
 ### 2026-11-01 用户移除ImageReward验收并授权正式光路部署
 
 以下为最新人工批准，覆盖下文旧ImageReward否决与尚未交接状态；原分数、旧报告及失败图全部保留。
