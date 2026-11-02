@@ -5,7 +5,7 @@
   "vision": "torchvision.ResNet18_Weights.IMAGENET1K_V1",
   "official_visual_checkpoint_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
   "visual_parameters_frozen_including_BN": true,
-  "reference_preprocessing": "Original RGB256, no crop, float32 ImageNet mean/std",
+  "reference_preprocessing": "Original square white RGB file (stored1024), full-frame bicubic resize256, no crop, float32 ImageNet mean/std",
   "visual_tokens": [64, 512],
   "text": "Original T19 random UTF8 byte embedding259x32 plus GRU32x64, full prompt <=512 bytes, no truncation",
   "readout": "Shared512 projection, inherited77 text and257 image queries plus pooled readout; new GRU projection",

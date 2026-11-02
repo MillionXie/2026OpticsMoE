@@ -61,8 +61,12 @@ class ResNetSceneFrontend(nn.Module):
 
 def rgb_tensor(image):
     import numpy as np
-    if image.mode != 'RGB' or image.size != (256, 256):
-        raise ValueError('Original RGB256 required; no crop or replacement reference')
+    from PIL import Image
+    if image.mode != 'RGB' or image.width != image.height or image.width < 256:
+        raise ValueError('Original square white RGB reference required; no crop')
+    # Stored references are1024 square; RGB256 denotes the effective model
+    # input, as in the Qwen processor. Resize the full original frame, no crop.
+    image = image.resize((256, 256), Image.Resampling.BICUBIC)
     value = torch.from_numpy(np.asarray(image, dtype=np.float32).copy()).permute(2, 0, 1) / 255
     return (value - torch.tensor([.485, .456, .406])[:, None, None]) / torch.tensor([.229, .224, .225])[:, None, None]
 
