@@ -1,5 +1,22 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 2026-11-02 去掉条件蒸馏和读出继承的正常图像监督50轮
+
+用户明确批准新的独立前端训练对照，旧蒸馏权重与页面全部保留。
+`configs/scene_resnet18_image_supervised50_20261102.json`固定同E68全70块decoder及30步推理，
+冻结原UNet／task-LoRA／VAE和官方RN18全部参数与BN；只训练fresh seed42的GRU、两路投影及
+三路条件读出7,062,496参数，不调用读出继承，不用Qwen特征、条件目标、anchor、KD或warmup。
+监督只来自原624 TRAIN已审核目标图的VAE mode latent，标准DDPM随机时间步epsilon MSE；
+365完整／259部分目标保持原1.0／0.5权重，原目标图历史上由冻结官方OmniGen生成，并非新增真人GT。
+这是去掉Qwen条件蒸馏的训练，不是去掉冻结decoder和ImageNet视觉预训练。
+固定50轮、有效B8、3900更新；微批B2累积4次以适应24GB，不改变有效batch或学习率。
+AdamW lr1e-4／weight_decay.01／clip1不变，不设早停或调参，正式只采用last50。
+先真实四次图像监督反向，核各前端组梯度非零有限、decoder无梯度／版本未变，再精确重置前端和优化器。
+训练使用冻结decoder的可微前向；不能将decoder包在no_grad中从而切断前端训练。
+UNet仅因activation checkpointing使用train模式，所有权重冻结且严格拒绝非零dropout或BN；RN始终eval。
+入口`scene_resnet_supervised_train --stage cache|fit`；生成／三指标沿用原入口的新profile
+`qwen70_30_supervised`，旧profile语义不变。是否实际启动／完成以新run收据为准。
+
 ### 2026-11-02 更正为完整Qwen同decoder、严格冻结ResNet的新对照
 
 用户进一步要求使用与Qwen文生图相同的decoder并冻结ResNet。上一轮RN18与BN已经冻结，

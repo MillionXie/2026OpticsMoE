@@ -34,6 +34,7 @@ def checked_data(a):
 
 
 def cache(a):
+    if a.profile=='qwen70_30_supervised':raise ValueError('Use the image-supervised cache; no condition teacher')
     from .scene_tail_distill import load_cache
     from .qwen3_scene_conditioning import QwenSDXLConditions
     from ..t19_resnet20_baselines.frozen_resnet18 import assert_encoder_unchanged
@@ -90,6 +91,7 @@ def cache(a):
 
 
 def fit(a):
+    if a.profile=='qwen70_30_supervised':raise ValueError('Use image-supervised epsilon training; no inherited readouts')
     state = parent(a)
     profile=experiment_profile(a.profile)
     report = json.loads((a.cache/'report.json').read_text())
@@ -164,13 +166,13 @@ def render(a):
     if not report['complete']or sha(file)!=expected:raise ValueError('Complete trained frontend checkpoint required')
     student=torch.load(file,map_location='cpu',weights_only=False)
     if student['schema']!=profile['schema'] or student['generator_sha256']!=profile['generator_sha256']:raise ValueError('Wrong frontend/tail binding')
-    if profile['name']=='qwen70_30' and (a.candidate!='last'or student['epoch']!=50):
+    if profile['steps']==30 and (a.candidate!='last'or student['epoch']!=50):
         raise ValueError('Human fixed last50; no TEST checkpoint selection')
     model=ResNetSceneFrontend().cuda().eval();model.readout.load_state_dict(student['readout'],strict=True)
     official=student['official_visual']
     if model.encoder.pretrained_provenance['encoder_state_sha256']!=official['encoder_state_sha256']:
         raise ValueError('Changed official visual weights')
-    if profile['name']=='qwen70_30':
+    if profile['steps']==30:
         from .white_reference_scene_probe import model_manifest
         if a.decoder_assets is None:raise ValueError('Original Qwen decoder asset manifest required')
         assets=json.loads(a.decoder_assets.read_text())
@@ -183,7 +185,7 @@ def render(a):
     if any(p.requires_grad for c in pipe.components.values()if isinstance(c,torch.nn.Module)for p in c.parameters()):
         raise ValueError('Every decoder parameter must remain frozen')
     reference_report=None
-    if profile['name']=='qwen70_30':
+    if profile['steps']==30:
         if a.reference_run is None:raise ValueError('Complete matched Qwen electronic reference required')
         reference_report=json.loads((a.reference_run/'report.json').read_text())
         if not reference_report['complete']or reference_report['checkpoint_sha256']!=profile['generator_sha256']or reference_report['sampling_steps']!=30 or not reference_report['task_LoRA_fused']:
@@ -238,7 +240,7 @@ def main():
     for key in ['parent','data','output']:p.add_argument('--'+key,type=Path,required=True)
     for key in ['teacher-cache','cache','frontend','model-path','adapter-path','decoder-assets']:p.add_argument('--'+key,type=Path)
     p.add_argument('--candidate',choices=['best','last'],default='last')
-    p.add_argument('--profile',choices=['lg70_8','qwen70_30'],default='lg70_8')
+    p.add_argument('--profile',choices=['lg70_8','qwen70_30','qwen70_30_supervised'],default='lg70_8')
     p.add_argument('--reference-run',type=Path)
     p.add_argument('--epochs',type=int,default=50);p.add_argument('--batch-size',type=int,default=8)
     a=p.parse_args()

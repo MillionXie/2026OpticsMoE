@@ -61,7 +61,7 @@ def run(a):
     from transformers import AutoImageProcessor,AutoModel
     from .white_reference_metrics import load_records
     profile=experiment_profile(a.profile)
-    fixed=profile['name']=='qwen70_30'
+    fixed=profile['steps']==30
     if fixed and (len(a.runs)!=1 or a.data is None):raise ValueError('Exactly the fixed-last50 run and canonical dataset required')
     rows=[r for folder in a.runs for r in (fixed_last_records(folder,a.data,profile)if fixed else load_records(folder))]
     signatures=[]
@@ -125,7 +125,7 @@ def run(a):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--runs',type=Path,nargs='+',required=True)
-    p.add_argument('--profile',choices=['lg70_8','qwen70_30'],default='lg70_8')
+    p.add_argument('--profile',choices=['lg70_8','qwen70_30','qwen70_30_supervised'],default='lg70_8')
     p.add_argument('--data',type=Path)
     for k in ['output','clip-checkpoint','dino-path']:p.add_argument('--'+k,type=Path,required=True)
     a=p.parse_args()

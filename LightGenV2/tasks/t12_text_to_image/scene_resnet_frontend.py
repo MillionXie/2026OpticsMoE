@@ -23,6 +23,9 @@ def experiment_profile(name='lg70_8'):
     if name == 'qwen70_30':
         return dict(name=name,schema='scene_resnet18_byte_gru_QwenE30_v1',generator_sha256=ELECTRONIC,
                     steps=30,timesteps=None,teacher='frozen_E68_TRAIN_condition_bank')
+    if name == 'qwen70_30_supervised':
+        return dict(name=name,schema='scene_resnet18_image_epsilon_QwenE30_v1',generator_sha256=ELECTRONIC,
+                    steps=30,timesteps=None,teacher=None)
     raise ValueError('Explicit historical LG8 or matched electronic Qwen30 profile required')
 
 
