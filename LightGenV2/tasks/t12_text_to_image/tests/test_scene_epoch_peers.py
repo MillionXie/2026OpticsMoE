@@ -2,13 +2,21 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from ..scene_native_edit_peers import preview_first,verify_assets
+from ..scene_native_edit_peers import preview_first,verify_assets,prepare_reference
 from ..scene_resnet_frontend import experiment_profile,checked_evaluation_epoch
 from ..scene_resnet_supervised_train import REQUESTED_EPOCHS,requested_training_epochs
 from ..scene_resnet_frontend_metrics import fixed_last_records
 
 
 class EpochPeerTests(unittest.TestCase):
+    def test_native512_interface_keeps_only_RGB256_information(self):
+        from PIL import Image
+        original=Image.new('RGB',(1024,1024),'red')
+        small,ip=prepare_reference(original,'ip2p');same,flux=prepare_reference(original,'flux2_klein4b')
+        self.assertEqual(small.size,(256,256));self.assertEqual(ip.size,(512,512))
+        self.assertEqual(flux.size,(256,256));self.assertEqual(small.tobytes(),same.tobytes())
+        self.assertEqual(ip.tobytes(),small.resize((512,512),Image.Resampling.BICUBIC).tobytes())
+
     def test_zero_and_short_epoch_authorization_does_not_weaken_fixed50(self):
         p=experiment_profile('qwen70_30_supervised')
         self.assertEqual(REQUESTED_EPOCHS,(0,1,2,5,10));self.assertEqual(requested_training_epochs(),50)

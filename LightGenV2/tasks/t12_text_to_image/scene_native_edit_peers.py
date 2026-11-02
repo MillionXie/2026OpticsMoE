@@ -24,6 +24,15 @@ MODELS={
 }
 
 
+def prepare_reference(image,model):
+    reference=image.convert('RGB').resize((256,256),Image.Resampling.BICUBIC)
+    # IP2P derives latent/output dimensions from the input image even when
+    # height/width kwargs are present. Upsample only the shared RGB256 input;
+    # never enlarge generated outputs or give the model extra source detail.
+    native=reference if model=='flux2_klein4b'else reference.resize((512,512),Image.Resampling.BICUBIC)
+    return reference,native
+
+
 def canonical_requests(data):
     request=data/'inference_inputs.json'
     if sha(request)!=REQUESTS:raise ValueError('Exact fixed500 TEST request identity required')
@@ -91,11 +100,11 @@ def infer(a):
     for i,row in enumerate(rows):
         src=a.data/row['reference']
         if sha(src)!=row['reference_sha256']:raise ValueError('Changed TEST input')
-        with Image.open(src)as im:reference=im.convert('RGB').resize((256,256),Image.Resampling.BICUBIC)
+        with Image.open(src)as im:reference,native_reference=prepare_reference(im,a.model)
         effective=hashlib.sha256(reference.tobytes()).hexdigest()
         generator=torch.Generator(device='cuda').manual_seed(row['seed'])
         with torch.inference_mode():
-            kwargs=dict(prompt=row['prompt'],image=reference,width=512,height=512,num_inference_steps=cfg['steps'],guidance_scale=cfg['guidance'],generator=generator)
+            kwargs=dict(prompt=row['prompt'],image=native_reference,width=512,height=512,num_inference_steps=cfg['steps'],guidance_scale=cfg['guidance'],generator=generator)
             if 'image_guidance'in cfg:kwargs['image_guidance_scale']=cfg['image_guidance']
             image=pipe(**kwargs).images[0]
         if image.size!=(512,512):raise ValueError('Native512 output required; no output resizing')
