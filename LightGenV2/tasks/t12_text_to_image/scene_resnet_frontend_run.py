@@ -182,14 +182,14 @@ def render(a):
     pipe.vae.cuda().eval().requires_grad_(False);pipe.set_ip_adapter_scale(.25)
     if any(p.requires_grad for c in pipe.components.values()if isinstance(c,torch.nn.Module)for p in c.parameters()):
         raise ValueError('Every decoder parameter must remain frozen')
-    reference=None
+    reference_report=None
     if profile['name']=='qwen70_30':
         if a.reference_run is None:raise ValueError('Complete matched Qwen electronic reference required')
-        reference=json.loads((a.reference_run/'report.json').read_text())
-        if not reference['complete']or reference['checkpoint_sha256']!=profile['generator_sha256']or reference['sampling_steps']!=30 or not reference['task_LoRA_fused']:
+        reference_report=json.loads((a.reference_run/'report.json').read_text())
+        if not reference_report['complete']or reference_report['checkpoint_sha256']!=profile['generator_sha256']or reference_report['sampling_steps']!=30 or not reference_report['task_LoRA_fused']:
             raise ValueError('Exactly the same original electronic decoder and fused-LoRA execution required')
         pipe.scheduler.set_timesteps(30,device='cuda')
-        if [float(x)for x in pipe.scheduler.timesteps.cpu().tolist()]!=reference['actual_timesteps']:
+        if [float(x)for x in pipe.scheduler.timesteps.cpu().tolist()]!=reference_report['actual_timesteps']:
             raise ValueError('Qwen reference Euler grid mismatch before rendering')
     records=[]
     for i,row in enumerate(rows):
@@ -209,15 +209,15 @@ def render(a):
                 negative_prompt_embeds=state['negative_text'].cuda().bfloat16(),
                 negative_pooled_prompt_embeds=state['negative_pooled'].cuda().bfloat16(),ip_adapter_image_embeds=[images]).images[0]
         name=row['sample_id']+'.png';image.save(a.output/name)
-        reference=a.output/(row['reference_id']+'.png')
-        if not reference.exists():shutil.copyfile(src,reference)
+        reference_file=a.output/(row['reference_id']+'.png')
+        if not reference_file.exists():shutil.copyfile(src,reference_file)
         records.append(dict(row,split='test',generated_PNG=name,generated_sha256=sha(a.output/name),
             input_sha256=sha(src),initial_latent_sha256=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest(),
             checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],model='resnet18_byte_gru',resolution=512,sampling_steps=profile['steps']))
         write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='raw_ResNet_GRU_TEST500_fixed_decoder',done=i+1,total=500))
     audit=assert_encoder_unchanged(model.encoder,official['encoder_state_sha256'])
     grid=[float(x)for x in pipe.scheduler.timesteps.detach().cpu().tolist()]
-    if reference is not None and grid!=reference['actual_timesteps']:
+    if reference_report is not None and grid!=reference_report['actual_timesteps']:
         raise ValueError('Actual Qwen and ResNet sampler grids differ')
     write(a.output/'report.json',dict(complete=True,schema=profile['schema'],scope='TEST_selection'if profile['steps']==8 else'TEST_fixed_last50',generated_count=500,resolution=512,
         training_performed=False,independent_TEST_opened=False,prompt_profile='two_sentence_product_scene_expanded_v8',
@@ -225,7 +225,7 @@ def render(a):
             prompt_profile='two_sentence_product_scene_expanded_v8',validation_set=False,
             TEST_used_for_model_selection=profile['steps']==8,request_sha256=REQUESTS),
         checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],sampling_steps=profile['steps'],actual_UNet_blocks=70,
-        actual_timesteps=grid,decoder_trainable_parameters=0,decoder_reference_report_sha256=sha(a.reference_run/'report.json')if reference else None,
+        actual_timesteps=grid,decoder_trainable_parameters=0,decoder_reference_report_sha256=sha(a.reference_run/'report.json')if reference_report else None,
         Qwen_parameters=0,optical_frontend_loaded=False,raw_RGB_prompt_recomputed=True,cached_conditions_in_inference=False,
         fixed_generator_weights_modified=False,TEST_used_for_gradient=False,TEST_used_for_model_selection=profile['steps']==8,
         independent_generalization_claim=False,graph=graph,frozen_encoder_audit=audit,
