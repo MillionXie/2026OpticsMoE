@@ -256,7 +256,9 @@ def main():
     if a.output.exists()or os.environ.get('CUDA_VISIBLE_DEVICES')!=gpu or len(os.environ.get('T12_SOURCE_COMMIT',''))!=40:
         raise ValueError('Fresh run, explicit GPU UUID and published source required')
     if a.epochs!=50 or a.batch_size!=8:raise ValueError('Fixed50 epochs/B8 frontend-only recipe')
-    a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0)
+    fraction=float(os.environ.get('T12_CUDA_MEMORY_FRACTION','.8'))
+    if not 0<fraction<=.8:raise ValueError('Bounded explicit CUDA memory fraction required')
+    a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(fraction,0)
     write(a.output/'execution.json',dict(argv=sys.argv,pid=os.getpid(),source_commit=os.environ['T12_SOURCE_COMMIT'],
         source_sha256=sha(__file__),GPU_UUID=gpu,GPU_name=torch.cuda.get_device_name(0),Qwen_backbone_loaded=False))
     try:globals()[a.stage](a)
