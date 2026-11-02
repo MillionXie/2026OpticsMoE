@@ -8,6 +8,19 @@
 下文较早的TEST候选选择计划不再决定正式ResNet版本，最终以固定last50的独立选择记录为准。
 视觉RN18为11,176,512冻结参数；GRU及条件读出共7,062,496可训参数，UNet／VAE均未更新。
 
+固定last50完整TEST500已生成并评分，原两候选共1000张评估证据均保留，未追加训练。
+总体CLIP-T／DINO-I／CLIP-I分别为0.2965447372／0.3137887553／0.7445925435；
+原LG2同请求分别为0.2968870885／0.3160399325／0.7456065532，原始差为
+−0.0003423513／−0.0022511772／−0.0010140097。本次没有观察到三个均值的显著落后，
+不能为了预期差距改结果；同生成器及LG条件蒸馏使这不是独立ResNet从头训练baseline。
+正式固定last50及新选择记录在`scene_resnet18_fixed70_fixed_last50_TESTselected_20261102`；
+`scene_resnet18_fixed70_TEST_metrics_20261102`保留三指标全量分数，不计算ImageReward。
+新对比页`scene_resnet18_fixed70_comparison_20261102/index.html`包含同500请求的原输入、
+完整Qwen电子30步、LG2及ResNet输出，全部2000图片链接已核验、图像SHA和输入／seed／噪声身份一致。
+固定26参考各前三个可用条件共78张已实际看完10张板，并看4张512原图；
+仍有悬浮灯罩、漏书柜／窗、靠垫放床头柜、主体形态及花纹变化，不能把接近的代理均值称为全部指令成功。
+这不是全500盲评；新ResNet速度未单独测量，不继承旧LG倍数。执行父已退出，自身GPU释放。
+
 用户确认只替换Qwen前端，保留当前生成器。历史参考已核到T19的
 `abo_conditional_edit_finetune50_formal_s42_20261024`：官方冻结ImageNet ResNet-18
 加可训byte-GRU及小型RGB解码器，固定last50完整2304 TEST为PSNR17.7911541dB、
@@ -24,7 +37,7 @@ SSIM0.7847682，PT SHA`12796ef78426245508e59ef58471ad35d0f2e356a21902ac31041afd9
 
 推理从原RGB和完整prompt重算RN18／GRU，不加载Qwen或光学前端，不用缓存条件代替正常推理。
 正式aa2权重对应UNet70块和原VAE全部冻结，保持八步网格／CFG7.5／IP.25／conditioning1024／BF16，
-不更改旧正式PT或正在现场部署的版本。每个不同前端候选完整TEST500评分，选PT标作开发指标；
+不更改旧正式PT或正在现场部署的版本。旧候选评估保留诊断用途，正式直接采用用户指定last50；
 CLIP-T／DINO-I／CLIP-I作为新结果对照，ImageReward不作验收。仅CPU／接口检查不等于训练或画质通过。
 源码入口为`scene_resnet_frontend`、`scene_resnet_frontend_run --stage cache|fit|render`。
 
