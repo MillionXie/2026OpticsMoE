@@ -10,9 +10,33 @@ import statistics
 import sys
 import traceback
 from .scene_instruction_data import sha, write
-from .scene_resnet_frontend import PARENT, REQUESTS
+from .scene_resnet_frontend import PARENT, REQUESTS, experiment_profile
 
 FIELDS=('CLIP_T','DINOv2_I','CLIP_I')
+
+
+def fixed_last_records(folder,data,profile):
+    report=json.loads((folder/'report.json').read_text())
+    if (not report['complete']or report.get('scope')!='TEST_fixed_last50'
+        or report['fixed_generator_sha256']!=profile['generator_sha256']
+        or report.get('TEST_used_for_model_selection')is not False
+        or report['TEST_selection_protocol']['request_sha256']!=REQUESTS):
+        raise ValueError('Fixed electronic-Qwen decoder and last50 cohort required')
+    request=data/'inference_inputs.json'
+    if sha(request)!=REQUESTS:raise ValueError('Changed target-free TEST requests')
+    expected={r['sample_id']:r for r in json.loads(request.read_text())}
+    rows=json.loads((folder/'images.json').read_text())
+    if len(rows)!=500 or len({r['sample_id']for r in rows})!=500:
+        raise ValueError('Exactly500 unique outputs required')
+    for row in rows:
+        wanted=expected[row['sample_id']]
+        if (any(row[k]!=v for k,v in wanted.items())or row['split']!='test'
+            or row['checkpoint_sha256']!=report['checkpoint_sha256']
+            or Path(row['generated_PNG']).name!=row['generated_PNG']
+            or sha(folder/row['generated_PNG'])!=row['generated_sha256']
+            or sha(folder/(row['reference_id']+'.png'))!=row['input_sha256']):
+            raise ValueError('TEST identity or output drift')
+        yield dict(row,run_id=folder.name,run_path=str(folder))
 
 
 def aggregate(rows):
@@ -36,11 +60,14 @@ def run(a):
     from PIL import Image
     from transformers import AutoImageProcessor,AutoModel
     from .white_reference_metrics import load_records
-    rows=[r for folder in a.runs for r in load_records(folder)]
+    profile=experiment_profile(a.profile)
+    fixed=profile['name']=='qwen70_30'
+    if fixed and (len(a.runs)!=1 or a.data is None):raise ValueError('Exactly the fixed-last50 run and canonical dataset required')
+    rows=[r for folder in a.runs for r in (fixed_last_records(folder,a.data,profile)if fixed else load_records(folder))]
     signatures=[]
     for folder in a.runs:
         report=json.loads((folder/'report.json').read_text())
-        if report.get('fixed_generator_sha256')!=PARENT or report['TEST_selection_protocol']['request_sha256']!=REQUESTS:
+        if report.get('fixed_generator_sha256')!=profile['generator_sha256'] or report['TEST_selection_protocol']['request_sha256']!=REQUESTS:
             raise ValueError('Same fixed70 tail and complete target-free requests required')
         signatures.append({r['sample_id']:(r['input_sha256'],r['prompt'],r['seed'],r['initial_latent_sha256'])
                            for r in rows if r['run_id']==folder.name})
@@ -87,17 +114,19 @@ def run(a):
         candidates.append(dict(run=folder.name,checkpoint_sha256=json.loads((folder/'report.json').read_text())['checkpoint_sha256'],
                                **{f:scores[f]['mean']for f in FIELDS}))
     candidates.sort(key=lambda r:(-r['CLIP_T'],-r['DINOv2_I'],-r['CLIP_I'],r['checkpoint_sha256']))
-    write(a.output/'selection.json',dict(complete=True,primary='full_TEST500_mean_CLIP_T',
+    write(a.output/'selection.json',dict(complete=True,primary='human_fixed_last50'if fixed else'full_TEST500_mean_CLIP_T',selection_uses_TEST=not fixed,
         tie_breakers=['DINOv2_I','CLIP_I','checkpoint_SHA'],ImageReward_used=False,
         TEST_used_for_gradient=False,independent_generalization_claim=False,selected=candidates[0],candidates=candidates))
     write(a.output/'report.json',dict(complete=True,n=len(rows),metrics=list(FIELDS),ImageReward_computed=False,
-        TEST_used_for_model_selection=True,TEST_used_for_gradient=False,independent_generalization_claim=False,
-        fixed_generator_sha256=PARENT,request_sha256=REQUESTS,source_commit=os.environ['T12_SOURCE_COMMIT']))
+        TEST_used_for_model_selection=not fixed,TEST_used_for_gradient=False,independent_generalization_claim=False,
+        fixed_generator_sha256=profile['generator_sha256'],request_sha256=REQUESTS,source_commit=os.environ['T12_SOURCE_COMMIT']))
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--runs',type=Path,nargs='+',required=True)
+    p.add_argument('--profile',choices=['lg70_8','qwen70_30'],default='lg70_8')
+    p.add_argument('--data',type=Path)
     for k in ['output','clip-checkpoint','dino-path']:p.add_argument('--'+k,type=Path,required=True)
     a=p.parse_args()
     from .scene_execution_gpu import configured_gpu

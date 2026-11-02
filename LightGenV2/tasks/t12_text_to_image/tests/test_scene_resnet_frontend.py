@@ -1,9 +1,19 @@
 import unittest
 import torch
-from ..scene_resnet_frontend import ResNetConditionReadout, condition_loss, tokenize_text, validate_training_rows, rgb_tensor
+from ..scene_resnet_frontend import (ResNetConditionReadout, condition_loss, tokenize_text, validate_training_rows, rgb_tensor,
+    experiment_profile,checked_parent_profile,PAIRS,ELECTRONIC,PARENT)
 
 
 class ResNetFrontendTests(unittest.TestCase):
+    def test_matched_Qwen_decoder_cannot_silently_use_LG_weights_or_sampler(self):
+        p=experiment_profile('qwen70_30')
+        self.assertEqual(p['steps'],30)
+        state=dict(pair_sha256=PAIRS,optical_frontend=None,joint_image_context=False)
+        self.assertIs(checked_parent_profile(state,dict(best_sha256=ELECTRONIC),p),state)
+        with self.assertRaises(ValueError):checked_parent_profile(state,dict(best_sha256=PARENT),p)
+        with self.assertRaises(ValueError):checked_parent_profile(dict(state,sampling_contract={'steps':8}),dict(best_sha256=ELECTRONIC),p)
+        with self.assertRaises(ValueError):experiment_profile('unreviewed')
+
     def test_original_stored_RGB_resized_without_cropping(self):
         from PIL import Image,ImageDraw
         image=Image.new('RGB',(1024,1024),'white')

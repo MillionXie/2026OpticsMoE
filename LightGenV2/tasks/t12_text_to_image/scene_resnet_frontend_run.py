@@ -15,20 +15,14 @@ import torch
 from PIL import Image
 from .scene_instruction_data import sha, write
 from .scene_resnet_frontend import (SCHEMA, PARENT, PAIRS, REQUESTS, ResNetSceneFrontend,
-    ResNetConditionReadout, rgb_tensor, tokenize_text, condition_loss, validate_training_rows)
+    ResNetConditionReadout, rgb_tensor, tokenize_text, condition_loss, validate_training_rows,
+    experiment_profile, checked_parent_profile)
 
 
 def parent(a):
     from .scene_tail_distill import complete_state
     state, report = complete_state(a.parent)
-    if report['best_sha256'] != PARENT or state['pair_sha256'] != PAIRS:
-        raise ValueError('Exact selected full70 parent required')
-    p = state['depth_compression']['profile']
-    if p['schema'] != 'scene_expanded_full_UNet8_v1' or p['UNet_deep_keep'] != 10:
-        raise ValueError('Keep all70 original UNet blocks')
-    if state['sampling_contract']['timesteps'] != [958,859,727,595,463,364,232,100]:
-        raise ValueError('Do not change the trained eight-step grid')
-    return state
+    return checked_parent_profile(state,report,experiment_profile(a.profile))
 
 
 def checked_data(a):
@@ -44,6 +38,7 @@ def cache(a):
     from .qwen3_scene_conditioning import QwenSDXLConditions
     from ..t19_resnet20_baselines.frozen_resnet18 import assert_encoder_unchanged
     state = parent(a)
+    profile=experiment_profile(a.profile)
     rows, _ = checked_data(a)
     payload, cr = load_cache(a.teacher_cache)
     validate_training_rows(payload['records'])
@@ -57,8 +52,13 @@ def cache(a):
             raise ValueError('TRAIN input/target identity drift')
     model = ResNetSceneFrontend().cuda().eval()
     initial = model.encoder.pretrained_provenance['encoder_state_sha256']
-    teacher = QwenSDXLConditions(joint_image_context=False).cuda().eval().requires_grad_(False)
-    teacher.load_state_dict(state['head'], strict=True)
+    teacher=None
+    if profile['name']=='lg70_8':
+        teacher = QwenSDXLConditions(joint_image_context=False).cuda().eval().requires_grad_(False)
+        teacher.load_state_dict(state['head'], strict=True)
+    elif (payload.get('condition_teacher_sha256')!=profile['generator_sha256']
+          or set(payload['TRAIN_electronic_conditions'])!={r['input_key']for r in payload['records']}):
+        raise ValueError('Exact624 original E68 TRAIN conditions required')
     visuals, targets = {}, {}
     for i, row in enumerate(payload['records']):
         if row['reference_sha256'] not in visuals:
@@ -69,28 +69,35 @@ def cache(a):
                 rgb = rgb_tensor(image.convert('RGB'))[None].cuda()
             with torch.no_grad():
                 visuals[row['reference_sha256']] = model.visual_tokens(rgb)[0].cpu().clone()
-        f = payload['features'][row['input_key']]
-        with torch.no_grad():
-            out = teacher(f['hidden'][None].cuda().float(), f['visual'][None].cuda().float())
-            targets[row['input_key']] = {k: v[0].cpu().bfloat16().clone() for k,v in out.items()}
+        if teacher is not None:
+            f = payload['features'][row['input_key']]
+            with torch.no_grad():
+                out = teacher(f['hidden'][None].cuda().float(), f['visual'][None].cuda().float())
+                targets[row['input_key']] = {k: v[0].cpu().bfloat16().clone() for k,v in out.items()}
+        else:
+            targets[row['input_key']]={k:v.detach().cpu().bfloat16().clone()
+                for k,v in payload['TRAIN_electronic_conditions'][row['input_key']].items()}
         write(a.output/'progress.json', dict(stage='TRAIN_only_RN18_and_frozen_condition_targets',done=i+1,total=624))
     frozen = assert_encoder_unchanged(model.encoder, initial)
-    data = dict(schema=SCHEMA, records=payload['records'], visuals=visuals, targets=targets,
-                pair_sha256=PAIRS, teacher_sha256=PARENT,
+    data = dict(schema=profile['schema'], records=payload['records'], visuals=visuals, targets=targets,
+                pair_sha256=PAIRS, teacher_sha256=profile['generator_sha256'],
                 teacher_cache_sha256=cr['cache_sha256'], official_visual=model.encoder.pretrained_provenance)
     torch.save(data, a.output/'frontend_cache.pt')
-    write(a.output/'report.json',dict(complete=True,schema=SCHEMA,n=624,TRAIN_views=76,TEST_target_conditions=0,
+    write(a.output/'report.json',dict(complete=True,schema=profile['schema'],n=624,TRAIN_views=76,TEST_target_conditions=0,
         cache_sha256=sha(a.output/'frontend_cache.pt'),Qwen_model_loaded=False,
-        teacher_is_cached_LG_features_plus_frozen_condition_head=True,TRAIN_distillation_only=True,
+        teacher=profile['teacher'],teacher_sha256=profile['generator_sha256'],TRAIN_distillation_only=True,
         official_visual=data['official_visual'],frozen_encoder_audit=frozen,source_commit=os.environ['T12_SOURCE_COMMIT']))
 
 
 def fit(a):
     state = parent(a)
+    profile=experiment_profile(a.profile)
     report = json.loads((a.cache/'report.json').read_text())
     if not report['complete'] or sha(a.cache/'frontend_cache.pt') != report['cache_sha256']:
         raise ValueError('Complete exact frontend cache required')
     data = torch.load(a.cache/'frontend_cache.pt',map_location='cpu',weights_only=False,mmap=True)
+    if data['schema']!=profile['schema'] or data['teacher_sha256']!=profile['generator_sha256']:
+        raise ValueError('Frontend targets and frozen decoder profile mismatch')
     rows=data['records'];validate_training_rows(rows)
     def fresh():
         torch.manual_seed(42)
@@ -129,17 +136,18 @@ def fit(a):
         mean=sum(values)/len(values)
         item=dict(epoch=epoch,updates=updates,TRAIN_condition_loss=mean,seconds=time.monotonic()-began)
         history.append(item);write(a.output/'history.json',history);write(a.output/'progress.json',dict(item,total_epochs=a.epochs,stage='TRAIN_only_new_frontend_fit_fixed_generator'))
-        checkpoint=dict(schema=SCHEMA,readout=model.state_dict(),epoch=epoch,step=updates,TRAIN_condition_loss=mean,
-            generator_sha256=PARENT,pair_sha256=PAIRS,cache_sha256=report['cache_sha256'],
+        checkpoint=dict(schema=profile['schema'],readout=model.state_dict(),epoch=epoch,step=updates,TRAIN_condition_loss=mean,
+            generator_sha256=profile['generator_sha256'],pair_sha256=PAIRS,cache_sha256=report['cache_sha256'],
             official_visual=data['official_visual'],source_commit=os.environ['T12_SOURCE_COMMIT'])
         torch.save(checkpoint,a.output/'last_checkpoint.pt')
         if mean<best:best=mean;torch.save(checkpoint,a.output/'best_checkpoint.pt')
-    write(a.output/'report.json',dict(complete=True,schema=SCHEMA,epochs=a.epochs,updates=updates,TRAIN_contexts=624,
+    write(a.output/'report.json',dict(complete=True,schema=profile['schema'],epochs=a.epochs,updates=updates,TRAIN_contexts=624,
         TRAIN_views=76,batch_size=a.batch_size,seconds=time.monotonic()-began,best_TRAIN_loss=best,
         best_sha256=sha(a.output/'best_checkpoint.pt'),last_sha256=sha(a.output/'last_checkpoint.pt'),
-        generator_sha256=PARENT,generator_weights_modified=False,TEST_used_for_gradient=False,
-        Qwen_model_loaded=False,distilled_from_preexisting_TRAIN_LG_conditions=True,
-        readout_initialization='Inherited original text/image/pooled query readouts; new RN18/GRU projections',
+        generator_sha256=profile['generator_sha256'],generator_weights_modified=False,TEST_used_for_gradient=False,
+        Qwen_model_loaded=False,condition_teacher=profile['teacher'],
+        ResNet_encoder_and_BN_frozen=True,UNet_LoRA_and_VAE_frozen=True,
+        readout_initialization='Inherited matched generator text/image/pooled query readouts; new RN18/GRU projections',
         trainable_frontend_parameters=sum(p.numel()for p in model.parameters()),
         frozen_visual_parameters=11176512,source_commit=os.environ['T12_SOURCE_COMMIT']))
 
@@ -149,20 +157,40 @@ def render(a):
     from .scene_depth_probe import prune_unet
     from ..t19_resnet20_baselines.frozen_resnet18 import assert_encoder_unchanged
     state=parent(a);_,rows=checked_data(a)
+    profile=experiment_profile(a.profile)
     report=json.loads((a.frontend/'report.json').read_text())
     file=a.frontend/(a.candidate+'_checkpoint.pt')
     expected=report[a.candidate+'_sha256']
     if not report['complete']or sha(file)!=expected:raise ValueError('Complete trained frontend checkpoint required')
     student=torch.load(file,map_location='cpu',weights_only=False)
-    if student['schema']!=SCHEMA or student['generator_sha256']!=PARENT:raise ValueError('Wrong frontend/tail binding')
+    if student['schema']!=profile['schema'] or student['generator_sha256']!=profile['generator_sha256']:raise ValueError('Wrong frontend/tail binding')
+    if profile['name']=='qwen70_30' and (a.candidate!='last'or student['epoch']!=50):
+        raise ValueError('Human fixed last50; no TEST checkpoint selection')
     model=ResNetSceneFrontend().cuda().eval();model.readout.load_state_dict(student['readout'],strict=True)
     official=student['official_visual']
     if model.encoder.pretrained_provenance['encoder_state_sha256']!=official['encoder_state_sha256']:
         raise ValueError('Changed official visual weights')
+    if profile['name']=='qwen70_30':
+        from .white_reference_scene_probe import model_manifest
+        if a.decoder_assets is None:raise ValueError('Original Qwen decoder asset manifest required')
+        assets=json.loads(a.decoder_assets.read_text())
+        if assets['SDXL']!=model_manifest(a.model_path)or assets['IPAdapter']!=model_manifest(a.adapter_path):
+            raise ValueError('UNet/VAE/IP-Adapter assets differ from the complete Qwen reference')
     a.fuse_teacher_task_lora=True
     pipe,unused_head=load_generator(a,state,False);del unused_head
     graph=prune_unet(pipe.unet,10);assert graph['actual_blocks']==70 and graph['removed_parameters']==0
     pipe.vae.cuda().eval().requires_grad_(False);pipe.set_ip_adapter_scale(.25)
+    if any(p.requires_grad for c in pipe.components.values()if isinstance(c,torch.nn.Module)for p in c.parameters()):
+        raise ValueError('Every decoder parameter must remain frozen')
+    reference=None
+    if profile['name']=='qwen70_30':
+        if a.reference_run is None:raise ValueError('Complete matched Qwen electronic reference required')
+        reference=json.loads((a.reference_run/'report.json').read_text())
+        if not reference['complete']or reference['checkpoint_sha256']!=profile['generator_sha256']or reference['sampling_steps']!=30 or not reference['task_LoRA_fused']:
+            raise ValueError('Exactly the same original electronic decoder and fused-LoRA execution required')
+        pipe.scheduler.set_timesteps(30,device='cuda')
+        if [float(x)for x in pipe.scheduler.timesteps.cpu().tolist()]!=reference['actual_timesteps']:
+            raise ValueError('Qwen reference Euler grid mismatch before rendering')
     records=[]
     for i,row in enumerate(rows):
         src=a.data/row['reference']
@@ -174,7 +202,8 @@ def render(a):
         with torch.inference_mode():
             cond={k:v.bfloat16()for k,v in model(rgb,tokens).items()}
             images=torch.cat([state['negative_image'].cuda().bfloat16(),cond['image']],0).unsqueeze(1)
-            image=pipe(width=512,height=512,timesteps=state['sampling_contract']['timesteps'],guidance_scale=7.5,
+            sampling=dict(timesteps=state['sampling_contract']['timesteps'])if profile['steps']==8 else dict(num_inference_steps=30)
+            image=pipe(width=512,height=512,**sampling,guidance_scale=7.5,
                 latents=noise,generator=generator,original_size=(1024,1024),target_size=(1024,1024),
                 prompt_embeds=cond['text'],pooled_prompt_embeds=cond['pooled'],
                 negative_prompt_embeds=state['negative_text'].cuda().bfloat16(),
@@ -184,17 +213,21 @@ def render(a):
         if not reference.exists():shutil.copyfile(src,reference)
         records.append(dict(row,split='test',generated_PNG=name,generated_sha256=sha(a.output/name),
             input_sha256=sha(src),initial_latent_sha256=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest(),
-            checkpoint_sha256=expected,fixed_generator_sha256=PARENT,model='resnet18_byte_gru',resolution=512,sampling_steps=8))
-        write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='raw_ResNet_GRU_TEST500_fixed70',done=i+1,total=500))
+            checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],model='resnet18_byte_gru',resolution=512,sampling_steps=profile['steps']))
+        write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='raw_ResNet_GRU_TEST500_fixed_decoder',done=i+1,total=500))
     audit=assert_encoder_unchanged(model.encoder,official['encoder_state_sha256'])
-    write(a.output/'report.json',dict(complete=True,schema=SCHEMA,scope='TEST_selection',generated_count=500,resolution=512,
+    grid=[float(x)for x in pipe.scheduler.timesteps.detach().cpu().tolist()]
+    if reference is not None and grid!=reference['actual_timesteps']:
+        raise ValueError('Actual Qwen and ResNet sampler grids differ')
+    write(a.output/'report.json',dict(complete=True,schema=profile['schema'],scope='TEST_selection'if profile['steps']==8 else'TEST_fixed_last50',generated_count=500,resolution=512,
         training_performed=False,independent_TEST_opened=False,prompt_profile='two_sentence_product_scene_expanded_v8',
-        TEST_selection_protocol=dict(schema='scene_expanded_TEST_selection_v1',contexts=500,
+        TEST_selection_protocol=dict(schema='scene_expanded_TEST_selection_v1'if profile['steps']==8 else'scene_expanded_fixed_last50_v1',contexts=500,
             prompt_profile='two_sentence_product_scene_expanded_v8',validation_set=False,
-            TEST_used_for_model_selection=True,request_sha256=REQUESTS),
-        checkpoint_sha256=expected,fixed_generator_sha256=PARENT,sampling_steps=8,actual_UNet_blocks=70,
+            TEST_used_for_model_selection=profile['steps']==8,request_sha256=REQUESTS),
+        checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],sampling_steps=profile['steps'],actual_UNet_blocks=70,
+        actual_timesteps=grid,decoder_trainable_parameters=0,decoder_reference_report_sha256=sha(a.reference_run/'report.json')if reference else None,
         Qwen_parameters=0,optical_frontend_loaded=False,raw_RGB_prompt_recomputed=True,cached_conditions_in_inference=False,
-        fixed_generator_weights_modified=False,TEST_used_for_gradient=False,TEST_used_for_model_selection=True,
+        fixed_generator_weights_modified=False,TEST_used_for_gradient=False,TEST_used_for_model_selection=profile['steps']==8,
         independent_generalization_claim=False,graph=graph,frozen_encoder_audit=audit,
         frontend_parameters=sum(p.numel()for p in model.parameters()),source_commit=os.environ['T12_SOURCE_COMMIT']))
 
@@ -203,8 +236,10 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--stage',choices=['cache','fit','render'],required=True)
     for key in ['parent','data','output']:p.add_argument('--'+key,type=Path,required=True)
-    for key in ['teacher-cache','cache','frontend','model-path','adapter-path']:p.add_argument('--'+key,type=Path)
+    for key in ['teacher-cache','cache','frontend','model-path','adapter-path','decoder-assets']:p.add_argument('--'+key,type=Path)
     p.add_argument('--candidate',choices=['best','last'],default='last')
+    p.add_argument('--profile',choices=['lg70_8','qwen70_30'],default='lg70_8')
+    p.add_argument('--reference-run',type=Path)
     p.add_argument('--epochs',type=int,default=50);p.add_argument('--batch-size',type=int,default=8)
     a=p.parse_args()
     from .scene_execution_gpu import configured_gpu

@@ -1,5 +1,21 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 2026-11-02 更正为完整Qwen同decoder、严格冻结ResNet的新对照
+
+用户进一步要求使用与Qwen文生图相同的decoder并冻结ResNet。上一轮RN18与BN已经冻结，
+UNet／VAE也没有更新；实际优化的是byte-GRU、两路投影及文本／图像／pooled条件读出，
+共7,062,496参数。其decoder为LG2所选aa2的八步版本，不能当成电子Qwen E68三十步decoder。
+
+新配置`configs/scene_resnet18_matched_Qwen30_frozen_20261102.json`显式选择`qwen70_30`：
+固定原E68权重`68e04d5f378e2bc0a495363b45d7d8c68e81c41cf4169329749712d23d8998f6`，
+同原70块UNet／task-LoRA／VAE、三十步Euler网格、CFG7.5、IP.25、conditioning1024和BF16。
+ResNet官方权重与BN全部冻结；decoder不进优化器，仅训练相同7,062,496个文字／连接读出参数。
+从fresh seed42重新做固定50轮／3900更新，末轮last50直接评完整TEST500，不按分数续训或择轮。
+新TRAIN监督与读出初始化均来自对应E68条件，不套LG head或八步tail；原两句文字完整保留。
+仍是明确的TRAIN条件蒸馏对照，不是完全无教师训练baseline。旧八步结果／权重／页面均保留。
+入口沿用`scene_resnet_frontend_run --profile qwen70_30`，这是配置差异，不新增另一套模型。
+实际加载、冻结、四步反向重置、正式训练及完整质量分别以新run记录为准。
+
 ### 2026-11-02 ResNet前端替换对照：保留正式70块／八步生成器
 
 用户随后明确固定正常训练50轮、不额外调整；本轮已完成50轮／3900更新，实耗126.274秒。

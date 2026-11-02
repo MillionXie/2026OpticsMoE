@@ -13,6 +13,29 @@ SCHEMA = 'scene_resnet18_byte_gru_fixed70_v1'
 PARENT = 'aa2d277bd743d4dd831ec33852629dbf3001e772b55a8ac436a0d2a557a06fd8'
 PAIRS = 'c2e30cbdbd871094df8827c78f4a02bc23305a0e39898ab53c6acf4178835fd0'
 REQUESTS = 'f132238c3a59efb1308649909c96ce3669e02c7420d598bb29183536720f9f47'
+ELECTRONIC = '68e04d5f378e2bc0a495363b45d7d8c68e81c41cf4169329749712d23d8998f6'
+
+
+def experiment_profile(name='lg70_8'):
+    if name == 'lg70_8':
+        return dict(name=name,schema=SCHEMA,generator_sha256=PARENT,steps=8,
+                    timesteps=[958,859,727,595,463,364,232,100],teacher='LG_cached_features_and_head')
+    if name == 'qwen70_30':
+        return dict(name=name,schema='scene_resnet18_byte_gru_QwenE30_v1',generator_sha256=ELECTRONIC,
+                    steps=30,timesteps=None,teacher='frozen_E68_TRAIN_condition_bank')
+    raise ValueError('Explicit historical LG8 or matched electronic Qwen30 profile required')
+
+
+def checked_parent_profile(state, report, profile):
+    if report['best_sha256'] != profile['generator_sha256'] or state['pair_sha256'] != PAIRS:
+        raise ValueError('Exact selected decoder identity required')
+    if profile['name'] == 'lg70_8':
+        p=state['depth_compression']['profile']
+        if p['schema']!='scene_expanded_full_UNet8_v1' or p['UNet_deep_keep']!=10 or state['sampling_contract']['timesteps']!=profile['timesteps']:
+            raise ValueError('Keep historical trained70/eight-step decoder')
+    elif state.get('optical_frontend')or state.get('sampling_contract')or state.get('joint_image_context',False):
+        raise ValueError('Original electronic Qwen30 decoder; no LG frontend or distilled sampler')
+    return state
 
 
 class ResNetConditionReadout(nn.Module):
