@@ -187,7 +187,11 @@ def render(a):
             checkpoint_sha256=expected,fixed_generator_sha256=PARENT,model='resnet18_byte_gru',resolution=512,sampling_steps=8))
         write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='raw_ResNet_GRU_TEST500_fixed70',done=i+1,total=500))
     audit=assert_encoder_unchanged(model.encoder,official['encoder_state_sha256'])
-    write(a.output/'report.json',dict(complete=True,schema=SCHEMA,scope='test',generated_count=500,resolution=512,
+    write(a.output/'report.json',dict(complete=True,schema=SCHEMA,scope='TEST_selection',generated_count=500,resolution=512,
+        training_performed=False,independent_TEST_opened=False,prompt_profile='two_sentence_product_scene_expanded_v8',
+        TEST_selection_protocol=dict(schema='scene_expanded_TEST_selection_v1',contexts=500,
+            prompt_profile='two_sentence_product_scene_expanded_v8',validation_set=False,
+            TEST_used_for_model_selection=True,request_sha256=REQUESTS),
         checkpoint_sha256=expected,fixed_generator_sha256=PARENT,sampling_steps=8,actual_UNet_blocks=70,
         Qwen_parameters=0,optical_frontend_loaded=False,raw_RGB_prompt_recomputed=True,cached_conditions_in_inference=False,
         fixed_generator_weights_modified=False,TEST_used_for_gradient=False,TEST_used_for_model_selection=True,

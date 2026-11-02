@@ -35,5 +35,13 @@ class ResNetFrontendTests(unittest.TestCase):
         rows[0]['split']='test'
         with self.assertRaises(ValueError):validate_training_rows(rows)
 
+    def test_three_metric_aggregate_excludes_reward(self):
+        from ..scene_resnet_frontend_metrics import aggregate,FIELDS
+        rows=[dict(run_id='rn',category=c,CLIP_T=.3,DINOv2_I=.4,CLIP_I=.7)for c in ['lamp','lamp','pillow','pillow']]
+        out=aggregate(rows)
+        self.assertEqual(out['rn/all']['n'],4)
+        self.assertEqual(set(out['rn/lamp']['scores']),set(FIELDS))
+        self.assertAlmostEqual(out['rn/all']['scores']['CLIP_T']['mean'],.3)
+
 
 if __name__=='__main__':unittest.main()

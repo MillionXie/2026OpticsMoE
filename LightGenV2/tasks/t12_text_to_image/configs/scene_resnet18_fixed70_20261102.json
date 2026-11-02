@@ -35,6 +35,7 @@
   "resolution": 512,
   "precision": "BF16 UNet/VAE and conditions, FP32 ResNet/GRU/readout",
   "ImageReward_acceptance": false,
+  "TEST_selector": "Mean CLIP-T, then DINO-I, then CLIP-I, then checkpoint SHA; ImageReward neither computed nor used",
   "historical_T19_reference": {
     "run": "LightGenV2/tasks/t19_resnet20_baselines/runs/simulation/abo_conditional_edit_finetune50_formal_s42_20261024",
     "checkpoint_sha256": "12796ef78426245508e59ef58471ad35d0f2e356a21902ac31041afd903543b6",
