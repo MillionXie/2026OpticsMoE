@@ -19,7 +19,7 @@ class IndependentResNetTests(unittest.TestCase):
         torch.manual_seed(42)
         pred=torch.randn(8,4,3,3,requires_grad=True);target=torch.randn_like(pred,requires_grad=True)
         weights=torch.tensor([.5,1.,1.,.5,.5,1.,.5,1.])
-        full=image_epsilon_loss(pred,target,weights);expected=torch.autograd.grad(full,pred)[0]
+        full=image_epsilon_loss(pred,target,weights);expected=torch.autograd.grad(full,pred,retain_graph=True)[0]
         pieces=sum(image_epsilon_loss(pred[i:i+2],target[i:i+2],weights[i:i+2])*2/8 for i in range(0,8,2))
         actual=torch.autograd.grad(pieces,pred)[0]
         self.assertTrue(torch.allclose(full,pieces));self.assertTrue(torch.equal(expected,actual))
