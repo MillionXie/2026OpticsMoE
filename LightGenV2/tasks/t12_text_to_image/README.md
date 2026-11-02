@@ -3,7 +3,7 @@
 ### 2026-11-02 外部实验室的LG2仿真推理目录交付
 
 按用户指定服务器和`/autodl-tmp/lg2/`交付当前aa2／F6、原624TRAIN／500TEST和全部模型资产。
-推理包为`t12_scene_full70_8step_20261102/`目录：源码通过Git逐字同步，DATA／PT以manifest＋SHA传输，
+推理包初次交付为`t12_scene_full70_8step_20261102/`，按用户随后要求更名为简短的`t12/`：源码通过Git逐字同步，DATA／PT以manifest＋SHA传输，
 不生成ZIP、不包含凭据，不改目标原有任务数据。独立入口`scene_portable_inference`复用原生成图，
 12GB卡仅改变CPU／GPU驻留，不改权重、光学数学或八步网格；包含可标识的单张烟雾与完整500模式。
 说明见`SCENE_PORTABLE_README.md`。传输／环境／实际试生成是否完成以目标端独立收据为准。
@@ -12,6 +12,7 @@
 目标独立环境检查、3项CPU测试及3080 Ti 12GB上的真实单请求512输出通过，自动逐模块CPU offload，
 GPU进程已退出。新机仅做入口烟雾，不声称已重跑完整500或通过现场光路；原始试跑故障保留。
 收据对应`scene_autodl_portable_delivery_20261102`，目标目录内亦保留`DELIVERY_RECEIPT.json`。
+最新运行路径为`/autodl-tmp/lg2/t12/`，旧长名保留兼容链接以支持已有虚拟环境及历史收据。
 
 ### 2026-11-02 用户指定0／1／2／5／10轮与三组原生零任务微调baseline
 

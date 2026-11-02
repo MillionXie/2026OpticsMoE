@@ -7,10 +7,10 @@ Qwen图像信息为256，输出512。运行包含GPU FFT光学仿真，不需要
 ## 目录与运行
 
 目标根目录为`/autodl-tmp/lg2`；本机该路径指向已有数据盘`/root/autodl-tmp/lg2`。
-本包位于`t12_scene_full70_8step_20261102/`，不改原有bloodmnist／kather等任务的数据。
+本包位于`t12/`，不改原有bloodmnist／kather等任务的数据。
 
 ```bash
-cd /autodl-tmp/lg2/t12_scene_full70_8step_20261102
+cd /autodl-tmp/lg2/t12
 
 # 先检查全部数据与权重SHA；不会初始化GPU
 bash run.sh --verify-only
