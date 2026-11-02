@@ -41,6 +41,14 @@ def checked_parent_profile(state, report, profile):
     return state
 
 
+def checked_evaluation_epoch(profile,student,candidate,requested=50):
+    if profile['steps']!=30:return
+    if candidate!='last'or student['epoch']!=requested:
+        raise ValueError('Human fixed epoch required, no TEST selection')
+    if requested!=50 and(profile['name']!='qwen70_30_supervised'or requested not in [0,1,2,5,10]or not student.get('requested_epoch_sweep')):
+        raise ValueError('Explicit authorized independent epoch sweep only')
+
+
 class ResNetConditionReadout(nn.Module):
     def __init__(self):
         super().__init__()
