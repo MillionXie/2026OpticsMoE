@@ -56,6 +56,7 @@ def infer(a):
     import torch
     from diffusers import StableDiffusionInstructPix2PixPipeline,EulerAncestralDiscreteScheduler
     rows=preview_first(canonical_requests(a.data));cfg=MODELS[a.model]
+    if a.preview_only:rows=rows[:8]
     assets=json.loads(a.asset_report.read_text());verify_assets(a.model_path,assets,a.model)
     identity=sha(a.asset_report)
     if a.model=='flux2_klein4b':
@@ -101,11 +102,11 @@ def infer(a):
         records.append(dict(row,split='test',generated_PNG=name,generated_sha256=sha(a.output/name),input_sha256=sha(src),
             effective_RGB256_sha256=effective,checkpoint_sha256=identity,weights_manifest_sha256=identity,
             source_revision=assets['revision'],model=a.model,resolution=512,sampling_steps=cfg['steps'],task_finetuned=False))
-        write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='native_frozen_TEST500',done=i+1,total=500,seconds=time.monotonic()-began))
+        write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='native_frozen_preview8'if a.preview_only else'native_frozen_TEST500',done=i+1,total=len(rows),seconds=time.monotonic()-began))
         if i==7:write(a.output/'preview8.json',dict(complete=True,not_full500=True,balanced_two_categories=True,rows=records))
     if any(p.requires_grad or p.grad is not None for m in components.values()for p in m.parameters()):raise ValueError('Frozen native baseline only')
-    write(a.output/'report.json',dict(complete=True,native_pretrained_peer=True,scope='TEST_native_frozen_model',model=a.model,
-        generated_count=500,request_sha256=REQUESTS,training_performed=False,task_finetuned=False,trainable_parameters=0,
+    write(a.output/'report.json',dict(complete=True,native_pretrained_peer=True,scope='TEST_native_preview8'if a.preview_only else'TEST_native_frozen_model',model=a.model,
+        generated_count=len(rows),request_sha256=REQUESTS,training_performed=False,task_finetuned=False,trainable_parameters=0,
         component_parameters=counts,total_parameters=sum(counts.values()),repo=cfg['repo'],source_revision=assets['revision'],
         checkpoint_sha256=identity,checkpoint_identity_kind='official_weights_manifest_SHA256_not_task_PT',
         resolution=512,reference_information_resolution=256,prompt_rewritten=False,full_prompt_preserved=True,
@@ -117,7 +118,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--model',choices=MODELS,required=True)
     for name in ['data','model-path','asset-report','output']:p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--ip2p-config',type=Path);a=p.parse_args()
+    p.add_argument('--ip2p-config',type=Path);p.add_argument('--preview-only',action='store_true');a=p.parse_args()
     from .scene_execution_gpu import configured_gpu
     gpu=configured_gpu()
     if a.output.exists()or os.environ.get('CUDA_VISIBLE_DEVICES')!=gpu or len(os.environ.get('T12_SOURCE_COMMIT',''))!=40:

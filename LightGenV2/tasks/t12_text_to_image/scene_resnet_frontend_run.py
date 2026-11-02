@@ -160,6 +160,11 @@ def render(a):
     from ..t19_resnet20_baselines.frozen_resnet18 import assert_encoder_unchanged
     state=parent(a);_,rows=checked_data(a)
     profile=experiment_profile(a.profile)
+    preview=getattr(a,'preview_only',False)
+    if preview:
+        if a.profile!='qwen70_30_supervised':raise ValueError('Explicit independent frontend diagnostic only')
+        from .scene_native_edit_peers import preview_first
+        rows=preview_first(rows)[:8]
     report=json.loads((a.frontend/'report.json').read_text())
     file=a.frontend/(a.candidate+'_checkpoint.pt')
     expected=report[a.candidate+'_sha256']
@@ -216,12 +221,12 @@ def render(a):
         records.append(dict(row,split='test',generated_PNG=name,generated_sha256=sha(a.output/name),
             input_sha256=sha(src),initial_latent_sha256=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest(),
             checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],model='resnet18_byte_gru',resolution=512,sampling_steps=profile['steps'],evaluation_epoch=evaluation_epoch))
-        write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='raw_ResNet_GRU_TEST500_fixed_decoder',done=i+1,total=500))
+        write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='raw_ResNet_GRU_fixed_decoder_preview'if preview else'raw_ResNet_GRU_TEST500_fixed_decoder',done=i+1,total=len(rows)))
     audit=assert_encoder_unchanged(model.encoder,official['encoder_state_sha256'])
     grid=[float(x)for x in pipe.scheduler.timesteps.detach().cpu().tolist()]
     if reference_report is not None and grid!=reference_report['actual_timesteps']:
         raise ValueError('Actual Qwen and ResNet sampler grids differ')
-    write(a.output/'report.json',dict(complete=True,schema=profile['schema'],scope='TEST_selection'if profile['steps']==8 else('TEST_fixed_last50'if evaluation_epoch==50 else'TEST_fixed_requested_epoch'),generated_count=500,resolution=512,
+    write(a.output/'report.json',dict(complete=True,schema=profile['schema'],scope='TEST_requested_epoch_preview8'if preview else'TEST_selection'if profile['steps']==8 else('TEST_fixed_last50'if evaluation_epoch==50 else'TEST_fixed_requested_epoch'),generated_count=len(rows),resolution=512,
         training_performed=False,independent_TEST_opened=False,prompt_profile='two_sentence_product_scene_expanded_v8',
         TEST_selection_protocol=dict(schema='scene_expanded_TEST_selection_v1'if profile['steps']==8 else'scene_expanded_fixed_last50_v1',contexts=500,
             prompt_profile='two_sentence_product_scene_expanded_v8',validation_set=False,
@@ -241,6 +246,7 @@ def main():
     for key in ['teacher-cache','cache','frontend','model-path','adapter-path','decoder-assets']:p.add_argument('--'+key,type=Path)
     p.add_argument('--candidate',choices=['best','last'],default='last')
     p.add_argument('--evaluation-epoch',type=int,choices=[0,1,2,5,10,50],default=50)
+    p.add_argument('--preview-only',action='store_true')
     p.add_argument('--profile',choices=['lg70_8','qwen70_30','qwen70_30_supervised'],default='lg70_8')
     p.add_argument('--reference-run',type=Path)
     p.add_argument('--epochs',type=int,default=50);p.add_argument('--batch-size',type=int,default=8)

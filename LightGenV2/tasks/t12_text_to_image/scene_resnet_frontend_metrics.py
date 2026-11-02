@@ -23,7 +23,7 @@ def fixed_last_records(folder,data,profile,requested_epoch=None):
         or report.get('TEST_used_for_model_selection')is not False
         or report['TEST_selection_protocol']['request_sha256']!=REQUESTS):
         raise ValueError('Fixed electronic-Qwen decoder and last50 cohort required')
-    if requested_epoch is not None and report.get('evaluation_epoch')!=requested_epoch:
+    if requested_epoch is not None and report.get('evaluation_epoch',50 if expected_scope=='TEST_fixed_last50'else None)!=requested_epoch:
         raise ValueError('Requested epoch and actual checkpoint differ')
     request=data/'inference_inputs.json'
     if sha(request)!=REQUESTS:raise ValueError('Changed target-free TEST requests')
