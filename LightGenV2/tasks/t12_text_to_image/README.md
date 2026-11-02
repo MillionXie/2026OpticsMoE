@@ -23,6 +23,10 @@ IP2P／MagicBrush按固定100步、text7.5／image1.5；FLUX-klein为官方蒸�
 FLUX的4B是生成骨干称呼，文本编码器另计；报告实际组件及总参数，不冒称总系统只有4B。
 资产按官方上游revision和逐文件SHA核验；下载镜像不得替代官方身份，环境隔离，不升级共享训练环境。
 Pix2Pix-Turbo单列少量诊断，公开edge／sketch权重不是通用RGB图文场景编辑，不能冒充同任务强baseline。
+诊断入口`scene_turbo_diagnostic`固定上游`86f54146590ffb4543c8cf85b5a36657da670924`，
+使用官方edge_to_image权重、SD-Turbo FP16、Canny100／200和单步，固定同一8个请求。
+仅把共享RGB256参考上采样512后提边；明确输入域不同，不混入三个原生RGB模型的完整500表。
+上游源码保持Git原样，加载器只将硬编码Hub路径映射到逐SHA验证的本地资产，不修改推理数学。
 先固定两类各两个视图、各两个条件共8张预览，再完整500；首8非单一商品，不据此调参或称500成功率。
 合同为`configs/scene_epoch_native_peers_20261102.json`，新原生入口`scene_native_edit_peers`，
 轮次训练仍复用`scene_resnet_supervised_train --epoch-sweep`，渲染用显式`--evaluation-epoch`。
