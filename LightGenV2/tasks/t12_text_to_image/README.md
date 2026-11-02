@@ -15,7 +15,15 @@ AdamW lr1e-4／weight_decay.01／clip1不变，不设早停或调参，正式只
 训练使用冻结decoder的可微前向；不能将decoder包在no_grad中从而切断前端训练。
 UNet仅因activation checkpointing使用train模式，所有权重冻结且严格拒绝非零dropout或BN；RN始终eval。
 入口`scene_resnet_supervised_train --stage cache|fit`；生成／三指标沿用原入口的新profile
-`qwen70_30_supervised`，旧profile语义不变。是否实际启动／完成以新run收据为准。
+`qwen70_30_supervised`，旧profile语义不变。
+服务器9项CPU测试无skip通过，实际四次图像epsilon反向已通过所有前端组非零有限梯度、
+decoder无梯度／参数版本未变及精确随机前端／优化器重置，初始前端tensor SHA为
+`cbad1ac64b53ccb13aaff86b77d28032a6e6f84a9c77c34cdef7340b4aa802dd`。
+正式`scene_resnet18_image_supervised50_workflow_20261102`已启动，训练pin
+`11122ada31e587c5c22bde41845451141421216b`，GPU3 RTX4090逐UUID绑定，不使用A100。
+首轮624 TRAIN实际150.219秒；50轮总训练约125分钟只是当前吞吐估计，不是完成或质量承诺。
+后续固定last50完整500／三指标自动串行执行，只存best／last，数据接收和页面汇总为一次性后处理。
+新权重的固定78图仍需独立实际检查，不能继承旧蒸馏版本的人工观察。实际完成以新report为准。
 
 ### 2026-11-02 更正为完整Qwen同decoder、严格冻结ResNet的新对照
 
