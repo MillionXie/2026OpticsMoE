@@ -4,11 +4,17 @@ import tempfile
 import unittest
 from ..scene_native_edit_peers import preview_first,verify_assets,prepare_reference
 from ..scene_resnet_frontend import experiment_profile,checked_evaluation_epoch
-from ..scene_resnet_supervised_train import REQUESTED_EPOCHS,requested_training_epochs,partial_training_updates
+from ..scene_resnet_supervised_train import REQUESTED_EPOCHS,requested_training_epochs,partial_training_updates,partial_last_update_scale
 from ..scene_resnet_frontend_metrics import fixed_last_records
 
 
 class EpochPeerTests(unittest.TestCase):
+    def test_only_explicit_partial_training_can_reduce_final_step_lr(self):
+        self.assertEqual(partial_last_update_scale(.5,9),.5)
+        self.assertEqual(partial_last_update_scale(1.,None),1.)
+        for scale,partial in [(.5,None),(0.,9),(1.1,9),(float('nan'),9),(float('inf'),9)]:
+            with self.assertRaises(ValueError):partial_last_update_scale(scale,partial)
+
     def test_partial_budget_does_not_impersonate_epoch_or_weaken_old_guard(self):
         p=experiment_profile('qwen70_30_supervised')
         for n in [1,2,77]:
