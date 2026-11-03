@@ -172,7 +172,8 @@ def render(a):
     student=torch.load(file,map_location='cpu',weights_only=False)
     if student['schema']!=profile['schema'] or student['generator_sha256']!=profile['generator_sha256']:raise ValueError('Wrong frontend/tail binding')
     evaluation_epoch=getattr(a,'evaluation_epoch',50)
-    checked_evaluation_epoch(profile,student,a.candidate,evaluation_epoch)
+    partial_updates=getattr(a,'evaluation_updates',None)
+    checked_evaluation_epoch(profile,student,a.candidate,evaluation_epoch,partial_updates)
     model=ResNetSceneFrontend().cuda().eval();model.readout.load_state_dict(student['readout'],strict=True)
     official=student['official_visual']
     if model.encoder.pretrained_provenance['encoder_state_sha256']!=official['encoder_state_sha256']:
@@ -220,21 +221,22 @@ def render(a):
         if not reference_file.exists():shutil.copyfile(src,reference_file)
         records.append(dict(row,split='test',generated_PNG=name,generated_sha256=sha(a.output/name),
             input_sha256=sha(src),initial_latent_sha256=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest(),
-            checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],model='resnet18_byte_gru',resolution=512,sampling_steps=profile['steps'],evaluation_epoch=evaluation_epoch))
+            checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],model='resnet18_byte_gru',resolution=512,sampling_steps=profile['steps'],evaluation_epoch=evaluation_epoch,evaluation_updates=partial_updates))
         write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='raw_ResNet_GRU_fixed_decoder_preview'if preview else'raw_ResNet_GRU_TEST500_fixed_decoder',done=i+1,total=len(rows)))
     audit=assert_encoder_unchanged(model.encoder,official['encoder_state_sha256'])
     grid=[float(x)for x in pipe.scheduler.timesteps.detach().cpu().tolist()]
     if reference_report is not None and grid!=reference_report['actual_timesteps']:
         raise ValueError('Actual Qwen and ResNet sampler grids differ')
-    write(a.output/'report.json',dict(complete=True,schema=profile['schema'],scope='TEST_requested_epoch_preview8'if preview else'TEST_selection'if profile['steps']==8 else('TEST_fixed_last50'if evaluation_epoch==50 else'TEST_fixed_requested_epoch'),generated_count=len(rows),resolution=512,
+    selection=profile['steps']==8 or partial_updates is not None
+    write(a.output/'report.json',dict(complete=True,schema=profile['schema'],scope='TEST_requested_epoch_preview8'if preview else'TEST_partial_updates_development'if partial_updates else'TEST_selection'if profile['steps']==8 else('TEST_fixed_last50'if evaluation_epoch==50 else'TEST_fixed_requested_epoch'),generated_count=len(rows),resolution=512,
         training_performed=False,independent_TEST_opened=False,prompt_profile='two_sentence_product_scene_expanded_v8',
         TEST_selection_protocol=dict(schema='scene_expanded_TEST_selection_v1'if profile['steps']==8 else'scene_expanded_fixed_last50_v1',contexts=500,
             prompt_profile='two_sentence_product_scene_expanded_v8',validation_set=False,
-            TEST_used_for_model_selection=profile['steps']==8,request_sha256=REQUESTS),
+            TEST_used_for_model_selection=selection,request_sha256=REQUESTS),
         checkpoint_sha256=expected,fixed_generator_sha256=profile['generator_sha256'],sampling_steps=profile['steps'],actual_UNet_blocks=70,
-        actual_timesteps=grid,evaluation_epoch=evaluation_epoch,decoder_trainable_parameters=0,decoder_reference_report_sha256=sha(a.reference_run/'report.json')if reference_report else None,
+        actual_timesteps=grid,evaluation_epoch=evaluation_epoch,evaluation_updates=partial_updates,decoder_trainable_parameters=0,decoder_reference_report_sha256=sha(a.reference_run/'report.json')if reference_report else None,
         Qwen_parameters=0,optical_frontend_loaded=False,raw_RGB_prompt_recomputed=True,cached_conditions_in_inference=False,
-        fixed_generator_weights_modified=False,TEST_used_for_gradient=False,TEST_used_for_model_selection=profile['steps']==8,
+        fixed_generator_weights_modified=False,TEST_used_for_gradient=False,TEST_used_for_model_selection=selection,
         independent_generalization_claim=False,graph=graph,frozen_encoder_audit=audit,
         frontend_parameters=sum(p.numel()for p in model.parameters()),source_commit=os.environ['T12_SOURCE_COMMIT']))
 
@@ -246,6 +248,7 @@ def main():
     for key in ['teacher-cache','cache','frontend','model-path','adapter-path','decoder-assets']:p.add_argument('--'+key,type=Path)
     p.add_argument('--candidate',choices=['best','last'],default='last')
     p.add_argument('--evaluation-epoch',type=int,choices=[0,1,2,5,10,50],default=50)
+    p.add_argument('--evaluation-updates',type=int,help='Exact partial-update checkpoint; requires evaluation-epoch0')
     p.add_argument('--preview-only',action='store_true')
     p.add_argument('--profile',choices=['lg70_8','qwen70_30','qwen70_30_supervised'],default='lg70_8')
     p.add_argument('--reference-run',type=Path)

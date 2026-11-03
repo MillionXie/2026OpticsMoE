@@ -15,14 +15,17 @@ from .scene_resnet_frontend import PARENT, REQUESTS, experiment_profile
 FIELDS=('CLIP_T','DINOv2_I','CLIP_I')
 
 
-def fixed_last_records(folder,data,profile,requested_epoch=None):
+def fixed_last_records(folder,data,profile,requested_epoch=None,partial_updates=None):
     report=json.loads((folder/'report.json').read_text())
-    expected_scope='TEST_fixed_last50'if requested_epoch in [None,50] else'TEST_fixed_requested_epoch'
+    expected_scope='TEST_partial_updates_development'if partial_updates else'TEST_fixed_last50'if requested_epoch in [None,50] else'TEST_fixed_requested_epoch'
     if (not report['complete']or report.get('scope')!=expected_scope
         or report['fixed_generator_sha256']!=profile['generator_sha256']
-        or report.get('TEST_used_for_model_selection')is not False
+        or report.get('TEST_used_for_model_selection')is not bool(partial_updates)
         or report['TEST_selection_protocol']['request_sha256']!=REQUESTS):
         raise ValueError('Fixed electronic-Qwen decoder and last50 cohort required')
+    if partial_updates is not None and(profile['name']!='qwen70_30_supervised' or not 1<=partial_updates<78
+        or report.get('evaluation_updates')!=partial_updates or report.get('evaluation_epoch')!=0):
+        raise ValueError('Exact partial-update development cohort required')
     if requested_epoch is not None and report.get('evaluation_epoch',50 if expected_scope=='TEST_fixed_last50'else None)!=requested_epoch:
         raise ValueError('Requested epoch and actual checkpoint differ')
     request=data/'inference_inputs.json'
@@ -80,7 +83,9 @@ def run(a):
     from PIL import Image
     from transformers import AutoImageProcessor,AutoModel
     from .white_reference_metrics import load_records
-    native=getattr(a,'native_peers',False);epochs=getattr(a,'requested_epochs',None)
+    native=getattr(a,'native_peers',False);epochs=getattr(a,'requested_epochs',None);partial=getattr(a,'partial_updates',None)
+    if partial is not None and(native or epochs or a.profile!='qwen70_30_supervised' or type(partial)is not int or not 1<=partial<78 or len(a.runs)!=1):
+        raise ValueError('One explicit partial-update development cohort required')
     profile=None if native else experiment_profile(a.profile)
     fixed=native or profile['steps']==30
     if epochs and(native or a.profile!='qwen70_30_supervised'or len(epochs)!=len(a.runs)or len(set(epochs))!=len(epochs)
@@ -88,7 +93,7 @@ def run(a):
     if fixed and(a.data is None or(not native and not epochs and len(a.runs)!=1)):raise ValueError('Canonical fixed cohort required')
     rows=[]
     for i,folder in enumerate(a.runs):
-        rows.extend(native_peer_records(folder,a.data)if native else fixed_last_records(folder,a.data,profile,epochs[i]if epochs else None)if fixed else load_records(folder))
+        rows.extend(native_peer_records(folder,a.data)if native else fixed_last_records(folder,a.data,profile,epochs[i]if epochs else None,getattr(a,'partial_updates',None))if fixed else load_records(folder))
     signatures=[]
     for folder in a.runs:
         report=json.loads((folder/'report.json').read_text())
@@ -141,11 +146,11 @@ def run(a):
                                **{f:scores[f]['mean']for f in FIELDS}))
     comparison=native or bool(epochs)
     if not comparison:candidates.sort(key=lambda r:(-r['CLIP_T'],-r['DINOv2_I'],-r['CLIP_I'],r['checkpoint_sha256']))
-    write(a.output/'selection.json',dict(complete=True,primary='prespecified_comparison_no_winner_selection'if comparison else'human_fixed_last50'if fixed else'full_TEST500_mean_CLIP_T',selection_uses_TEST=not fixed,
+    write(a.output/'selection.json',dict(complete=True,primary='user_requested_partial_update_development'if partial else'prespecified_comparison_no_winner_selection'if comparison else'human_fixed_last50'if fixed else'full_TEST500_mean_CLIP_T',selection_uses_TEST=bool(partial)or not fixed,
         tie_breakers=['DINOv2_I','CLIP_I','checkpoint_SHA'],ImageReward_used=False,
         TEST_used_for_gradient=False,independent_generalization_claim=False,selected=None if comparison else candidates[0],candidates=candidates))
     write(a.output/'report.json',dict(complete=True,n=len(rows),metrics=list(FIELDS),ImageReward_computed=False,
-        TEST_used_for_model_selection=not fixed,TEST_used_for_gradient=False,independent_generalization_claim=False,
+        TEST_used_for_model_selection=bool(partial)or not fixed,TEST_used_for_gradient=False,independent_generalization_claim=False,partial_updates=partial,
         fixed_generator_sha256=None if native else profile['generator_sha256'],requested_epochs=epochs,native_peers=native,request_sha256=REQUESTS,source_commit=os.environ['T12_SOURCE_COMMIT']))
 
 
@@ -155,6 +160,7 @@ def main():
     p.add_argument('--profile',choices=['lg70_8','qwen70_30','qwen70_30_supervised'],default='lg70_8')
     p.add_argument('--data',type=Path)
     p.add_argument('--requested-epochs',nargs='+',type=int)
+    p.add_argument('--partial-updates',type=int,help='Explicit sub-epoch development cohort1..77')
     p.add_argument('--native-peers',action='store_true')
     for k in ['output','clip-checkpoint','dino-path']:p.add_argument('--'+k,type=Path,required=True)
     a=p.parse_args()

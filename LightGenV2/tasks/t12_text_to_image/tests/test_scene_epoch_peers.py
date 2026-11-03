@@ -4,11 +4,23 @@ import tempfile
 import unittest
 from ..scene_native_edit_peers import preview_first,verify_assets,prepare_reference
 from ..scene_resnet_frontend import experiment_profile,checked_evaluation_epoch
-from ..scene_resnet_supervised_train import REQUESTED_EPOCHS,requested_training_epochs
+from ..scene_resnet_supervised_train import REQUESTED_EPOCHS,requested_training_epochs,partial_training_updates
 from ..scene_resnet_frontend_metrics import fixed_last_records
 
 
 class EpochPeerTests(unittest.TestCase):
+    def test_partial_budget_does_not_impersonate_epoch_or_weaken_old_guard(self):
+        p=experiment_profile('qwen70_30_supervised')
+        for n in [1,2,77]:
+            self.assertEqual(partial_training_updates(n),n)
+            saved=dict(epoch=0,step=n,explicit_partial_updates=n)
+            checked_evaluation_epoch(p,saved,'last',0,n)
+            with self.assertRaises(ValueError):checked_evaluation_epoch(p,saved,'last',0)
+            with self.assertRaises(ValueError):checked_evaluation_epoch(p,saved,'last',0,n+1)
+        for n in [0,78,-1,1.5]:
+            with self.assertRaises(ValueError):partial_training_updates(n)
+        with self.assertRaises(ValueError):partial_training_updates(2,True)
+
     def test_native512_interface_keeps_only_RGB256_information(self):
         from PIL import Image
         original=Image.new('RGB',(1024,1024),'red')

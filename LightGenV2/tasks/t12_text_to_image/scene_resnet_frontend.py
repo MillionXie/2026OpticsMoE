@@ -41,7 +41,13 @@ def checked_parent_profile(state, report, profile):
     return state
 
 
-def checked_evaluation_epoch(profile,student,candidate,requested=50):
+def checked_evaluation_epoch(profile,student,candidate,requested=50,partial_updates=None):
+    if partial_updates is not None:
+        if (profile['name']!='qwen70_30_supervised' or candidate!='last' or requested!=0
+            or type(partial_updates)is not int or not 1<=partial_updates<78 or student['epoch']!=0
+            or student.get('step')!=partial_updates or student.get('explicit_partial_updates')!=partial_updates):
+            raise ValueError('Exact explicit sub-epoch checkpoint/budget required')
+        return
     if profile['steps']!=30:return
     if candidate!='last'or student['epoch']!=requested:
         raise ValueError('Human fixed epoch required, no TEST selection')
