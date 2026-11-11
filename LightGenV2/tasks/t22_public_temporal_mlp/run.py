@@ -20,10 +20,10 @@ from torch.nn import functional as F
 from scipy.stats import spearmanr, kendalltau, pearsonr
 
 if __package__:
-    from .model import LightGenTemporal, ModelConfig, load_lightgen
+    from .model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
 else:
-    from model import LightGenTemporal, ModelConfig, load_lightgen
+    from model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from data import load_inputs, groups, batch, sha256, attach_train_soft_targets
 
 ROOT=Path(__file__).resolve().parent
@@ -87,6 +87,8 @@ def regression_metrics(prediction,target):
 @torch.no_grad()
 def evaluate(model,payload,device,batch_fields,out=None,epoch=None,slot_shift=0):
     model.eval();idx,valid=groups(payload,'test');preds=[];truth=[];all_indices=[]
+    probabilities = []
+    logits = []
     route_samples={'frame':[],'video':[]}
     for start in range(0,len(idx),batch_fields):
         ii=idx[start:start+batch_fields];vv=valid[start:start+batch_fields]
@@ -95,6 +97,9 @@ def evaluate(model,payload,device,batch_fields,out=None,epoch=None,slot_shift=0)
         result=model(item['vision']);keep=item['valid']
         preds.extend(result['prediction'][keep].cpu().tolist());truth.extend(item['target'][keep].cpu().tolist())
         all_indices.extend(ii[vv].tolist())
+        if model.cfg.readout_mode == 'five_levels':
+            probabilities.extend(result['quality_probabilities'][keep].cpu().tolist())
+            logits.extend(result['quality_logits'][keep].cpu().tolist())
         for name,r in result['routing'].items():
             selected=r['selected'][keep].cpu()
             route_samples[name].append(selected)
@@ -109,8 +114,17 @@ def evaluate(model,payload,device,batch_fields,out=None,epoch=None,slot_shift=0)
             'unique_top2_pairs':int((counts>0).sum())}
     if out:
         with (Path(out)/'test_predictions.csv').open('w',encoding='utf-8-sig',newline='') as f:
-            writer=csv.writer(f);writer.writerow(['sample_id','target','prediction','epoch'])
-            for index,target,pred in zip(all_indices,truth,preds):writer.writerow([payload['ids'][index],target,pred,epoch])
+            writer = csv.writer(f)
+            columns = ['sample_id', 'target', 'prediction', 'epoch']
+            if probabilities:
+                columns += ['probability_' + word.lower() for word in QUALITY_WORDS]
+                columns += ['logit_' + word.lower() for word in QUALITY_WORDS]
+            writer.writerow(columns)
+            for row, (index, target, pred) in enumerate(zip(all_indices, truth, preds)):
+                values = [payload['ids'][index], target, pred, epoch]
+                if probabilities:
+                    values += probabilities[row] + logits[row]
+                writer.writerow(values)
         write(Path(out)/'metrics.json',metrics)
     return metrics
 
@@ -150,6 +164,8 @@ def train(args):
     train_idx=[i for i,s in enumerate(payload['splits']) if s=='train']
     train_y=payload['target'][train_idx]
     model.target_mean.copy_(train_y.mean());model.target_std.copy_(train_y.std(unbiased=False))
+    if mc.readout_mode == 'five_levels':
+        model.set_quality_levels(train_y)
     initialization=None
     if args.paper_initialize:
         if args.initialize:raise ValueError('Select one initialization source')
@@ -209,6 +225,15 @@ def train(args):
               'gpu_admission':admission,'command':sys.argv,'pid':os.getpid(),
               'model_parameters':sum(p.numel() for p in model.parameters()),'model_config':asdict(mc)}
     metadata['initialization']=initialization
+    metadata['initial_parameter_SHA256'] = {
+        name: hashlib.sha256(value.detach().cpu().contiguous().numpy().tobytes()).hexdigest()
+        for name, value in model.named_parameters()}
+    if mc.readout_mode == 'five_levels':
+        metadata['quality_scale'] = {
+            'source': '2250 TRAIN temporal MOS values, Qwen baseline linspace rule',
+            'level_scores': model.level_scores.cpu().tolist(),
+            'boundaries': model.level_boundaries.cpu().tolist(),
+            'quality_words': list(QUALITY_WORDS)}
     write(out/'metadata.json',metadata)
     history=[];best=-float('inf');started=time.time()
     write(out/'status.json',{'state':'running','epoch':0,'pid':os.getpid()})
@@ -231,6 +256,10 @@ def train(args):
             y=((item['target']-model.target_mean)/model.target_std)[keep]
             pred=result['normalized_prediction'][keep]
             loss=F.smooth_l1_loss(pred,y)+cfg['correlation_weight']*(1-correlation(pred,y))
+            if cfg.get('quality_ce_weight', 0):
+                labels = torch.bucketize(item['target'][keep], model.level_boundaries)
+                loss = loss + cfg['quality_ce_weight'] * F.cross_entropy(
+                    result['quality_logits'][keep], labels)
             if cfg.get('soft_target_weight',0):
                 if not bool(item['teacher_present'][keep].all()):raise ValueError('Missing TRAIN teacher entry')
                 teacher=(item['teacher']-model.target_mean)/model.target_std

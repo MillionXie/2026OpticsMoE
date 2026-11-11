@@ -17,6 +17,8 @@ from torch.nn import functional as F
 
 GELU_ARCHITECTURE = 't22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2'
 RELU_ARCHITECTURE = GELU_ARCHITECTURE + '_allrelu'
+FIVE_LEVEL_ARCHITECTURE = RELU_ARCHITECTURE + '_five_levels'
+QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
 @dataclass(frozen=True)
@@ -26,6 +28,8 @@ class ModelConfig:
     router_hidden: int = 128
     readout_hidden: int = 1024
     mlp_activation: str = 'relu'
+    readout_mode: str = 'five_levels'
+    visual_output_norm: bool = False
     prompt_length: int = 38
     videos: int = 16
     frames: int = 4
@@ -56,6 +60,12 @@ class ModelConfig:
             raise ValueError('Invalid model width/temperature')
         if self.mlp_activation not in ('relu', 'gelu'):
             raise ValueError('Unsupported MLP activation')
+        if self.readout_mode not in ('scalar', 'five_levels'):
+            raise ValueError('Unsupported readout mode')
+        if self.readout_mode == 'five_levels' and self.mlp_activation != 'relu':
+            raise ValueError('The five-level architecture uses ReLU')
+        if self.readout_mode == 'scalar' and not self.visual_output_norm:
+            raise ValueError('Historical scalar profiles require the visual output LayerNorm')
 
 
 def mlp_activation(config: ModelConfig) -> nn.Module:
@@ -243,7 +253,8 @@ class LightGenTemporal(nn.Module):
         self.register_buffer('prompt_ready',torch.tensor(False))
         self.vision_adapter=nn.Sequential(nn.LayerNorm(1024),nn.Linear(1024,cfg.width))
         self.language_adapter=nn.Sequential(nn.LayerNorm(2048),nn.Linear(2048,cfg.width))
-        self.visual_input_norm=nn.LayerNorm(cfg.width)
+        self.visual_input_norm = (
+            nn.LayerNorm(cfg.width) if cfg.visual_output_norm else nn.Identity())
         self.frame_router=Router(cfg,49);self.frame_experts=Experts(cfg)
         self.frame_global=GlobalStage(cfg,True)
         self.frame_merger=nn.Sequential(nn.LayerNorm(2*cfg.width),
@@ -254,9 +265,26 @@ class LightGenTemporal(nn.Module):
         self.video_router=Router(cfg,4);self.video_experts=Experts(cfg)
         self.video_global=GlobalStage(cfg,False)
         self.readout=nn.Sequential(nn.Flatten(-2),nn.Linear((4+cfg.prompt_length)*cfg.width,cfg.readout_hidden),
-            mlp_activation(cfg),nn.Linear(cfg.readout_hidden,1))
+            mlp_activation(cfg),nn.Linear(cfg.readout_hidden,5 if cfg.readout_mode == 'five_levels' else 1))
         self.register_buffer('target_mean',torch.tensor(0.))
         self.register_buffer('target_std',torch.tensor(1.))
+        if cfg.readout_mode == 'five_levels':
+            self.register_buffer('level_scores', torch.zeros(5))
+            self.register_buffer('level_boundaries', torch.zeros(4))
+            self.register_buffer('quality_ready', torch.tensor(False))
+
+    def set_quality_levels(self, train_targets):
+        if self.cfg.readout_mode != 'five_levels':
+            raise ValueError('Quality levels require the five-level readout')
+        targets = torch.as_tensor(train_targets, dtype=torch.float32)
+        if not bool(torch.isfinite(targets).all()) or targets.numel() < 2:
+            raise ValueError('Finite TRAIN MOS targets are required')
+        lower, upper = float(targets.min()), float(targets.max())
+        if lower >= upper:
+            raise ValueError('TRAIN MOS range must be positive')
+        self.level_scores.copy_(torch.linspace(lower, upper, 5).to(self.level_scores))
+        self.level_boundaries.copy_(torch.linspace(lower, upper, 6)[1:-1].to(self.level_boundaries))
+        self.quality_ready.fill_(True)
 
     def set_prompt(self,embedding):
         value=embedding.reshape(-1,2048)
@@ -287,25 +315,53 @@ class LightGenTemporal(nn.Module):
         r2=self.video_router(sequence[...,:4,:])
         sequence=self.video_experts(sequence,r2['weights'])
         sequence,g2=self.video_global(sequence)
-        normalized=self.readout(sequence).squeeze(-1)
-        return {'prediction':normalized*self.target_std+self.target_mean,
-                'normalized_prediction':normalized,'routing':{'frame':visual['routing'],'video':r2},
-                'guard_energy':(visual['guard_energy']+g2)/2}
+        output = self.readout(sequence)
+        result = {'routing': {'frame': visual['routing'], 'video': r2},
+                  'guard_energy': (visual['guard_energy'] + g2) / 2}
+        if self.cfg.readout_mode == 'five_levels':
+            if not bool(self.quality_ready):
+                raise RuntimeError('TRAIN quality levels have not been populated')
+            probabilities = output.softmax(-1)
+            prediction = probabilities @ self.level_scores
+            result.update(prediction=prediction, quality_logits=output,
+                          quality_probabilities=probabilities,
+                          normalized_prediction=(prediction - self.target_mean) / self.target_std)
+        else:
+            normalized = output.squeeze(-1)
+            result.update(prediction=normalized * self.target_std + self.target_mean,
+                          normalized_prediction=normalized)
+        return result
 
     def checkpoint(self,**metadata:Any):
         all_relu = self.cfg.mlp_activation == 'relu'
-        return {'schema':4 if all_relu else 3,
-                'architecture':RELU_ARCHITECTURE if all_relu else GELU_ARCHITECTURE,
+        architecture = RELU_ARCHITECTURE if all_relu else GELU_ARCHITECTURE
+        schema = 4 if all_relu else 3
+        if self.cfg.readout_mode == 'five_levels':
+            suffix = '_ln192' if self.cfg.visual_output_norm else '_no_ln192'
+            architecture = FIVE_LEVEL_ARCHITECTURE + suffix
+            schema = 5
+        return {'schema':schema, 'architecture':architecture,
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
 
 def load_lightgen(path,device='cpu'):
     payload=torch.load(path,map_location='cpu',weights_only=True)
     architecture = payload['architecture']
-    activations = {GELU_ARCHITECTURE: 'gelu', RELU_ARCHITECTURE: 'relu'}
+    activations = {GELU_ARCHITECTURE: 'gelu', RELU_ARCHITECTURE: 'relu',
+                   FIVE_LEVEL_ARCHITECTURE + '_ln192': 'relu',
+                   FIVE_LEVEL_ARCHITECTURE + '_no_ln192': 'relu'}
     if architecture not in activations:
         raise ValueError('Checkpoint uses a different T22 prototype architecture. Use its recorded Git version.')
     config = dict(payload['config'])
+    if architecture in (GELU_ARCHITECTURE, RELU_ARCHITECTURE):
+        config.setdefault('readout_mode', 'scalar')
+        config.setdefault('visual_output_norm', True)
+        if config['readout_mode'] != 'scalar' or not config['visual_output_norm']:
+            raise ValueError('Historical scalar architecture conflicts with its configuration')
+    else:
+        expected_norm = architecture == FIVE_LEVEL_ARCHITECTURE + '_ln192'
+        if config.get('readout_mode') != 'five_levels' or config.get('visual_output_norm') != expected_norm:
+            raise ValueError('Five-level architecture conflicts with its configuration')
     config.setdefault('mlp_activation', activations[architecture])
     if config['mlp_activation'] != activations[architecture]:
         raise ValueError('Checkpoint activation conflicts with its architecture identity')

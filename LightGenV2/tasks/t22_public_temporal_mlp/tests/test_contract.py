@@ -34,6 +34,7 @@ class Contracts(unittest.TestCase):
         cfg=ModelConfig(width=8,expert_hidden=16,router_hidden=8,readout_hidden=16,
                         input_shift=0,phase_shift=0,ccd_shift=0,phase_dropout=0)
         model=LightGenTemporal(cfg).eval();model.set_prompt(torch.randn(38,2048))
+        model.set_quality_levels(torch.tensor([0., 100.]))
         x=torch.randn(1,16,4,49,1024)
         out=model(x);self.assertEqual(tuple(out['prediction'].shape),(1,16))
         out['prediction'].square().mean().backward()
@@ -107,6 +108,7 @@ class Contracts(unittest.TestCase):
     def test_legacy_gelu_checkpoint_preserves_its_predictions(self):
         config = ModelConfig(width=8, expert_hidden=16, router_hidden=8,
                              readout_hidden=16, mlp_activation='gelu',
+                             readout_mode='scalar', visual_output_norm=True,
                              input_shift=0, phase_shift=0, ccd_shift=0,
                              phase_dropout=0)
         model = LightGenTemporal(config).eval()
@@ -116,6 +118,8 @@ class Contracts(unittest.TestCase):
             expected = model(inputs)['prediction']
         legacy = model.checkpoint()
         legacy['config'].pop('mlp_activation')
+        legacy['config'].pop('readout_mode')
+        legacy['config'].pop('visual_output_norm')
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / 'legacy.pt'
             torch.save(legacy, path)
@@ -124,6 +128,29 @@ class Contracts(unittest.TestCase):
             with torch.inference_mode():
                 actual = restored(inputs)['prediction']
             self.assertTrue(torch.equal(expected, actual))
+
+    def test_five_level_expectation_and_projection_norm_switch(self):
+        config = ModelConfig(width=8, expert_hidden=16, router_hidden=8,
+                             readout_hidden=16, input_shift=0, phase_shift=0,
+                             ccd_shift=0, phase_dropout=0)
+        model = LightGenTemporal(config).eval()
+        model.set_prompt(torch.randn(38, 2048))
+        model.set_quality_levels(torch.tensor([0., 100.]))
+        self.assertIsInstance(model.visual_input_norm, nn.Identity)
+        with torch.no_grad():
+            model.readout[3].weight.zero_()
+            model.readout[3].bias.copy_(torch.tensor([-2., -1., 0., 1., 2.]))
+            model.target_mean.fill_(1000.)
+            model.target_std.fill_(77.)
+            result = model(torch.randn(1, 16, 4, 49, 1024))
+        probabilities = torch.tensor([-2., -1., 0., 1., 2.]).softmax(0)
+        expected = probabilities @ torch.tensor([0., 25., 50., 75., 100.])
+        self.assertTrue(torch.allclose(result['prediction'], expected.expand(1, 16)))
+        self.assertTrue(torch.allclose(result['quality_probabilities'].sum(-1), torch.ones(1, 16)))
+        self.assertEqual(tuple(result['quality_logits'].shape), (1, 16, 5))
+        with_norm = LightGenTemporal(ModelConfig(width=8, expert_hidden=16,
+            router_hidden=8, readout_hidden=16, visual_output_norm=True))
+        self.assertIsInstance(with_norm.visual_input_norm, nn.LayerNorm)
 
 
 if __name__=='__main__':unittest.main()
