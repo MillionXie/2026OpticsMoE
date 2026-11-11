@@ -18,6 +18,7 @@ from torch.nn import functional as F
 GELU_ARCHITECTURE = 't22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2'
 RELU_ARCHITECTURE = GELU_ARCHITECTURE + '_allrelu'
 FIVE_LEVEL_ARCHITECTURE = RELU_ARCHITECTURE + '_five_levels'
+AMPLITUDE_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v6'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -27,6 +28,11 @@ class ModelConfig:
     expert_hidden: int = 384
     router_hidden: int = 128
     readout_hidden: int = 1024
+    expert_mode: str = 'mlp'
+    orm_mode: str = 'legacy_energy'
+    alpha_min: float = 2 / 3
+    alpha_max: float = 2 / 3
+    alpha_eval: float = 2 / 3
     mlp_activation: str = 'relu'
     readout_mode: str = 'five_levels'
     visual_output_norm: bool = False
@@ -58,6 +64,16 @@ class ModelConfig:
             raise ValueError('4 frame tokens plus the fixed prompt must fit the 56-row video field')
         if self.width <= 0 or self.temperature <= 0:
             raise ValueError('Invalid model width/temperature')
+        if self.expert_mode not in ('mlp', 'linear'):
+            raise ValueError('Unsupported expert mode')
+        if self.orm_mode not in ('legacy_energy', 'amplitude'):
+            raise ValueError('Unsupported ORM mode')
+        if not 0 <= self.alpha_min <= self.alpha_max <= 1 or not 0 <= self.alpha_eval <= 1:
+            raise ValueError('ORM amplitude weights must lie in [0, 1]')
+        if self.expert_mode == 'linear' and self.orm_mode != 'amplitude':
+            raise ValueError('The linear-expert ablation requires amplitude ORM')
+        if self.orm_mode == 'amplitude' and self.readout_mode != 'five_levels':
+            raise ValueError('Amplitude ORM requires the current five-level readout')
         if self.mlp_activation not in ('relu', 'gelu'):
             raise ValueError('Unsupported MLP activation')
         if self.readout_mode not in ('scalar', 'five_levels'):
@@ -139,12 +155,16 @@ class Router(nn.Module):
 
 
 class Experts(nn.Module):
-    """Four shared tokenwise MLPs, no internal residual or side route."""
+    """Four shared tokenwise experts, with one explicitly selected definition."""
     def __init__(self,cfg):
         super().__init__()
-        self.experts=nn.ModuleList([nn.Sequential(nn.LayerNorm(cfg.width),
-            nn.Linear(cfg.width,cfg.expert_hidden),mlp_activation(cfg),
-            nn.Linear(cfg.expert_hidden,cfg.width)) for _ in range(4)])
+        if cfg.expert_mode == 'linear':
+            self.experts = nn.ModuleList([
+                nn.Linear(cfg.width, cfg.width, bias=False) for _ in range(4)])
+        else:
+            self.experts=nn.ModuleList([nn.Sequential(nn.LayerNorm(cfg.width),
+                nn.Linear(cfg.width,cfg.expert_hidden),mlp_activation(cfg),
+                nn.Linear(cfg.expert_hidden,cfg.width)) for _ in range(4)])
 
     def forward(self,tokens,weights):
         # All four are evaluated for a simple implementation; exactly two
@@ -210,9 +230,17 @@ class GlobalStage(nn.Module):
             keep=(torch.rand(16,math.ceil(111/k),math.ceil(111/k),device=value.device)>=self.cfg.phase_dropout)
             keep=keep.repeat_interleave(k,-2).repeat_interleave(k,-1)[...,:111,:111]
             value=torch.where(keep,value,torch.ones_like(value))
-        eta=(self.cfg.leakage_min+(self.cfg.leakage_max-self.cfg.leakage_min)*torch.rand((),device=value.device)
-             if self.training else value.real.new_tensor(self.cfg.leakage_eval))
-        value=(1-eta).sqrt()*value+eta.sqrt()
+        if self.cfg.orm_mode == 'amplitude':
+            alpha = (self.cfg.alpha_min + (self.cfg.alpha_max - self.cfg.alpha_min)
+                     * torch.rand((), device=value.device) if self.training
+                     else value.real.new_tensor(self.cfg.alpha_eval))
+            # Manuscript V = alpha * D U + (1-alpha) * U_tilde.
+            # Here U_tilde = U, so the unmodulated residual has unit phase.
+            value = alpha * value + (1 - alpha)
+        else:
+            eta=(self.cfg.leakage_min+(self.cfg.leakage_max-self.cfg.leakage_min)*torch.rand((),device=value.device)
+                 if self.training else value.real.new_tensor(self.cfg.leakage_eval))
+            value=(1-eta).sqrt()*value+eta.sqrt()
         return translated(value,*random_shift(self.cfg.phase_shift,self.training),fill=1+0j)
 
     def forward(self,tokens):
@@ -340,6 +368,10 @@ class LightGenTemporal(nn.Module):
             suffix = '_ln192' if self.cfg.visual_output_norm else '_no_ln192'
             architecture = FIVE_LEVEL_ARCHITECTURE + suffix
             schema = 5
+        if self.cfg.orm_mode == 'amplitude':
+            suffix = '_ln192' if self.cfg.visual_output_norm else '_no_ln192'
+            architecture = AMPLITUDE_ARCHITECTURE + '_' + self.cfg.expert_mode + suffix
+            schema = 6
         return {'schema':schema, 'architecture':architecture,
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
@@ -350,6 +382,9 @@ def load_lightgen(path,device='cpu'):
     activations = {GELU_ARCHITECTURE: 'gelu', RELU_ARCHITECTURE: 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_ln192': 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_no_ln192': 'relu'}
+    for expert in ('mlp', 'linear'):
+        for norm in ('_ln192', '_no_ln192'):
+            activations[AMPLITUDE_ARCHITECTURE + '_' + expert + norm] = 'relu'
     if architecture not in activations:
         raise ValueError('Checkpoint uses a different T22 prototype architecture. Use its recorded Git version.')
     config = dict(payload['config'])
@@ -358,10 +393,23 @@ def load_lightgen(path,device='cpu'):
         config.setdefault('visual_output_norm', True)
         if config['readout_mode'] != 'scalar' or not config['visual_output_norm']:
             raise ValueError('Historical scalar architecture conflicts with its configuration')
+    elif architecture.startswith(AMPLITUDE_ARCHITECTURE + '_'):
+        expected_norm = not architecture.endswith('_no_ln192')
+        expected_expert = 'linear' if '_linear_' in architecture else 'mlp'
+        if (config.get('readout_mode') != 'five_levels'
+                or config.get('visual_output_norm') != expected_norm
+                or config.get('expert_mode') != expected_expert
+                or config.get('orm_mode') != 'amplitude'):
+            raise ValueError('Amplitude architecture conflicts with its configuration')
     else:
         expected_norm = architecture == FIVE_LEVEL_ARCHITECTURE + '_ln192'
         if config.get('readout_mode') != 'five_levels' or config.get('visual_output_norm') != expected_norm:
             raise ValueError('Five-level architecture conflicts with its configuration')
+    if not architecture.startswith(AMPLITUDE_ARCHITECTURE + '_'):
+        config.setdefault('expert_mode', 'mlp')
+        config.setdefault('orm_mode', 'legacy_energy')
+        if config['expert_mode'] != 'mlp' or config['orm_mode'] != 'legacy_energy':
+            raise ValueError('Historical architecture conflicts with expert/ORM configuration')
     config.setdefault('mlp_activation', activations[architecture])
     if config['mlp_activation'] != activations[architecture]:
         raise ValueError('Checkpoint activation conflicts with its architecture identity')

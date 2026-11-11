@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import torch
 from torch import nn
-from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, load_lightgen
+from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, Experts, load_lightgen
 from ..run import save_checkpoint
 from ..data import attach_train_soft_targets
 
@@ -151,6 +151,47 @@ class Contracts(unittest.TestCase):
         with_norm = LightGenTemporal(ModelConfig(width=8, expert_hidden=16,
             router_hidden=8, readout_hidden=16, visual_output_norm=True))
         self.assertIsInstance(with_norm.visual_input_norm, nn.LayerNorm)
+
+    def test_linear_experts_have_no_bias_norm_or_activation(self):
+        cfg = ModelConfig(width=8, expert_mode='linear', orm_mode='amplitude')
+        experts = Experts(cfg).eval()
+        x, y = torch.randn(3, 49, 8), torch.randn(3, 49, 8)
+        for expert in experts.experts:
+            self.assertIsInstance(expert, nn.Linear)
+            self.assertIsNone(expert.bias)
+            self.assertTrue(torch.allclose(expert(2*x + 3*y), 2*expert(x) + 3*expert(y), atol=2e-6))
+
+    def test_manuscript_amplitude_orm(self):
+        cfg = ModelConfig(width=8, orm_mode='amplitude', alpha_eval=2/3,
+                          phase_shift=0, phase_dropout=0)
+        stage = GlobalStage(cfg, False).eval()
+        with torch.no_grad():
+            stage.raw_global_phase.zero_()  # D = exp(i*pi) = -1.
+        expected = torch.full((16,111,111), -1/3, dtype=torch.complex64)
+        self.assertTrue(torch.allclose(stage.modulation(), expected, atol=1e-6))
+
+    def test_amplitude_linear_checkpoint_roundtrip_and_legacy_config(self):
+        cfg = ModelConfig(width=8, expert_hidden=16, router_hidden=8,
+                          readout_hidden=16, expert_mode='linear', orm_mode='amplitude',
+                          input_shift=0, phase_shift=0, ccd_shift=0, phase_dropout=0)
+        model = LightGenTemporal(cfg).eval()
+        model.set_prompt(torch.randn(38,2048))
+        model.set_quality_levels(torch.tensor([0.,100.]))
+        x = torch.randn(1,16,4,49,1024)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder)/'linear.pt'
+            torch.save(model.checkpoint(), path)
+            restored, _ = load_lightgen(path)
+            self.assertEqual(restored.cfg, cfg)
+            with torch.inference_mode():
+                self.assertTrue(torch.equal(model(x)['prediction'], restored(x)['prediction']))
+            old = LightGenTemporal(ModelConfig(width=8, expert_hidden=16,
+                router_hidden=8, readout_hidden=16)).checkpoint()
+            for key in ('expert_mode','orm_mode','alpha_min','alpha_max','alpha_eval'):
+                old['config'].pop(key)
+            torch.save(old, path)
+            restored, _ = load_lightgen(path)
+            self.assertEqual(restored.cfg.orm_mode, 'legacy_energy')
 
 
 if __name__=='__main__':unittest.main()
