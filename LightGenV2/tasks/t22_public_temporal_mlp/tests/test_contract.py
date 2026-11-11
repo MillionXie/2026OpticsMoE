@@ -3,13 +3,13 @@ import ast
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, Experts, load_lightgen
 from ..run import save_checkpoint
 from ..data import attach_train_soft_targets
-from ..infer import iter_video_fields
+from ..infer import frames_from_video, iter_video_fields
 
 
 class Contracts(unittest.TestCase):
@@ -32,6 +32,16 @@ class Contracts(unittest.TestCase):
                 padding = (-count) % 16
                 expected = list(range(count)) + [i % count for i in range(padding)]
                 self.assertEqual(actual, expected, count)
+
+    def test_unreadable_video_releases_decoder(self):
+        decoder = Mock()
+        decoder.get.return_value = 0
+        cv2 = Mock()
+        cv2.VideoCapture.return_value = decoder
+        with patch.dict('sys.modules', {'cv2': cv2}):
+            with self.assertRaises(ValueError):
+                frames_from_video('unreadable.mp4')
+        decoder.release.assert_called_once_with()
 
     def test_dark_relu_field_has_finite_backward(self):
         cfg=ModelConfig(width=8,input_shift=0,phase_shift=0,ccd_shift=0,phase_dropout=0)

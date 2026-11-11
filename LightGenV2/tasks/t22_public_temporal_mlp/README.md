@@ -6,7 +6,9 @@
 
 用户确认删除四条电子旁路、RMS融合和quality14，将router与expert换为MLP，将原Softplus位置改为ReLU，末端使用两层全连接评分。用户随后澄清，Qwen前端、merger等实际使用的模块要保持原运行结构。
 
-当前版本沿用空间mean/max merger和64位置的序列位置参数，视觉适配采用LN1024→Linear1024,192，并按用户要求移除早期prompt条件化。视觉分支到merger全程仅使用图像特征，文本在merger之后的明确融合点进入。当前router、MLP专家、merger和末端头的激活统一为ReLU，读出采用五等级概率加权。本轮schema6使用256维末端隐藏层和论文幅度ORM，并提供MLP与无偏置线性专家两个候选。两者均删除投影后LN192。历史schema3–5按其原有配置加载。
+2026-11-12用户已选定无偏置线性专家版本，固定入口为 `configs/selected_linear.json`。选定PT为 `runs/simulation/compact256_linear_refine_s197_20261112/LightGen.pt`，SHA256为 `acd26ecaa7a67ea7f284bec8b46a31a7a5cc6126c64f6100c350ba1bf1d00861`，大小24,140,819字节，可训练参数4,798,790。MLP消融及历史PT继续保留内部证据。
+
+当前版本沿用空间mean/max merger和64位置的序列位置参数，视觉适配采用LN1024→Linear1024,192，并按用户要求移除早期prompt条件化。视觉分支到merger全程仅使用图像特征，文本在merger之后的明确融合点进入。router、merger和末端头的激活统一为ReLU，专家为无偏置线性层，读出采用五等级概率加权。schema6使用256维末端隐藏层和论文幅度ORM，并删除投影后LN192。历史schema3–5按其原有配置加载。
 
 此前的prompt条件化由文本产生缩放和偏移，再作用于视觉特征。此操作已移除。当前视觉输入LayerNorm对每个token的1024维特征规范化，再投影到192维。更换prompt时，训练后模型的merger输出、帧级和视频级路由权重均逐位一致。图文在merger后的42-token拼接处开始联合处理。
 
@@ -15,7 +17,7 @@
 1. 每视频4帧，原65%短边中心裁剪及448输入。冻结Qwen patch projection与位置编码，按原固定空间降采样得到每帧49×1024。固定Temporal prompt含38个2048维embedding。
 2. 视觉适配为LN1024、Linear1024→192；投影后LN192由配对消融profile控制。归一化的均值、方差均由当前视觉token自身计算，仿射参数为视觉层自身的训练参数。
 3. 帧router为LN192、Flatten9408、Linear9408→128、ReLU、Linear128→4、softmax、Top2及选中权重L1归一化。
-4. MLP候选的四个帧专家分别为LN192、Linear192→384、ReLU、Linear384→192。线性候选每个专家为无偏置Linear192→192。逐token执行后按Top2权重相加。四专家在帧和视频槽位之间共享，视频级使用独立的一组专家参数。
+4. 四个帧专家各为无偏置Linear192→192，逐token执行后按Top2权重相加。四专家在帧和视频槽位之间共享，视频级使用独立的一组专家参数。
 5. 帧global通过Linear192→27/ReLU和token轴Linear49→27/ReLU编码。原幅值归一化后装入518整场，执行原相位调制、传播、强度探测、区域读取、强度除均值、clip8和log1p。pool49×96、LN96、ReLU和Linear96→192得到帧特征。
 6. 原Frame Merger对每帧49个token作空间mean与max，拼成384维，经过LN384、Linear384→192和ReLU，再加原帧位置编码。
 7. 固定prompt embedding经过独立的LN2048与Linear2048→192。四个图像token与38个prompt token在此处拼接，加原序列位置编码前42项。视频router只读四个图像token，经LN192、Flatten768、Linear768→128、ReLU、Linear128→4和Top2。
@@ -61,8 +63,7 @@
 | Router LN192、展平49×192 | `[B,16,4,9408]` |
 | Linear9408→128、ReLU、Linear128→4 | `[B,16,4,4]`，末轴为四专家logits |
 | softmax，温度1.1，Top2掩码及选中权重和归一化 | `[B,16,4,4]`，每帧两个非零权重 |
-| 每个专家LN192、Linear192→384、ReLU、Linear384→192 | 各为`[B,16,4,49,192]` |
-| 线性候选以单层无偏置Linear192→192替代上述专家 | 各为`[B,16,4,49,192]` |
+| 每个专家无偏置Linear192→192 | 各为`[B,16,4,49,192]` |
 | 按该帧Top2权重求和 | `[B,16,4,49,192]` |
 | global的Linear192→27、ReLU | `[B,16,4,49,27]` |
 | 转置后沿token轴Linear49→27、ReLU，再转回 | `[B,16,4,27,27]` |
@@ -77,7 +78,7 @@
 
 四个帧专家共享于全部帧和视频槽位。代码计算四个专家输出，Top2之外的输出乘零权重。frame global将每视频的四帧排为2×2，每帧编码区27×27，统一在518×518相干光场传播。探测区到49×96的自适应均值池化是当前实际操作，宽度由56变为96。
 
-帧级只有1个共享router和4个独立专家。一个专家的参数在所有49个token、4帧、16视频及batch之间复用。MLP候选每个专家148,416参数，四专家593,664参数。线性候选每个专家36,864参数，四专家147,456参数。帧router有1,205,252个参数，所有帧均复用该组参数。每帧独立计算4个路由权重，并将该帧的全部49个token送入同一Top2专家组合。
+帧级只有1个共享router和4个独立专家。一个专家的参数在所有49个token、4帧、16视频及batch之间复用。每个线性专家36,864参数，四专家147,456参数。帧router有1,205,252个参数，所有帧均复用该组参数。每帧独立计算4个路由权重，并将该帧的全部49个token送入同一Top2专家组合。
 
 原LG2的帧router相位为 `[64,27,27]`，专家相位为 `[256,27,27]`，按视频槽位、帧位和专家编号组织。共享MLP参数是当前替代模型采用的参数组织选择。原光学expert之前先编码到27×27，expert的CCD读出回到49×192，global之前再次编码到27×27。
 
@@ -95,7 +96,7 @@
 | 视频router读取前4个视觉token，LN192、展平 | `[B,16,768]` |
 | Linear768→128、ReLU、Linear128→4 | `[B,16,4]` |
 | softmax，温度1.1，Top2及选中权重和归一化 | `[B,16,4]` |
-| 每个视频专家LN192、Linear192→384、ReLU、Linear384→192 | 各为`[B,16,42,192]` |
+| 每个视频专家无偏置Linear192→192 | 各为`[B,16,42,192]` |
 | 用每视频的Top2权重汇合42个token | `[B,16,42,192]` |
 | video global的Linear192→56、ReLU | `[B,16,42,56]` |
 | token轴补14行零，再除每个56×56场的RMS | `[B,16,56,56]` |
@@ -123,7 +124,7 @@ TRAIN均值为49.7535400391、标准差为13.5796670914，用于损失尺度规�
 
 论文Qwen baseline采用2048→5质量词logits，经softmax后对五个等级分数加权。已核验原PT的 `level_scores` 为28.62、40.79、52.96、65.13和77.30，入口为 `t06_video_quality_assessment/quality_token_batch_benchmark_200.py`。本任务复用其五档期望计算和TRAIN范围分档规则，schema6采用8064→256→5两层ReLU评分头。
 
-当前候选已通过完整原生像素输入的前向尺寸核验，见 `runs/simulation/five_levels_ln192_remove_refine_s181_20261111/architecture_shapes.json`。旧37模块核验记录保留在对应历史run。
+选定线性PT的逐层尺寸及视觉独立性核验见 `runs/simulation/compact256_linear_refine_s197_20261112/architecture_shapes.json` 与 `independent_model_audit.json`。原始视频输入的完整558条核查及可视化见下文的开源审查记录。历史核验保留在各自run。
 
 ## 初始化和独立PT
 
@@ -261,3 +262,93 @@ schema2原merger和早期prompt条件化试验完成120epoch，最佳SRCC为0.75
 同配置权重的参数平均使用 `python average_weights.py --paths paths.local.json --checkpoints <父PT1> <父PT2> --out runs/simulation/<run_id> --device cuda`，按相同的数据、前端buffer和模型配置核验后评价，保存独立PT及逐样本结果。
 
 本轮内部试验源代码通过私有Git bundle同步服务器，只取出本任务路径。公开GitHub远端的push留待交付确认。
+
+## 选定线性版本的整体对应核查
+
+本轮对照 `E:/2026LightGen2Data/投稿文件/manuscript.pdf` 与 `supplement information.pdf`，分别22页和26页。SHA和文件身份在 `assets/selected_linear_submission_source_identity.json`。该工程覆盖固定prompt条件下的LGVQ时间一致性评分。
+
+| 项目 | 实际实现与证据 |
+|---|---|
+| 顺序与尺寸 | 4帧×49视觉token→帧router/线性专家/global→原merger的4个视觉token→拼接38个文本token→视频router/线性专家/global→42×192→8064→256→5 |
+| 视觉与文本 | 视觉分支到merger只接收图像，文本在42-token拼接点进入。两个router均从视觉部分产生权重 |
+| 动态线性加权 | 两级均满足Y=Σg_k X W_k^T，等效算子为Σg_kW_k。真实前向张量复算最大误差低于3.4e-6，支持SI S9/S10形式的对应 |
+| 专家后电子处理 | global输入编码、强度探测和CCD的LN/ReLU按现有实现保留。SI线性专家算子作用于其规定的复振幅边界 |
+| ORM | 与正文570–585行一致采用幅度权重alpha与1-alpha。本实现取U_tilde=U及alpha=2/3，调制后场与真实传播入口逐点相同 |
+| 传播与几何 | 两次完整518×518相干传播，中央478×478有效区、四边20像素padding。16视频按4×4排列，帧级每视频4个27×27输入区，视频级每视频一个56×56输入区 |
+| 探测与读出 | 帧级64个56×56探测区，视频级16个115×115探测区，区域内除均值、clip8、log1p后池化。复算CCD池化与前向值最大差低于6e-7 |
+| 末端 | 两层FC为8064→256→5，中间ReLU。softmax后按Qwen baseline五档分数求MOS |
+| 指标定义 | SRCC、KRCC、PLCC、RMSE、MAE与原VQA评价口径对应。相关性由原始预测计算，等级分数来自TRAIN范围 |
+
+需要在公开说明中列明已批准的替换内容。正文83–107行及SI S3/S4描述光学探测路由，当前使用MLP路由。专家为电子无偏置192×192线性矩阵，global保持光场数值处理。SI Note 3的原系统有两轮router/expert/global、合计六次光学处理，本版本有两个global传播。公开模型的可训练参数规模为4,798,790，其评价记录与该结构绑定。论文原硬件系统的时延、能耗和规模记录对应各自原系统。
+
+ReLU与Top2使当前路由函数呈分段形式。S9的动态线性加权可直接验证，SI S16–S21的光滑Taylor展开需在固定激活分段及固定Top2支撑的局部条件下讨论。
+
+本轮发现并修正原生入口的尾组补齐差异。558条评价由35个光场组成，最后14条真实视频与开头2条视频共同组场。现在 `infer.py` 与缓存评价使用相同规则。1、3、15、16、17、31、32、33及558条输入的补齐身份已逐一回归。无效视频的解码器释放也有专门回归。
+
+## 原始视频复算与光场可视化
+
+`audit_native_inference.py` 从原始视频解码558条、共2232个真实抽帧，执行所选PT内的冻结前端与完整主干。尾组padding用有效位排除在指标之外。首次完整结果在 `runs/simulation/linear_native558_audit_20261112/`。
+
+| 输入方式 | SRCC | KRCC | PLCC | RMSE | MAE |
+|---|---|---|---|---|---|
+| 选定缓存评价 | 0.7853234272 | 0.5743142102 | 0.7900532524 | 8.7496365280 | 6.5336418767 |
+| 原始视频入口 | 0.7853172110 | 0.5743013325 | 0.7900544543 | 8.7496189451 | 6.5336452607 |
+
+原始视频和缓存方式的逐条MOS最大差0.0031852722、平均绝对差0.0002683824。冻结前端特征最大差0.03125、平均绝对差4.55e-7。缓存评价batch1与原batch4保存预测的最大差3.05e-5。原始视频SRCC与原仿真参考的绝对差为0.0190696533，在0.02范围内。
+
+审查用统一输出目录为 `runs/simulation/linear_release_review_20261112/`。其中 `native558/` 保存最后一轮原始视频回归，`fields/` 保存从原始视频输入生成的可视化及底层数组。此前两套缓存/原生图保留在各自run，最终审查以该统一目录为入口。
+
+`visualize_fields.py` 支持 `--videos` 原始视频入口，也支持内部的 `--paths` 缓存核查入口。原始视频方式只依赖model.py、infer.py、PyTorch、NumPy、OpenCV和Matplotlib。独立运行核查从/tmp、空PYTHONPATH开始，并禁止导入训练入口、内部data模块、原工程兼容后端和完整Qwen运行库。
+
+每个global图展示入射幅度、SLM相位、ORM后幅度/相位、传播后强度的线性/对数显示、输出相位以及CCD预处理区域。青色方框标示478有效区。强度单位为输入RMS规范化后的任意单位，相位单位为弧度。色标范围和显示截断阈值写入manifest，NPZ保留原始复数场和未经显示截断的强度。
+
+| 文件 | 内容 |
+|---|---|
+| frame_global.png / video_global.png | 两级global的完整518画布 |
+| input_frames.png | 本组16视频、每视频4帧的真实裁剪输入，空间排列对应4×4光场槽位 |
+| slot_detail.png | 第0槽位的4帧、4个帧级CCD区、两级路由权重、视频CCD区、五档概率及MOS |
+| frame_global_arrays.npz / video_global_arrays.npz | 实际传播入口V、输出O、探测强度、相位、输入编码及CCD区域等原始数组 |
+| group_predictions.csv / routing.json | 输入ID、槽位、有效位、预测和路由权重 |
+| visualization_manifest.json | PT及数据SHA、源码身份、复算误差、显示参数、输出文件SHA |
+
+可视化hook前后的MOS逐位相同。入射场按原几何从输入编码重建，并与捕获的传播入口校验。全场传播按原模型一次完成，原始O和I直接来自实际前向。第0组按原TEST顺序选取前16条，详细图固定取第0槽位。
+
+## 工程入口与后续公开整理规划
+
+当前源码入口为本目录。训练服务器对应 `/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t22_public_temporal_mlp/`。当前目录承载内部开发、历史消融和审查证据，选定结构由 `configs/selected_linear.json` 固定。
+
+| 当前文件或目录 | 用途 |
+|---|---|
+| model.py | 模型、两级global传播、历史PT兼容加载 |
+| infer.py | 原始视频抽帧、规范化、16视频组场、MOS输出 |
+| visualize_fields.py | 原始视频或缓存输入的可复算光场图 |
+| configs/selected_linear.json | 用户选定的线性PT、SHA、参数规模及评价条件 |
+| runs/simulation/compact256_linear_refine_s197_20261112/ | 所选独立PT、训练日志、558条预测及原有审计 |
+| runs/simulation/linear_release_review_20261112/ | 本轮完整原生复算及光场审查输出 |
+| run.py / prepare_compact_ablation.py / configs/trial_* | 内部训练与消融复现 |
+| assets/ / paths.local.json | 本机缓存、内部资产和路径配置 |
+
+建议下一步通过固定commit的导出脚本生成 `releases/temporal_linear_reference/` 发布产物。本轮只确定规划，源码仍由当前主线任务维护。
+
+```text
+temporal_linear_reference/
+  README.md
+  requirements.txt
+  model.py
+  infer.py
+  visualize_fields.py
+  evaluate.py
+  configs/selected_linear.json
+  weights/LightGen.pt
+  examples/video_list.txt
+  results/reference_metrics.json
+  results/reference_predictions.csv
+  LICENSE
+  THIRD_PARTY_NOTICES
+```
+
+公开model固定采用本次线性专家、256隐藏头和幅度ORM。发布前以所选权重的逐张量一致性、558条预测及独立像素推理进行回归。evaluate.py规划为接受用户提供的视频manifest和MOS标签，按相同分组计算五项指标。输入视频路径使用用户提供的列表，模型组件来源与Qwen版本、第三方许可说明列入发布说明。
+
+公开PT的元数据规划为模型配置、组件来源、评价条件和权重来源身份，内部绝对路径保留在本任务原始记录。内部训练、教师记录及原项目缓存依赖保存在开发目录。当前24.1MB PT已经包含冻结patch投影、位置编码和固定prompt，推理按该PT直接运行。
+
+公开README建议使用“temporal-quality reference implementation”，并写明MLP路由、线性专家、两个global和自身的原生视频指标，输入顺序/分组/槽位规则同时列出。历史“MLP”任务目录名继续作为内部稳定路径。

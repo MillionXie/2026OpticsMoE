@@ -14,7 +14,9 @@ else:
 def frames_from_video(path):
     import cv2
     cap=cv2.VideoCapture(str(path));count=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    if count<=0:raise ValueError('Cannot decode video: '+str(path))
+    if count<=0:
+        cap.release()
+        raise ValueError('Cannot decode video: '+str(path))
     frames=[]
     try:
         for fraction in np.linspace(.1,.9,4):
