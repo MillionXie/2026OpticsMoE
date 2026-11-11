@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, load_lightgen
 from ..run import save_checkpoint
+from ..data import attach_train_soft_targets
 
 
 class Contracts(unittest.TestCase):
@@ -77,6 +78,18 @@ class Contracts(unittest.TestCase):
         self.assertEqual(tuple(model.sequence_position.shape),(1,64,8))
         self.assertTrue(hasattr(model,'visual_input_norm'))
         self.assertTrue(hasattr(model,'prompt_to_visual'))
+
+    def test_teacher_matches_train_ids_and_rejects_test_entries(self):
+        payload={'ids':['a','b','c'],'splits':['train','test','train'],'identity':{}}
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'teacher.pt'
+            teacher={'sample_ids':['c','a'],'predictions':torch.tensor([[1.,30.],[2.,50.]]),
+                     'target_names':['spatial','temporal'],'inference_dependency':False}
+            torch.save(teacher,path);attach_train_soft_targets(payload,path)
+            self.assertEqual(payload['teacher'].tolist(),[50.,0.,30.])
+            self.assertEqual(payload['teacher_present'].tolist(),[True,False,True])
+            teacher['sample_ids']=['a','b'];torch.save(teacher,path)
+            with self.assertRaises(ValueError):attach_train_soft_targets(payload,path)
 
 
 if __name__=='__main__':unittest.main()

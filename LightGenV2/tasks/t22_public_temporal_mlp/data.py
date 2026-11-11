@@ -53,5 +53,28 @@ def groups(payload,split,seed=None):
 
 
 def batch(payload,index,valid,device):
-    return {'vision':payload['vision'][index].to(device,dtype=torch.float32),
+    result={'vision':payload['vision'][index].to(device,dtype=torch.float32),
             'target':payload['target'][index].to(device), 'valid':valid.to(device), 'indices':index}
+    if 'teacher' in payload:
+        result['teacher']=payload['teacher'][index].to(device)
+        result['teacher_present']=payload['teacher_present'][index].to(device)
+    return result
+
+
+def attach_train_soft_targets(payload,path):
+    teacher=torch.load(path,map_location='cpu',weights_only=False)
+    ids=teacher['sample_ids'];names=teacher['target_names'];scores=teacher['predictions']
+    expected={name for name,split in zip(payload['ids'],payload['splits']) if split=='train'}
+    if len(set(ids))!=len(ids) or set(ids)!=expected:
+        raise ValueError('Teacher IDs must match exactly the TRAIN set')
+    if scores.shape!=(len(ids),len(names)) or 'temporal' not in names or not bool(torch.isfinite(scores).all()):
+        raise ValueError('Invalid temporal teacher scores')
+    if teacher.get('inference_dependency') is not False:
+        raise ValueError('Unexpected teacher asset contract')
+    target=scores[:,names.index('temporal')].float();lookup={name:i for i,name in enumerate(ids)}
+    values=torch.zeros(len(payload['ids']));present=torch.zeros(len(payload['ids']),dtype=torch.bool)
+    for i,(name,split) in enumerate(zip(payload['ids'],payload['splits'])):
+        if split=='train':values[i]=target[lookup[name]];present[i]=True
+    payload['teacher']=values;payload['teacher_present']=present
+    payload['identity']['training_soft_targets']={'path':str(path),'sha256':sha256(path),
+        'count':len(ids),'TEST_entries':0,'teacher_checkpoint':teacher.get('teacher_checkpoint')}

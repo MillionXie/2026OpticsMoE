@@ -32,6 +32,7 @@ def main():
     p.add_argument('--poll-seconds',type=int,default=30)
     p.add_argument('--initialize',type=Path)
     p.add_argument('--paper-initialize',type=Path)
+    p.add_argument('--train-soft-targets',type=Path)
     a=p.parse_args();a.dispatch_dir.mkdir(parents=True,exist_ok=False)
     status=a.dispatch_dir/'status.json';started=time.time();candidate=None;count=0
     while time.time()-started<a.max_wait_seconds:
@@ -47,6 +48,7 @@ def main():
                      '--config',str(a.config),'--out',str(a.out),'--device','cuda']
             if a.initialize:command.extend(['--initialize',str(a.initialize)])
             if a.paper_initialize:command.extend(['--paper-initialize',str(a.paper_initialize)])
+            if a.train_soft_targets:command.extend(['--train-soft-targets',str(a.train_soft_targets)])
             with (a.dispatch_dir/'training.log').open('w',buffering=1) as log:
                 child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,env=env)
                 status.write_text(json.dumps({'state':'training','pid':os.getpid(),'training_pid':child.pid,

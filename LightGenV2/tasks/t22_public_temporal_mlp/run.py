@@ -21,10 +21,10 @@ from scipy.stats import spearmanr, kendalltau, pearsonr
 
 if __package__:
     from .model import LightGenTemporal, ModelConfig, load_lightgen
-    from .data import load_inputs, groups, batch, sha256
+    from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
 else:
     from model import LightGenTemporal, ModelConfig, load_lightgen
-    from data import load_inputs, groups, batch, sha256
+    from data import load_inputs, groups, batch, sha256, attach_train_soft_targets
 
 ROOT=Path(__file__).resolve().parent
 
@@ -137,6 +137,9 @@ def train(args):
     else:admission='local smoke or explicitly allowed device; no exclusive-resource measurement claim'
     torch.set_num_threads(4);torch.manual_seed(cfg['seed']);np.random.seed(cfg['seed'])
     payload=load_inputs(paths)
+    if cfg.get('soft_target_weight',0):
+        if not args.train_soft_targets:raise ValueError('TRAIN soft-target path required by this profile')
+        attach_train_soft_targets(payload,args.train_soft_targets)
     small_front=torch.load(paths['front'],map_location='cpu',weights_only=True)
     if not torch.equal(small_front['prompt_embedding'].to(payload['prompt']),payload['prompt']):
         raise ValueError('Exported prompt/cache mismatch')
@@ -209,6 +212,12 @@ def train(args):
     write(out/'metadata.json',metadata)
     history=[];best=-float('inf');started=time.time()
     write(out/'status.json',{'state':'running','epoch':0,'pid':os.getpid()})
+    if args.initialize and not args.smoke_steps:
+        initial_metrics=evaluate(model,payload,args.device,cfg['eval_batch_fields'])
+        best=initial_metrics['srcc']
+        history.append({'epoch':0,'test_development':initial_metrics,'source':'weights-only parent'})
+        save_checkpoint(out/'best_checkpoint.pt',model.checkpoint(**metadata,epoch=0,metrics=initial_metrics))
+        evaluate(model,payload,args.device,cfg['eval_batch_fields'],out,0)
     for epoch in range(1,cfg['epochs']+1):
         model.train();indices,valid=groups(payload,'train',cfg['seed']+epoch)
         # A smoke remains clearly separate and does not yield formal metrics.
@@ -222,6 +231,10 @@ def train(args):
             y=((item['target']-model.target_mean)/model.target_std)[keep]
             pred=result['normalized_prediction'][keep]
             loss=F.smooth_l1_loss(pred,y)+cfg['correlation_weight']*(1-correlation(pred,y))
+            if cfg.get('soft_target_weight',0):
+                if not bool(item['teacher_present'][keep].all()):raise ValueError('Missing TRAIN teacher entry')
+                teacher=(item['teacher']-model.target_mean)/model.target_std
+                loss=loss+cfg['soft_target_weight']*F.smooth_l1_loss(pred,teacher[keep])
             pair=torch.sign(y[:,None]-y[None,:]);mask=pair!=0
             if bool(mask.any()):loss=loss+cfg['ranking_weight']*F.relu(.1-pair*(pred[:,None]-pred[None,:]))[mask].mean()
             reg,_=router_regularization(result['routing'],keep)
@@ -283,6 +296,7 @@ def main():
     p.add_argument('--device',default='cuda')
     p.add_argument('--initialize',type=Path,help='Weights-only continuation of the same surrogate; never the paper model')
     p.add_argument('--paper-initialize',type=Path,help='Explicitly whitelist matching front, merger, global tensors for initialization')
+    p.add_argument('--train-soft-targets',type=Path)
     p.add_argument('--smoke-steps',type=int,default=0)
     p.add_argument('--allow-shared-gpu',action='store_true',help='Only for explicitly authorized nonexclusive correctness smoke')
     args=p.parse_args()
