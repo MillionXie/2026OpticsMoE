@@ -119,12 +119,12 @@ def ensure_idle_gpu():
     """Fail before creating a CUDA context if the selected GPU is occupied."""
     visible=os.environ.get('CUDA_VISIBLE_DEVICES')
     if not visible or ',' in visible:raise RuntimeError('Set CUDA_VISIBLE_DEVICES to exactly one GPU UUID/index')
-    text=subprocess.check_output(['nvidia-smi','-i',visible,'--query-gpu=uuid,memory.used,utilization.gpu',
+    text=subprocess.check_output(['nvidia-smi','-i',visible,'--query-gpu=uuid,memory.used,memory.total,utilization.gpu',
                                   '--format=csv,noheader,nounits'],text=True).strip()
-    uuid,memory,util=[v.strip() for v in text.split(',')]
+    uuid,memory,total,util=[v.strip() for v in text.split(',')]
     procs=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid',
                                    '--format=csv,noheader,nounits'],text=True)
-    if float(memory)>256 or float(util)>5 or any(line.startswith(uuid+',') for line in procs.splitlines()):
+    if float(total)-float(memory)<6144 or float(util)>5 or any(line.startswith(uuid+',') for line in procs.splitlines()):
         raise RuntimeError('Selected GPU occupied; refusing to share: '+text)
     return text
 
@@ -148,6 +148,33 @@ def train(args):
     train_y=payload['target'][train_idx]
     model.target_mean.copy_(train_y.mean());model.target_std.copy_(train_y.std(unbiased=False))
     initialization=None
+    if args.paper_initialize:
+        if args.initialize:raise ValueError('Select one initialization source')
+        paper=torch.load(args.paper_initialize,map_location='cpu',weights_only=False)
+        source=paper['state_dict'];target=model.state_dict();copied=[]
+        direct=['vision_adapter.','language_adapter.','visual_input_norm.','prompt_to_visual.','frame_merger.']
+        globals_map={'frame_global.':'parallel_optics.','video_global.':'serial_optics.'}
+        for name in target:
+            original=None
+            if any(name.startswith(prefix) for prefix in direct) or name in ['frame_position','sequence_position']:
+                original=name
+            for new_prefix,old_prefix in globals_map.items():
+                if name.startswith(new_prefix):
+                    suffix=name[len(new_prefix):]
+                    if suffix.startswith(('width_to_field.','tokens_to_field.')) or suffix=='raw_global_phase':
+                        original=old_prefix+suffix
+                    elif suffix.startswith('norm.'):
+                        original=old_prefix+'global_readout.'+suffix
+                    elif suffix.startswith('output.'):
+                        original=old_prefix+'global_readout.'+suffix
+            if original is not None:
+                if original not in source or source[original].shape!=target[name].shape:
+                    raise ValueError('Paper initialization shape mismatch: '+str(original))
+                target[name].copy_(source[original]);copied.append({'target':name,'source':original})
+        model.load_state_dict(target,strict=True)
+        initialization={'path':str(args.paper_initialize),'sha256':sha256(args.paper_initialize),
+                        'kind':'explicit front/merger/global whitelist; fresh MLP router/experts and final scoring head',
+                        'copied_tensors':copied,'optimizer':'new AdamW and cosine schedule'}
     if args.initialize:
         parent,record=load_lightgen(args.initialize,'cpu')
         if parent.cfg!=mc:raise ValueError('Initialization architecture differs')
@@ -255,6 +282,7 @@ def main():
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--device',default='cuda')
     p.add_argument('--initialize',type=Path,help='Weights-only continuation of the same surrogate; never the paper model')
+    p.add_argument('--paper-initialize',type=Path,help='Explicitly whitelist matching front, merger, global tensors for initialization')
     p.add_argument('--smoke-steps',type=int,default=0)
     p.add_argument('--allow-shared-gpu',action='store_true',help='Only for explicitly authorized nonexclusive correctness smoke')
     args=p.parse_args()

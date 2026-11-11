@@ -68,5 +68,15 @@ class Contracts(unittest.TestCase):
                 self.assertEqual(int(torch.load(path,weights_only=True)['value']),version)
             self.assertFalse(list(Path(tmp).glob('*.writing')))
 
+    def test_original_merger_structure_and_reduction(self):
+        cfg=ModelConfig(width=8,expert_hidden=16,router_hidden=8,readout_hidden=16)
+        model=LightGenTemporal(cfg)
+        self.assertEqual(model.frame_merger[0].normalized_shape,(16,))
+        self.assertEqual((model.frame_merger[1].in_features,model.frame_merger[1].out_features),(16,8))
+        self.assertIsInstance(model.frame_merger[2],nn.GELU)
+        self.assertEqual(tuple(model.sequence_position.shape),(1,64,8))
+        self.assertTrue(hasattr(model,'visual_input_norm'))
+        self.assertTrue(hasattr(model,'prompt_to_visual'))
+
 
 if __name__=='__main__':unittest.main()

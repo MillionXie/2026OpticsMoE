@@ -1,46 +1,67 @@
-# T22：时间一致性公开替代模型试验
+# T22 时间一致性公开替代模型试验
 
-2026-11-11 用户批准独立试跑。原论文 T06/T13 模型、权重、数据和结果不改。本目录由本对话负责；不修改图表整理对话负责的 E 盘归档或其他任务。
+2026-11-11 用户批准独立试跑。本目录由本对话负责。参考仿真SRCC为0.8043868643，试验目标按绝对差不超过0.02记录，对应0.7843868643至0.8243868643。
 
-这是单独训练、单独评价的替代模型，不冒充论文原实现。目标为原仿真 SRCC 0.8043868643 的绝对差不超过 0.02。当前状态：本机首轮80epoch完成，SRCC 0.6028183747，未达标；关闭随机扰动的对照在epoch25达到0.6731984861，epoch28写last时发生I/O异常，best已核验可读。中断run保持原样，改为原子写入并从同架构best在新run做权重初始化续试；不冒称原优化器状态恢复。服务器原等待器只在等待状态被本对话核验PID后替换，未停止任何其他任务。
+## 当前架构
 
-## 已批准的架构
+用户确认删除四条电子旁路、RMS融合和quality14，将router与expert换为MLP，将原Softplus位置改为ReLU，末端使用两层全连接评分。用户随后澄清，Qwen前端、merger等实际使用的模块要保持原运行结构。
 
-输入保留 16 视频/场、4 帧/视频、49 个视觉 token/帧、固定 Temporal prompt。仅使用冻结 Qwen patch+position 特征与固定 prompt；删除 quality14、prompt 到视觉的额外调制、四条电子卷积旁路及 RMS 融合。用户进一步指定所有原 Softplus 位置改 ReLU。
+修正版恢复原空间mean/max merger、输入prompt条件化、视觉LayerNorm和64位置的序列位置参数。模型架构身份为 `t22_serial_mlp_top2_global2_relu_original_merger_fc2`，schema为2。
 
-串行链路：Qwen front -> LN1024/Linear1024→192 -> 帧 MLP router/Top2 experts -> 帧 optical global -> Flatten49×192/LN9408/Linear9408→192/GELU -> 四帧 token 与 38 个 prompt token 拼接 -> 视频 MLP router/Top2 experts -> 视频 optical global -> Flatten8064/Linear8064→1024/GELU/Linear1024→1 -> MOS 尺度还原。
+逐层运行顺序如下。
 
-- Router：LN192、Flatten、Linear→128、GELU、Linear128→4、softmax(T=1.1)、Top2、选中权重 L1 归一化。帧 router 读49 token，视频 router 只读4帧 token。
-- 每级4个专家：LN192、Linear192→384、GELU、Linear384→192；按Top2加权。专家在视频/帧/物理槽之间共享，同一级4专家互不共享，帧级与视频级不共享。当前为易核对实现，实际执行4个MLP，仅2个贡献输出，不宣称稀疏执行速度。
-- 两次 global 保持原17μm逻辑光路：532nm、10cm、518整场/478有效区、0.5°截止、16视频布局、111×111每视频相位、评测相干漏光系数0.2。不是改变传播网格的8μm/v2结果。
-- 帧 global 编码：Linear192→27/ReLU；token轴Linear49→27/ReLU；原RMS幅值归一化；原整场传播、探测、区域读取；强度除均值/clip8/log1p；pool49×96/LN96/ReLU/Linear96→192。
-- 视频 global 编码：Linear192→56/ReLU；序列补零至56行；原RMS归一化、整场传播、探测及读取；pool42×96/LN96/ReLU/Linear96→192。
-- 末端没有时序卷积、均值/方差/差分统计、独立文本统计头或额外旁路。前端固定空间降采样和global物理归一化仍明确保留。
+1. 每视频4帧，原65%短边中心裁剪及448输入。冻结Qwen patch projection与位置编码，按原固定空间降采样得到每帧49×1024。固定Temporal prompt含38个2048维embedding。
+2. 视觉适配为LN1024和Linear1024→192，文本适配为LN2048和Linear2048→192。原prompt条件化对文本token求均值，经LN192和Linear192→384形成scale/shift，执行原0.10系数调制和视觉LN192。
+3. 帧router为LN192、Flatten9408、Linear9408→128、GELU、Linear128→4、softmax、Top2及选中权重L1归一化。
+4. 四个帧专家分别为LN192、Linear192→384、GELU、Linear384→192，逐token执行后按Top2权重相加。四专家在帧和视频槽位之间共享，视频级使用独立的一组专家参数。
+5. 帧global通过Linear192→27/ReLU和token轴Linear49→27/ReLU编码。原幅值归一化后装入518整场，执行原相位调制、传播、强度探测、区域读取、强度除均值、clip8和log1p。pool49×96、LN96、ReLU和Linear96→192得到帧特征。
+6. 原Frame Merger对每帧49个token作空间mean与max，拼成384维，经过LN384、Linear384→192和GELU，再加原帧位置编码。
+7. 四个图像token与38个prompt token拼接，加原序列位置编码前42项。视频router只读四个图像token，经LN192、Flatten768、Linear768→128、GELU、Linear128→4和Top2。
+8. 四个视频专家逐token处理42个图文token并按Top2加权汇合，每个专家均为LN192、Linear192→384、GELU、Linear384→192。
+9. 视频global通过Linear192→56/ReLU编码，补零至56行，执行原幅值归一化、整场传播和探测。pool42×96、LN96、ReLU与Linear96→192输出42×192。
+10. 末端Flatten8064、Linear8064→1024、GELU和Linear1024→1得到评分，再还原MOS尺度。
 
-`model.py` 独立声明全部前向层，不 import 原 T06/T13/experiments，不带旧 router/expert 相位实现。`front.py` 从本机已有 safetensors 定向抽取实际需要的 patch/position 参数，固定 prompt 直接保存 embedding；不实例化完整 Qwen。不把2B权重或词表打入包。
+空间mean/max属于原merger。末端时序卷积和均值、方差、差分统计已按用户要求删除。每场16视频，每视频对应一个输出。
 
-## 数据与评价
+两级global保持原17μm采样、532nm波长、10cm传播、518画布、478有效区、0.5°截止和111×111每视频相位。评测相干漏光系数为0.20，相位为2π·sigmoid(raw)。零ReLU场在平方均值上先clamp再开方，保证反传有限。
 
-沿用原2250 TRAIN / 558 TEST，无独立VAL；TEST只用于周期评价和选模，不参与梯度，结果注明开发评价。每视频一标签；padding仍参与整场传播但从损失/指标剔除。训练可使用已核验的冻结前端缓存，不读取quality14作为输入。初次试验不蒸馏、不读取原模型TEST预测或MOS进入训练损失。
+## 初始化和独立PT
 
-只保存 best/last；配置、Git源版本/文件SHA、环境、逐样本预测、SRCC/KRCC/PLCC/RMSE/MAE、路由统计和状态写入独立run。两级global均保留整幅相干传播，不把逐视频独立传播拼接冒充多视频光场。
+`front.py` 定向抽取Qwen patch与position参数，保存固定prompt embedding，结果约4.9MB。独立推理加载 `LightGen.pt` 中的配置、state_dict、前端buffer、固定prompt和MOS尺度。
 
-## 独立权重
+`--paper-initialize` 使用显式白名单导入原模型保留的适配层、输入条件化、merger、位置参数和两级global。每个导入张量记录原名、目标名，原PT的SHA写入run。新MLP router、expert和末端评分层单独初始化。
 
-`LightGen.pt` 为结构配置 + state_dict + 固定prompt/位置buffer + MOS尺度。含提取后的冻结视觉前端，可对新的RGB输入推理；不需要完整Qwen目录/模型/Tokenizer。固定prompt限定此Temporal任务。原Qwen预训练参数的来源及必要归属保留。
+提取的前端参数与原缓存逐张量SHA一致。随机图像和实际视频上，独立前端与官方小组件的CPU输出均逐位相同。该视频CPU输出与历史CUDA缓存最大绝对差0.03125、平均绝对差约0.000201，原始核查记录已保留。
 
-当前工作仅为内部试跑。公开远端仓库存在，因此不自动将本轮源代码或权重push公开。服务器仅从带提交身份的私有Git包取出本任务路径，记录发布状态；不更新/覆盖其已有脏工作目录或修改其他窗口文件。
+## 数据和评价
 
-## 检查与运行
+沿用2250 TRAIN与558 TEST，周期TEST评价用于选模，记录为开发评价。TRAIN标签用于反传。既有缓存仅向模型提供Qwen视觉特征。padding参与整场传播，从损失与指标中剔除。
 
-`python -m unittest LightGenV2.tasks.t22_public_temporal_mlp.tests.test_contract -v` 检查串行拓扑、精确Top2、全零ReLU场的有限梯度、两级相位梯度、独立PT重载。
+每个run保留配置、源提交、文件SHA、环境、样本ID、逐样本预测、指标和路由统计，保存best与last。完整训练后执行16次循环换位审计并生成独立 `LightGen.pt`。
 
-首次导出前端：`python front.py --qwen-dir <原本机快照目录> --language-cache <固定prompt缓存> --output assets/front.pt`。只定向读取小组件，不构建完整Qwen。`paths.local.json` 指定 vision_cache、language_cache、manifest、front，均不提交Git。
+## 已有试验
 
-试跑：`python run.py --paths paths.local.json --out runs/simulation/relu_s163_20261111 --device cuda`。必须设置单个CUDA_VISIBLE_DEVICES，并在入场前、缓存核对后两次检查GPU为空闲；不抢占、不终止其他任务。
+早期Flatten merger原型按对应源提交封存。
 
-`wait_for_gpu.py` 是本次试验的有界单任务等待器，只候选空闲RTX4090、连续三次检查后启动一个训练任务；超时只记录未开始，不自动换占用GPU或转A100。它不是无限轮询或后台超参数搜索。
+| run | merger | 结果 |
+|---|---|---|
+| relu_s163_local_20261111 | Flatten | 80epoch完成，SRCC 0.6028183747 |
+| relu_clean_s163_local_20261111 | Flatten | epoch25最佳0.6731984861，epoch28保存last时I/O异常 |
+| relu_clean_refine_s163_local_20261111 | Flatten | 120epoch完成，最佳0.7354285207 |
+| relu_clean_refine_s163_server_20261111 | Flatten | 120epoch完成，最佳0.7330343156 |
 
-`trial_relu_clean_s163.json` 仅关闭输入/相位/CCD随机位移、相位dropout和router噪声，计算结构不变。`trial_relu_clean_refine_s163.json` 用同一干净条件和较低学习率续试。`--initialize <T22 best_checkpoint.pt>` 严格核对同一架构/数据manifest，只载模型权重，新建AdamW与cosine，独立记录父PT SHA和epoch；不读取论文模型或旧光路router/expert。
+保存已改为临时文件写完并flush/fsync后原子替换。中断run保留，后续在新run记录父PT和新优化器身份。
 
-正式独立推理：`python infer.py --weights <LightGen.pt> --videos <video1.mp4> <video2.mp4> --output result.json --device cuda`。新视频按输入顺序组成16槽位，最后一组复用已有视频padding但只输出有效条目。槽位敏感性另由每次正式run的16次循环换位审计记录。
+修正版使用 `configs/trial_original_merger_relu_s163.json`，训练结果在完成后补入。
+
+## 运行
+
+`python -m unittest LightGenV2.tasks.t22_public_temporal_mlp.tests.test_contract -v` 检查拓扑、原merger结构、Top2、零场梯度、两级global梯度、PT重载和原子保存。
+
+`paths.local.json` 指定vision_cache、language_cache、manifest和提取后的front。执行 `python run.py --paths paths.local.json --config configs/trial_original_merger_relu_s163.json --paper-initialize <原T06 PT> --out runs/simulation/<run_id> --device cuda` 训练。
+
+`wait_for_gpu.py` 接受任意空闲CUDA卡，要求至少6GiB空闲显存、无其他计算进程、利用率不超过5%，连续三次检查后启动。
+
+独立视频推理使用 `python infer.py --weights <LightGen.pt> --videos <video1.mp4> <video2.mp4> --output result.json --device cuda`。
+
+本轮内部试验源代码通过私有Git bundle同步服务器，只取出本任务路径。公开GitHub远端的push留待交付确认。

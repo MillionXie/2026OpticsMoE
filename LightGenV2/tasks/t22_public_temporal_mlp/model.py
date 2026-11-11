@@ -229,12 +229,14 @@ class LightGenTemporal(nn.Module):
         self.register_buffer('prompt_ready',torch.tensor(False))
         self.vision_adapter=nn.Sequential(nn.LayerNorm(1024),nn.Linear(1024,cfg.width))
         self.language_adapter=nn.Sequential(nn.LayerNorm(2048),nn.Linear(2048,cfg.width))
+        self.visual_input_norm=nn.LayerNorm(cfg.width)
+        self.prompt_to_visual=nn.Sequential(nn.LayerNorm(cfg.width),nn.Linear(cfg.width,cfg.width*2))
         self.frame_router=Router(cfg,49);self.frame_experts=Experts(cfg)
         self.frame_global=GlobalStage(cfg,True)
-        self.frame_merger=nn.Sequential(nn.Flatten(-2),nn.LayerNorm(49*cfg.width),
-            nn.Linear(49*cfg.width,cfg.width),nn.GELU())
+        self.frame_merger=nn.Sequential(nn.LayerNorm(2*cfg.width),
+            nn.Linear(2*cfg.width,cfg.width),nn.GELU())
         self.frame_position=nn.Parameter(torch.zeros(1,1,4,cfg.width))
-        self.sequence_position=nn.Parameter(torch.zeros(1,1,4+cfg.prompt_length,cfg.width))
+        self.sequence_position=nn.Parameter(torch.zeros(1,64,cfg.width))
         nn.init.normal_(self.frame_position,std=.02);nn.init.normal_(self.sequence_position,std=.02)
         self.video_router=Router(cfg,4);self.video_experts=Experts(cfg)
         self.video_global=GlobalStage(cfg,False)
@@ -253,14 +255,18 @@ class LightGenTemporal(nn.Module):
         if pixels is not None:vision_tokens=self.front(pixels)
         if tuple(vision_tokens.shape[1:])!=(16,4,49,1024):raise ValueError('Expected [B,16,4,49,1024]')
         if not bool(self.prompt_ready):raise RuntimeError('Fixed prompt embedding is not populated')
+        prompt=self.language_adapter(self.prompt_embedding.float())
+        prompt_scale,prompt_shift=self.prompt_to_visual(prompt.mean(0)).chunk(2,-1)
         vision=self.vision_adapter(vision_tokens.float())
+        vision=self.visual_input_norm(vision*(1+.10*torch.tanh(prompt_scale))+.10*prompt_shift)
         r1=self.frame_router(vision)
         vision=self.frame_experts(vision,r1['weights'])
         vision,g1=self.frame_global(vision)
-        frames=self.frame_merger(vision)+self.frame_position
-        prompt=self.language_adapter(self.prompt_embedding.float())
+        frame_summary=torch.cat((vision.mean(-2),vision.amax(-2)),-1)
+        frames=self.frame_merger(frame_summary)+self.frame_position
         prompt=prompt[None,None].expand(len(frames),16,-1,-1)
-        sequence=torch.cat((frames,prompt),dim=-2)+self.sequence_position
+        sequence=torch.cat((frames,prompt),dim=-2)
+        sequence=sequence+self.sequence_position[:,None,:sequence.shape[-2]]
         r2=self.video_router(sequence[...,:4,:])
         sequence=self.video_experts(sequence,r2['weights'])
         sequence,g2=self.video_global(sequence)
@@ -270,14 +276,14 @@ class LightGenTemporal(nn.Module):
                 'guard_energy':(g1+g2)/2}
 
     def checkpoint(self,**metadata:Any):
-        return {'schema':1,'architecture':'t22_serial_mlp_top2_global2_relu_flatten_fc2',
+        return {'schema':2,'architecture':'t22_serial_mlp_top2_global2_relu_original_merger_fc2',
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
 
 def load_lightgen(path,device='cpu'):
     payload=torch.load(path,map_location='cpu',weights_only=True)
-    if payload['architecture']!='t22_serial_mlp_top2_global2_relu_flatten_fc2':
-        raise ValueError('Not a T22 standalone surrogate')
+    if payload['architecture']!='t22_serial_mlp_top2_global2_relu_original_merger_fc2':
+        raise ValueError('Checkpoint uses a different T22 prototype architecture. Use its recorded Git version.')
     model=LightGenTemporal(ModelConfig(**payload['config']))
     model.load_state_dict(payload['model'],strict=True)
     return model.to(device).eval(),payload['metadata']

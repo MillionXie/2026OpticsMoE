@@ -9,15 +9,15 @@ import time
 
 
 def idle_gpus():
-    output=subprocess.check_output(['nvidia-smi','--query-gpu=uuid,name,memory.used,utilization.gpu',
+    output=subprocess.check_output(['nvidia-smi','--query-gpu=uuid,name,memory.used,memory.total,utilization.gpu',
                                     '--format=csv,noheader,nounits'],text=True)
     processes=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid',
                                       '--format=csv,noheader,nounits'],text=True)
     occupied={row.split(',')[0].strip() for row in processes.splitlines() if ',' in row}
     eligible=[]
     for line in output.splitlines():
-        uuid,name,memory,util=[x.strip() for x in line.split(',')]
-        if 'RTX 4090' in name and float(memory)<=256 and float(util)<=5 and uuid not in occupied:
+        uuid,name,memory,total,util=[x.strip() for x in line.split(',')]
+        if float(total)-float(memory)>=6144 and float(util)<=5 and uuid not in occupied:
             eligible.append(uuid)
     return eligible
 
@@ -31,13 +31,14 @@ def main():
     p.add_argument('--max-wait-seconds',type=int,default=1800)
     p.add_argument('--poll-seconds',type=int,default=30)
     p.add_argument('--initialize',type=Path)
+    p.add_argument('--paper-initialize',type=Path)
     a=p.parse_args();a.dispatch_dir.mkdir(parents=True,exist_ok=False)
     status=a.dispatch_dir/'status.json';started=time.time();candidate=None;count=0
     while time.time()-started<a.max_wait_seconds:
         choices=idle_gpus()
         if candidate in choices:count+=1
         else:candidate=choices[0] if choices else None;count=1 if candidate else 0
-        record={'state':'waiting_for_idle_RTX4090','pid':os.getpid(),'eligible':choices,
+        record={'state':'waiting_for_idle_GPU','pid':os.getpid(),'eligible':choices,
                 'candidate':candidate,'consecutive_checks':count,'elapsed_seconds':time.time()-started}
         status.write_text(json.dumps(record,indent=2)+'\n')
         if count>=3:
@@ -45,6 +46,7 @@ def main():
             command=[sys.executable,str(Path(__file__).with_name('run.py')),'--paths',str(a.paths),
                      '--config',str(a.config),'--out',str(a.out),'--device','cuda']
             if a.initialize:command.extend(['--initialize',str(a.initialize)])
+            if a.paper_initialize:command.extend(['--paper-initialize',str(a.paper_initialize)])
             with (a.dispatch_dir/'training.log').open('w',buffering=1) as log:
                 child=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,env=env)
                 status.write_text(json.dumps({'state':'training','pid':os.getpid(),'training_pid':child.pid,
