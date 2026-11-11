@@ -6,7 +6,7 @@
 
 用户确认删除四条电子旁路、RMS融合和quality14，将router与expert换为MLP，将原Softplus位置改为ReLU，末端使用两层全连接评分。用户随后澄清，Qwen前端、merger等实际使用的模块要保持原运行结构。
 
-当前版本恢复原空间mean/max merger、视觉LayerNorm和64位置的序列位置参数，并按用户最新要求移除早期prompt条件化。视觉分支到merger全程仅使用图像特征，文本在merger之后的明确融合点进入。模型架构身份为 `t22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2`，schema为3。
+当前版本恢复原空间mean/max merger、视觉LayerNorm和64位置的序列位置参数，并按用户最新要求移除早期prompt条件化。视觉分支到merger全程仅使用图像特征，文本在merger之后的明确融合点进入。当前MLP、merger和末端头的激活按用户最新要求统一为ReLU，架构身份为 `t22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2_allrelu`，schema为4。
 
 此前的prompt条件化由文本产生缩放和偏移，再作用于视觉特征。此操作已移除。视觉LayerNorm对每个视觉token的192维特征计算自身均值与方差，再使用该视觉层的可训练缩放和偏移参数。更换prompt时，训练后模型的merger输出、帧级和视频级路由权重均逐位一致。图文在merger后的42-token拼接处开始联合处理。
 
@@ -14,24 +14,26 @@
 
 1. 每视频4帧，原65%短边中心裁剪及448输入。冻结Qwen patch projection与位置编码，按原固定空间降采样得到每帧49×1024。固定Temporal prompt含38个2048维embedding。
 2. 视觉适配为LN1024、Linear1024→192和视觉LN192。归一化的均值、方差均由当前视觉token自身计算，仿射参数为视觉层自身的训练参数。
-3. 帧router为LN192、Flatten9408、Linear9408→128、GELU、Linear128→4、softmax、Top2及选中权重L1归一化。
-4. 四个帧专家分别为LN192、Linear192→384、GELU、Linear384→192，逐token执行后按Top2权重相加。四专家在帧和视频槽位之间共享，视频级使用独立的一组专家参数。
+3. 帧router为LN192、Flatten9408、Linear9408→128、ReLU、Linear128→4、softmax、Top2及选中权重L1归一化。
+4. 四个帧专家分别为LN192、Linear192→384、ReLU、Linear384→192，逐token执行后按Top2权重相加。四专家在帧和视频槽位之间共享，视频级使用独立的一组专家参数。
 5. 帧global通过Linear192→27/ReLU和token轴Linear49→27/ReLU编码。原幅值归一化后装入518整场，执行原相位调制、传播、强度探测、区域读取、强度除均值、clip8和log1p。pool49×96、LN96、ReLU和Linear96→192得到帧特征。
-6. 原Frame Merger对每帧49个token作空间mean与max，拼成384维，经过LN384、Linear384→192和GELU，再加原帧位置编码。
-7. 固定prompt embedding经过独立的LN2048与Linear2048→192。四个图像token与38个prompt token在此处拼接，加原序列位置编码前42项。视频router只读四个图像token，经LN192、Flatten768、Linear768→128、GELU、Linear128→4和Top2。
-8. 四个视频专家逐token处理42个图文token并按Top2加权汇合，每个专家均为LN192、Linear192→384、GELU、Linear384→192。
+6. 原Frame Merger对每帧49个token作空间mean与max，拼成384维，经过LN384、Linear384→192和ReLU，再加原帧位置编码。
+7. 固定prompt embedding经过独立的LN2048与Linear2048→192。四个图像token与38个prompt token在此处拼接，加原序列位置编码前42项。视频router只读四个图像token，经LN192、Flatten768、Linear768→128、ReLU、Linear128→4和Top2。
+8. 四个视频专家逐token处理42个图文token并按Top2加权汇合，每个专家均为LN192、Linear192→384、ReLU、Linear384→192。
 9. 视频global通过Linear192→56/ReLU编码，补零至56行，执行原幅值归一化、整场传播和探测。pool42×96、LN96、ReLU与Linear96→192输出42×192。
-10. 末端Flatten8064、Linear8064→1024、GELU和Linear1024→1得到评分，再还原MOS尺度。
+10. 末端Flatten8064、Linear8064→1024、ReLU和Linear1024→1得到评分，再还原MOS尺度。
 
 空间mean/max属于原merger。末端时序卷积和均值、方差、差分统计已按用户要求删除。每场16视频，每视频对应一个输出。
 
 两级global保持原17μm采样、532nm波长、10cm传播、518画布、478有效区、0.5°截止和111×111每视频相位。评测相干漏光系数为0.20，相位为2π·sigmoid(raw)。零ReLU场在平方均值上先clamp再开方，保证反传有限。
 
+478×478为中央有效区域，518×518为传播计算画布，四边各有20像素padding。16视频排布位于中央有效区域中。
+
 ## 输入到输出的完整尺寸
 
 以下 `B` 表示光场批数，每个光场固定16个视频，每视频4帧。视频在10%、36.67%、63.33%、90%位置抽帧，帧索引为 `round(fraction * (count - 1))`。每帧取短边65%的中心正方形裁剪，转RGB并缩放到448×448。视频不足16条时循环补齐已有视频，最终只返回真实输入的评分。
 
-四个视觉token按时间顺序对应上述四帧。每帧的49个global读出token经过原Frame Merger汇总成一个192维token，帧的数量保持4。Frame Merger沿token轴执行mean/max汇总、LN384、Linear384→192和GELU。
+四个视觉token按时间顺序对应上述四帧。每帧的49个global读出token经过原Frame Merger汇总成一个192维token，帧的数量保持4。Frame Merger沿token轴执行mean/max汇总、LN384、Linear384→192和ReLU。
 
 ### 冻结的Qwen前端与视觉适配
 
@@ -48,14 +50,18 @@
 
 运行时使用提取的patch投影、位置编码与固定prompt embedding。这里的四帧各自通过patch投影，每帧的两个时间切片由该帧复制而成。
 
+两次2×2均值汇聚均来自LG2的定制缓存流程，见 `t13_temporal_robust_training/cache_builder/cache_qwen_front.py` 的 `pool_qwen_front_tokens`。它们承担将patch特征适配到7×7、49-token输入规模的工作。Qwen原生PatchMerger采用LayerNorm和可学习的线性层完成相邻patch组映射。原Frame Merger为后续独立模块。
+
+视觉适配的LN1024规范化输入特征，投影后的LN192规范化输出特征。两者来自原LG2，原第二次LN前还包括quality相加和prompt调制。当前两处LN均存在，第二处LN的独立收益尚未消融验证。
+
 ### 帧级路由、专家与global
 
 | 操作 | 输出尺寸 |
 |---|---|
 | Router LN192、展平49×192 | `[B,16,4,9408]` |
-| Linear9408→128、GELU、Linear128→4 | `[B,16,4,4]`，末轴为四专家logits |
+| Linear9408→128、ReLU、Linear128→4 | `[B,16,4,4]`，末轴为四专家logits |
 | softmax，温度1.1，Top2掩码及选中权重和归一化 | `[B,16,4,4]`，每帧两个非零权重 |
-| 每个专家LN192、Linear192→384、GELU、Linear384→192 | 各为`[B,16,4,49,192]` |
+| 每个专家LN192、Linear192→384、ReLU、Linear384→192 | 各为`[B,16,4,49,192]` |
 | 按该帧Top2权重求和 | `[B,16,4,49,192]` |
 | global的Linear192→27、ReLU | `[B,16,4,49,27]` |
 | 转置后沿token轴Linear49→27、ReLU，再转回 | `[B,16,4,27,27]` |
@@ -70,6 +76,10 @@
 
 四个帧专家共享于全部帧和视频槽位。代码计算四个专家输出，Top2之外的输出乘零权重。frame global将每视频的四帧排为2×2，每帧编码区27×27，统一在518×518相干光场传播。探测区到49×96的自适应均值池化是当前实际操作，宽度由56变为96。
 
+帧级只有1个共享router和4个独立专家。一个专家的参数在所有49个token、4帧、16视频及batch之间复用，每个专家有148,416个参数，四专家共593,664个参数。帧router有1,205,252个参数，所有帧均复用该组参数。每帧独立计算4个路由权重，并将该帧的全部49个token送入同一Top2专家组合。
+
+原LG2的帧router相位为 `[64,27,27]`，专家相位为 `[256,27,27]`，按视频槽位、帧位和专家编号组织。共享MLP参数是当前替代模型采用的参数组织选择。原光学expert之前先编码到27×27，expert的CCD读出回到49×192，global之前再次编码到27×27。
+
 ### 独立文本输入与视频级主干
 
 固定prompt为 `Please evaluate the temporal quality of this video and rate it using one of the following five levels: Excellent, Good, Fair, Poor, or Bad.`。含聊天模板的固定输入对应38个2048维embedding，作为PT buffer保存。
@@ -82,9 +92,9 @@
 | 与4个视觉token沿token轴拼接 | `[B,16,42,192]` |
 | 加序列位置参数前42项，完整参数尺寸为1×64×192 | `[B,16,42,192]` |
 | 视频router读取前4个视觉token，LN192、展平 | `[B,16,768]` |
-| Linear768→128、GELU、Linear128→4 | `[B,16,4]` |
+| Linear768→128、ReLU、Linear128→4 | `[B,16,4]` |
 | softmax，温度1.1，Top2及选中权重和归一化 | `[B,16,4]` |
-| 每个视频专家LN192、Linear192→384、GELU、Linear384→192 | 各为`[B,16,42,192]` |
+| 每个视频专家LN192、Linear192→384、ReLU、Linear384→192 | 各为`[B,16,42,192]` |
 | 用每视频的Top2权重汇合42个token | `[B,16,42,192]` |
 | video global的Linear192→56、ReLU | `[B,16,42,56]` |
 | token轴补14行零，再除每个56×56场的RMS | `[B,16,56,56]` |
@@ -101,12 +111,16 @@
 | 操作 | 输出尺寸 |
 |---|---|
 | 展平42×192 | `[B,16,8064]` |
-| Linear8064→1024、GELU | `[B,16,1024]` |
+| Linear8064→1024、ReLU | `[B,16,1024]` |
 | Linear1024→1 | `[B,16,1]` |
 | 去末尾单例轴 | `[B,16]`，归一化评分 |
 | 乘TRAIN MOS标准差，再加TRAIN MOS均值 | `[B,16]`，MOS |
 
-当前TRAIN均值为49.7535400391、标准差为13.5796670914。patch/位置buffer、prompt buffer和MOS尺度固定，其余适配层、路由、专家、global编码/读出、相位、merger、位置参数及末端两层全连接参与训练。MLP中的激活为GELU，原Softplus位置为ReLU。
+当前TRAIN均值为49.7535400391、标准差为13.5796670914。patch/位置buffer、prompt buffer和MOS尺度固定，其余适配层、路由、专家、global编码/读出、相位、merger、位置参数及末端两层全连接参与训练。MLP中的激活为ReLU，原Softplus位置为ReLU。
+
+训练监督先将MOS真值变为 `(MOS-TRAIN均值)/TRAIN标准差`，网络预测该标准化目标，推理再执行逆变换。两个统计量由2250条TRAIN计算。原LG2代码及原PT采用同一标准化和恢复方式。
+
+论文Qwen baseline采用2048→5质量词logits，经softmax后对五个等级分数加权。已核验原PT的 `level_scores` 为28.62、40.79、52.96、65.13和77.30，入口为 `t06_video_quality_assessment/quality_token_batch_benchmark_200.py`。该读出与本任务的标准化MOS回归分别记录。
 
 完整原生像素输入的一次前向已记录37个模块的输入输出和Conv3d、两次AdaptiveAvgPool2d尺寸，见 `runs/simulation/separate_inputs_original_merger_relu_distill10_s163_server_20261111/architecture_shapes.json`。
 
@@ -127,6 +141,8 @@
 每个run保留配置、源提交、文件SHA、环境、样本ID、逐样本预测、指标和路由统计，保存best与last。完整训练后执行16次循环换位审计并生成独立 `LightGen.pt`。
 
 ## 已有试验
+
+以下精度来自历史schema3的GELU版本。当前schema4为全ReLU版本，已通过前向、反向与重载合同检查，精度需要重新训练评价。旧PT加载时按其历史激活恢复，已与修改前的真实0.7822584592模型逐位核验预测及两级路由一致。
 
 早期Flatten merger原型按对应源提交封存。
 
@@ -164,15 +180,15 @@ schema2原merger和早期prompt条件化试验完成120epoch，最佳SRCC为0.75
 
 两次lowrate试验从原0.7785模型初始化，两次short试验从lowrate的0.7812模型初始化。参数平均对96个可训练参数张量逐一核验等于三份父权重的算术平均，全部固定buffer逐张量一致，记录在该run的 `parameter_average_math_check.json`。
 
-当前最佳为 `separate_inputs_short_distill30_s197_server_20261111`，选中epoch1，SRCC为0.7822584592。与参考SRCC的绝对差为0.0221284051，距离0.7843868643目标下限仍差0.0021284051。所有本轮试验均已完成。
+历史GELU版本最佳为 `separate_inputs_short_distill30_s197_server_20261111`，选中epoch1，SRCC为0.7822584592。与参考SRCC的绝对差为0.0221284051，距离0.7843868643目标下限仍差0.0021284051。所有本轮试验均已完成。
 
-最佳run的558条CSV预测已独立复算SRCC、KRCC、PLCC、RMSE和MAE，样本ID、顺序及float32目标值与原manifest一致。完整训练后权重已执行prompt替换检查，并通过从 `/tmp`、空 `PYTHONPATH` 启动的原生视频推理。独立 `LightGen.pt` 为52,493,346字节，含11,885,250个可训练参数及所需前端buffer。对应核验记录见run内 `independent_audit.json`。
+该历史run的558条CSV预测已独立复算SRCC、KRCC、PLCC、RMSE和MAE，样本ID、顺序及float32目标值与原manifest一致。完整训练后权重已执行prompt替换检查，并通过从 `/tmp`、空 `PYTHONPATH` 启动的原生视频推理。独立 `LightGen.pt` 为52,493,346字节，含11,885,250个可训练参数及所需前端buffer。对应核验记录见run内 `independent_audit.json`。
 
 ## 运行
 
 `python -m unittest LightGenV2.tasks.t22_public_temporal_mlp.tests.test_contract -v` 检查拓扑、改变prompt时视觉特征逐位不变、原merger结构、Top2、零场梯度、两级global梯度、PT重载和原子保存。
 
-`paths.local.json` 指定vision_cache、language_cache、manifest和提取后的front。执行 `python run.py --paths paths.local.json --config configs/trial_separate_inputs_original_merger_relu_trainsoft_s163.json --train-soft-targets <TRAIN软标签PT> --paper-initialize <原T06 PT> --out runs/simulation/<run_id> --device cuda` 训练。
+`paths.local.json` 指定vision_cache、language_cache、manifest和提取后的front。执行 `python run.py --paths paths.local.json --config configs/trial_allrelu_separate_inputs_s163.json --train-soft-targets <TRAIN软标签PT> --paper-initialize <原T06 PT> --out runs/simulation/<run_id> --device cuda` 训练。
 
 `wait_for_gpu.py` 接受任意空闲CUDA卡，要求至少6GiB空闲显存、无其他计算进程、利用率不超过5%，连续三次检查后启动。
 

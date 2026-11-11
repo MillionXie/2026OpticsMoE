@@ -15,12 +15,17 @@ from torch import nn
 from torch.nn import functional as F
 
 
+GELU_ARCHITECTURE = 't22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2'
+RELU_ARCHITECTURE = GELU_ARCHITECTURE + '_allrelu'
+
+
 @dataclass(frozen=True)
 class ModelConfig:
     width: int = 192
     expert_hidden: int = 384
     router_hidden: int = 128
     readout_hidden: int = 1024
+    mlp_activation: str = 'relu'
     prompt_length: int = 38
     videos: int = 16
     frames: int = 4
@@ -49,6 +54,14 @@ class ModelConfig:
             raise ValueError('4 frame tokens plus the fixed prompt must fit the 56-row video field')
         if self.width <= 0 or self.temperature <= 0:
             raise ValueError('Invalid model width/temperature')
+        if self.mlp_activation not in ('relu', 'gelu'):
+            raise ValueError('Unsupported MLP activation')
+
+
+def mlp_activation(config: ModelConfig) -> nn.Module:
+    if config.mlp_activation == 'relu':
+        return nn.ReLU()
+    return nn.GELU()
 
 
 def translated(value, dy, dx, fill=0.0):
@@ -101,9 +114,10 @@ class Router(nn.Module):
         self.norm=nn.LayerNorm(cfg.width)
         self.fc1=nn.Linear(token_count*cfg.width,cfg.router_hidden)
         self.fc2=nn.Linear(cfg.router_hidden,4)
+        self.activation = mlp_activation(cfg)
 
     def forward(self,tokens):
-        logits=self.fc2(F.gelu(self.fc1(self.norm(tokens).flatten(-2))))
+        logits=self.fc2(self.activation(self.fc1(self.norm(tokens).flatten(-2))))
         if self.training and self.cfg.router_noise:
             logits=logits+self.cfg.router_noise*torch.randn_like(logits)
         probabilities=(logits/self.cfg.temperature).softmax(-1)
@@ -119,7 +133,7 @@ class Experts(nn.Module):
     def __init__(self,cfg):
         super().__init__()
         self.experts=nn.ModuleList([nn.Sequential(nn.LayerNorm(cfg.width),
-            nn.Linear(cfg.width,cfg.expert_hidden),nn.GELU(),
+            nn.Linear(cfg.width,cfg.expert_hidden),mlp_activation(cfg),
             nn.Linear(cfg.expert_hidden,cfg.width)) for _ in range(4)])
 
     def forward(self,tokens,weights):
@@ -233,14 +247,14 @@ class LightGenTemporal(nn.Module):
         self.frame_router=Router(cfg,49);self.frame_experts=Experts(cfg)
         self.frame_global=GlobalStage(cfg,True)
         self.frame_merger=nn.Sequential(nn.LayerNorm(2*cfg.width),
-            nn.Linear(2*cfg.width,cfg.width),nn.GELU())
+            nn.Linear(2*cfg.width,cfg.width),mlp_activation(cfg))
         self.frame_position=nn.Parameter(torch.zeros(1,1,4,cfg.width))
         self.sequence_position=nn.Parameter(torch.zeros(1,64,cfg.width))
         nn.init.normal_(self.frame_position,std=.02);nn.init.normal_(self.sequence_position,std=.02)
         self.video_router=Router(cfg,4);self.video_experts=Experts(cfg)
         self.video_global=GlobalStage(cfg,False)
         self.readout=nn.Sequential(nn.Flatten(-2),nn.Linear((4+cfg.prompt_length)*cfg.width,cfg.readout_hidden),
-            nn.GELU(),nn.Linear(cfg.readout_hidden,1))
+            mlp_activation(cfg),nn.Linear(cfg.readout_hidden,1))
         self.register_buffer('target_mean',torch.tensor(0.))
         self.register_buffer('target_std',torch.tensor(1.))
 
@@ -279,14 +293,22 @@ class LightGenTemporal(nn.Module):
                 'guard_energy':(visual['guard_energy']+g2)/2}
 
     def checkpoint(self,**metadata:Any):
-        return {'schema':3,'architecture':'t22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2',
+        all_relu = self.cfg.mlp_activation == 'relu'
+        return {'schema':4 if all_relu else 3,
+                'architecture':RELU_ARCHITECTURE if all_relu else GELU_ARCHITECTURE,
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
 
 def load_lightgen(path,device='cpu'):
     payload=torch.load(path,map_location='cpu',weights_only=True)
-    if payload['architecture']!='t22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2':
+    architecture = payload['architecture']
+    activations = {GELU_ARCHITECTURE: 'gelu', RELU_ARCHITECTURE: 'relu'}
+    if architecture not in activations:
         raise ValueError('Checkpoint uses a different T22 prototype architecture. Use its recorded Git version.')
-    model=LightGenTemporal(ModelConfig(**payload['config']))
+    config = dict(payload['config'])
+    config.setdefault('mlp_activation', activations[architecture])
+    if config['mlp_activation'] != activations[architecture]:
+        raise ValueError('Checkpoint activation conflicts with its architecture identity')
+    model=LightGenTemporal(ModelConfig(**config))
     model.load_state_dict(payload['model'],strict=True)
     return model.to(device).eval(),payload['metadata']

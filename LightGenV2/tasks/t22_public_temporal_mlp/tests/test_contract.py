@@ -51,7 +51,7 @@ class Contracts(unittest.TestCase):
     def test_no_disallowed_layers_or_shortcuts(self):
         model=LightGenTemporal(ModelConfig(width=8,expert_hidden=16,router_hidden=8,readout_hidden=16))
         for layer in model.modules():
-            self.assertNotIsInstance(layer,(nn.Softplus,nn.Conv1d,nn.Conv2d,nn.MultiheadAttention,nn.Transformer))
+            self.assertNotIsInstance(layer,(nn.GELU,nn.Softplus,nn.Conv1d,nn.Conv2d,nn.MultiheadAttention,nn.Transformer))
         self.assertEqual(sum(isinstance(l,nn.Linear) for l in model.readout.modules()),2)
         names=list(dict(model.named_parameters()))
         self.assertEqual(sum(n.endswith('raw_global_phase') for n in names),2)
@@ -74,7 +74,7 @@ class Contracts(unittest.TestCase):
         model=LightGenTemporal(cfg)
         self.assertEqual(model.frame_merger[0].normalized_shape,(16,))
         self.assertEqual((model.frame_merger[1].in_features,model.frame_merger[1].out_features),(16,8))
-        self.assertIsInstance(model.frame_merger[2],nn.GELU)
+        self.assertIsInstance(model.frame_merger[2],nn.ReLU)
         self.assertEqual(tuple(model.sequence_position.shape),(1,64,8))
         self.assertTrue(hasattr(model,'visual_input_norm'))
         self.assertFalse(hasattr(model,'prompt_to_visual'))
@@ -103,6 +103,27 @@ class Contracts(unittest.TestCase):
             self.assertEqual(payload['teacher_present'].tolist(),[True,False,True])
             teacher['sample_ids']=['a','b'];torch.save(teacher,path)
             with self.assertRaises(ValueError):attach_train_soft_targets(payload,path)
+
+    def test_legacy_gelu_checkpoint_preserves_its_predictions(self):
+        config = ModelConfig(width=8, expert_hidden=16, router_hidden=8,
+                             readout_hidden=16, mlp_activation='gelu',
+                             input_shift=0, phase_shift=0, ccd_shift=0,
+                             phase_dropout=0)
+        model = LightGenTemporal(config).eval()
+        model.set_prompt(torch.randn(38, 2048))
+        inputs = torch.randn(1, 16, 4, 49, 1024)
+        with torch.inference_mode():
+            expected = model(inputs)['prediction']
+        legacy = model.checkpoint()
+        legacy['config'].pop('mlp_activation')
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'legacy.pt'
+            torch.save(legacy, path)
+            restored, _ = load_lightgen(path)
+            self.assertEqual(restored.cfg.mlp_activation, 'gelu')
+            with torch.inference_mode():
+                actual = restored(inputs)['prediction']
+            self.assertTrue(torch.equal(expected, actual))
 
 
 if __name__=='__main__':unittest.main()
