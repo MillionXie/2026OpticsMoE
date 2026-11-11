@@ -2,7 +2,6 @@
 import argparse
 import json
 from pathlib import Path
-import cv2
 import numpy as np
 import torch
 
@@ -13,6 +12,7 @@ else:
 
 
 def frames_from_video(path):
+    import cv2
     cap=cv2.VideoCapture(str(path));count=int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     if count<=0:raise ValueError('Cannot decode video: '+str(path))
     frames=[]
@@ -29,6 +29,20 @@ def frames_from_video(path):
     return torch.stack(frames)
 
 
+def iter_video_fields(video_paths):
+    """Keep original order and cyclically pad from the beginning of the input."""
+    if not video_paths:
+        raise ValueError('At least one video is required')
+    first_frames = []
+    for start in range(0, len(video_paths), 16):
+        chunk = video_paths[start:start+16]
+        frames = [frames_from_video(path) for path in chunk]
+        if not first_frames:
+            first_frames = frames[:15]
+        padding = [first_frames[i % len(first_frames)] for i in range(16-len(frames))]
+        yield chunk, torch.stack(frames + padding)[None]
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--weights',type=Path,required=True)
@@ -39,11 +53,9 @@ def main():
     records=[]
     # New videos retain the same ordered field grouping/padding convention.
     # Optical slot dependence is reported by the separately saved slot audit.
-    for start in range(0,len(a.videos),16):
-        chunk=a.videos[start:start+16];pixels=[frames_from_video(v) for v in chunk]
-        pixels=pixels+[pixels[i%len(pixels)] for i in range(16-len(pixels))]
+    for chunk, pixels in iter_video_fields(a.videos):
         with torch.inference_mode():
-            prediction=model(pixels=torch.stack(pixels)[None].to(a.device))['prediction'][0]
+            prediction=model(pixels=pixels.to(a.device))['prediction'][0]
         records.extend({'video':str(v),'slot':i,'MOS':float(prediction[i])} for i,v in enumerate(chunk))
     a.output.parent.mkdir(parents=True,exist_ok=True)
     a.output.write_text(json.dumps({'model':'public_surrogate','predictions':records},indent=2)+'\n','utf-8')

@@ -3,11 +3,13 @@ import ast
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, Experts, load_lightgen
 from ..run import save_checkpoint
 from ..data import attach_train_soft_targets
+from ..infer import iter_video_fields
 
 
 class Contracts(unittest.TestCase):
@@ -19,6 +21,17 @@ class Contracts(unittest.TestCase):
         r=Router(cfg,49).eval()(torch.randn(2,16,4,49,8))
         self.assertTrue(torch.all((r['weights']>0).sum(-1)==2))
         self.assertTrue(torch.allclose(r['weights'].sum(-1),torch.ones(2,16,4)))
+
+    def test_native_tail_padding_matches_global_input_order(self):
+        def decode(index):
+            return torch.full((4,3,2,2), index, dtype=torch.int64)
+        with patch('LightGenV2.tasks.t22_public_temporal_mlp.infer.frames_from_video', side_effect=decode):
+            for count in (1,3,15,16,17,31,32,33,558):
+                fields = list(iter_video_fields(list(range(count))))
+                actual = torch.cat([pixels[0,:,0,0,0,0] for _,pixels in fields]).tolist()
+                padding = (-count) % 16
+                expected = list(range(count)) + [i % count for i in range(padding)]
+                self.assertEqual(actual, expected, count)
 
     def test_dark_relu_field_has_finite_backward(self):
         cfg=ModelConfig(width=8,input_shift=0,phase_shift=0,ccd_shift=0,phase_dropout=0)
