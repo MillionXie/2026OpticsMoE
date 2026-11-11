@@ -6,6 +6,7 @@ import unittest
 import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, load_lightgen
+from ..run import save_checkpoint
 
 
 class Contracts(unittest.TestCase):
@@ -58,6 +59,14 @@ class Contracts(unittest.TestCase):
         tree=ast.parse(source)
         imports=[n.module or '' for n in ast.walk(tree) if isinstance(n,ast.ImportFrom)]
         self.assertFalse(any(s.startswith(('LightGenV2','experiments','transformers')) for s in imports))
+
+    def test_atomic_checkpoint_replacement(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'last_checkpoint.pt'
+            for version in [1,2]:
+                save_checkpoint(path,{'value':torch.tensor(version)})
+                self.assertEqual(int(torch.load(path,weights_only=True)['value']),version)
+            self.assertFalse(list(Path(tmp).glob('*.writing')))
 
 
 if __name__=='__main__':unittest.main()

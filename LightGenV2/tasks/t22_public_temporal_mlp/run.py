@@ -12,6 +12,7 @@ import platform
 import subprocess
 import sys
 import time
+import tempfile
 
 import numpy as np
 import torch
@@ -32,6 +33,21 @@ def write(path,value):
     path=Path(path);temp=path.with_suffix(path.suffix+'.tmp')
     temp.write_text(json.dumps(value,indent=2,ensure_ascii=False,allow_nan=False)+'\n','utf-8')
     temp.replace(path)
+
+
+def save_checkpoint(path,payload):
+    """Complete and flush a temporary file before replacing a valid checkpoint."""
+    path=Path(path)
+    with tempfile.NamedTemporaryFile(mode='w+b',dir=path.parent,
+            prefix='.'+path.name+'.',suffix='.writing',delete=False) as f:
+        temp=Path(f.name)
+        torch.save(payload,f)
+        f.flush();os.fsync(f.fileno())
+    for attempt in range(8):
+        try:os.replace(temp,path);return
+        except PermissionError:
+            if attempt==7:raise
+            time.sleep(.25*(attempt+1))
 
 
 def correlation(x,y):
@@ -131,6 +147,15 @@ def train(args):
     train_idx=[i for i,s in enumerate(payload['splits']) if s=='train']
     train_y=payload['target'][train_idx]
     model.target_mean.copy_(train_y.mean());model.target_std.copy_(train_y.std(unbiased=False))
+    initialization=None
+    if args.initialize:
+        parent,record=load_lightgen(args.initialize,'cpu')
+        if parent.cfg!=mc:raise ValueError('Initialization architecture differs')
+        if record['dataset']['manifest']['sha256']!=payload['identity']['manifest']['sha256']:
+            raise ValueError('Initialization data identity differs')
+        model.load_state_dict(parent.state_dict(),strict=True)
+        initialization={'path':str(args.initialize),'sha256':sha256(args.initialize),
+                        'parent_epoch':record.get('epoch'),'optimizer':'new AdamW and cosine schedule; weights-only initialization'}
     if args.device.startswith('cuda') and not args.allow_shared_gpu:
         admission=ensure_idle_gpu()  # Recheck after cache/hash work, before CUDA allocation.
     model=model.to(args.device)
@@ -153,6 +178,7 @@ def train(args):
               'gpu_name':torch.cuda.get_device_name(0) if args.device.startswith('cuda') else None,
               'gpu_admission':admission,'command':sys.argv,'pid':os.getpid(),
               'model_parameters':sum(p.numel() for p in model.parameters()),'model_config':asdict(mc)}
+    metadata['initialization']=initialization
     write(out/'metadata.json',metadata)
     history=[];best=-float('inf');started=time.time()
     write(out/'status.json',{'state':'running','epoch':0,'pid':os.getpid()})
@@ -195,12 +221,12 @@ def train(args):
             if metrics['srcc']>best:
                 best=metrics['srcc']
                 ck=model.checkpoint(**metadata,epoch=epoch,metrics=metrics)
-                torch.save(ck,out/'best_checkpoint.pt')
+                save_checkpoint(out/'best_checkpoint.pt',ck)
                 evaluate(model,payload,args.device,cfg['eval_batch_fields'],out,epoch)
         history.append(row);write(out/'history.json',history)
         last=model.checkpoint(**metadata,epoch=epoch)
         last['optimizer']=optimizer.state_dict();last['scheduler']=scheduler.state_dict()
-        torch.save(last,out/'last_checkpoint.pt')
+        save_checkpoint(out/'last_checkpoint.pt',last)
         write(out/'status.json',{'state':'running','epoch':epoch,'pid':os.getpid(),
                                'best_srcc':best if np.isfinite(best) else None,'elapsed_seconds':time.time()-started})
         print(json.dumps(row),flush=True)
@@ -216,7 +242,7 @@ def train(args):
     write(out/'slot_cycle_audit.json',{'srcc_by_shift':cycles,'mean_srcc':float(np.mean(cycles)),
                                     'minimum_srcc':float(np.min(cycles))})
     release=selected.checkpoint(**metadata,metrics=final,selection='best_original_TEST_development_SRCC')
-    torch.save(release,out/'LightGen.pt')
+    save_checkpoint(out/'LightGen.pt',release)
     write(out/'metrics.json',final)
     write(out/'status.json',{'state':'completed','epochs':cfg['epochs'],'elapsed_seconds':time.time()-started,**final})
     print('COMPLETED',json.dumps(final),flush=True)
@@ -228,6 +254,7 @@ def main():
     p.add_argument('--paths',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--device',default='cuda')
+    p.add_argument('--initialize',type=Path,help='Weights-only continuation of the same surrogate; never the paper model')
     p.add_argument('--smoke-steps',type=int,default=0)
     p.add_argument('--allow-shared-gpu',action='store_true',help='Only for explicitly authorized nonexclusive correctness smoke')
     args=p.parse_args()

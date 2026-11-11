@@ -2,7 +2,7 @@
 
 2026-11-11 用户批准独立试跑。原论文 T06/T13 模型、权重、数据和结果不改。本目录由本对话负责；不修改图表整理对话负责的 E 盘归档或其他任务。
 
-这是单独训练、单独评价的替代模型，不冒充论文原实现。目标为原仿真 SRCC 0.8043868643 的绝对差不超过 0.02。当前状态：实现和预检中；尚无正式训练结果。
+这是单独训练、单独评价的替代模型，不冒充论文原实现。目标为原仿真 SRCC 0.8043868643 的绝对差不超过 0.02。当前状态：本机首轮80epoch完成，SRCC 0.6028183747，未达标；关闭随机扰动的对照在epoch25达到0.6731984861，epoch28写last时发生I/O异常，best已核验可读。中断run保持原样，改为原子写入并从同架构best在新run做权重初始化续试；不冒称原优化器状态恢复。服务器原等待器只在等待状态被本对话核验PID后替换，未停止任何其他任务。
 
 ## 已批准的架构
 
@@ -40,5 +40,7 @@
 试跑：`python run.py --paths paths.local.json --out runs/simulation/relu_s163_20261111 --device cuda`。必须设置单个CUDA_VISIBLE_DEVICES，并在入场前、缓存核对后两次检查GPU为空闲；不抢占、不终止其他任务。
 
 `wait_for_gpu.py` 是本次试验的有界单任务等待器，只候选空闲RTX4090、连续三次检查后启动一个训练任务；超时只记录未开始，不自动换占用GPU或转A100。它不是无限轮询或后台超参数搜索。
+
+`trial_relu_clean_s163.json` 仅关闭输入/相位/CCD随机位移、相位dropout和router噪声，计算结构不变。`trial_relu_clean_refine_s163.json` 用同一干净条件和较低学习率续试。`--initialize <T22 best_checkpoint.pt>` 严格核对同一架构/数据manifest，只载模型权重，新建AdamW与cosine，独立记录父PT SHA和epoch；不读取论文模型或旧光路router/expert。
 
 正式独立推理：`python infer.py --weights <LightGen.pt> --videos <video1.mp4> <video2.mp4> --output result.json --device cuda`。新视频按输入顺序组成16槽位，最后一组复用已有视频padding但只输出有效条目。槽位敏感性另由每次正式run的16次循环换位审计记录。
