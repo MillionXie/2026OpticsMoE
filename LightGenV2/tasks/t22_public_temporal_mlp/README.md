@@ -159,6 +159,8 @@ TRAIN均值为49.7535400391、标准差为13.5796670914，用于损失尺度规�
 
 当前选定 `five_levels_ln192_remove_refine_s181_20261111` 的epoch20，全部六组训练已完成。当前候选包含11,888,966个可训练参数，独立PT为52,519,776字节。参考SRCC为0.8043868643，绝对差0.0157976031，进入±0.02范围。
 
+上述SRCC对应原manifest顺序、每16视频固定分组及固定光场槽位的开发评价。该候选16次循环换位审计的平均SRCC为0.7818493842，最低为0.7727637615，完整结果见对应run的 `slot_cycle_audit.json`。公开推理涉及16视频组场、输入顺序及尾组循环补齐，使用和比较指标时须记录这些条件。
+
 保留两层末端FC，结构为8064→1024→ReLU→5→softmax→五档期望MOS。五个等级分数与四个分档边界均由2250 TRAIN标签按baseline规则生成，已与原Qwen baseline PT逐位核对一致。训练加入权重1.0的五档CE，同时使用既有回归、相关性、排序、TRAIN软标签和路由等约束。
 
 六组558条预测均已从CSV独立复算指标，并由导出的五档概率重算MOS，最大数值误差处于float32点乘舍入范围。选定PT通过prompt替换的视觉独立性检查、训练均值/标准差buffer替换后的MOS不变检查，以及空PYTHONPATH、从/tmp启动的原生视频推理。配对验证见 `assets/five_levels_ln_ablation_audit.json`，传输SHA清单见 `assets/five_levels_result_transfer_manifest.json`。
