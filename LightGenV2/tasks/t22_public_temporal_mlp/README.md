@@ -6,9 +6,9 @@
 
 用户确认删除四条电子旁路、RMS融合和quality14，将router与expert换为MLP，将原Softplus位置改为ReLU，末端使用两层全连接评分。用户随后澄清，Qwen前端、merger等实际使用的模块要保持原运行结构。
 
-当前版本恢复原空间mean/max merger、视觉LayerNorm和64位置的序列位置参数，并按用户最新要求移除早期prompt条件化。视觉分支到merger全程仅使用图像特征，文本在merger之后的明确融合点进入。当前MLP、merger和末端头的激活按用户最新要求统一为ReLU，当前读出采用五等级概率加权，schema为5。`visual_output_norm`控制投影后LN192的保留或删除，分别使用 `_five_levels_ln192` 与 `_five_levels_no_ln192` 架构身份，正在进行配对消融。
+当前版本沿用空间mean/max merger和64位置的序列位置参数，视觉适配采用LN1024→Linear1024,192，并按用户要求移除早期prompt条件化。视觉分支到merger全程仅使用图像特征，文本在merger之后的明确融合点进入。当前MLP、merger和末端头的激活按用户最新要求统一为ReLU，当前读出采用五等级概率加权，schema为5。`visual_output_norm`控制投影后LN192的保留或删除，分别使用 `_five_levels_ln192` 与 `_five_levels_no_ln192` 架构身份。配对消融及删除后微调已完成，正式候选采用删除投影后LN192的版本。
 
-此前的prompt条件化由文本产生缩放和偏移，再作用于视觉特征。此操作已移除。视觉LayerNorm对每个视觉token的192维特征计算自身均值与方差，再使用该视觉层的可训练缩放和偏移参数。更换prompt时，训练后模型的merger输出、帧级和视频级路由权重均逐位一致。图文在merger后的42-token拼接处开始联合处理。
+此前的prompt条件化由文本产生缩放和偏移，再作用于视觉特征。此操作已移除。当前视觉输入LayerNorm对每个token的1024维特征规范化，再投影到192维。更换prompt时，训练后模型的merger输出、帧级和视频级路由权重均逐位一致。图文在merger后的42-token拼接处开始联合处理。
 
 逐层运行顺序如下。
 
@@ -52,7 +52,7 @@
 
 两次2×2均值汇聚均来自LG2的定制缓存流程，见 `t13_temporal_robust_training/cache_builder/cache_qwen_front.py` 的 `pool_qwen_front_tokens`。它们承担将patch特征适配到7×7、49-token输入规模的工作。Qwen原生PatchMerger采用LayerNorm和可学习的线性层完成相邻patch组映射。原Frame Merger为后续独立模块。
 
-视觉适配的LN1024规范化输入特征，投影后的LN192规范化输出特征。两者来自原LG2，原第二次LN前还包括quality相加和prompt调制。当前以相同种子、公共参数初始化、训练配置和评价顺序，比较保留与删除第二处LN。
+视觉适配的LN1024规范化输入特征，投影后的LN192规范化输出特征。两者来自原LG2，原第二次LN前还包括quality相加和prompt调制。当前以相同种子、公共参数初始化、训练配置和评价顺序，比较保留与删除第二处LN，结果及微调恢复见本轮结果。
 
 ### 帧级路由、专家与global
 
@@ -122,7 +122,7 @@ TRAIN均值为49.7535400391、标准差为13.5796670914，用于损失尺度规�
 
 论文Qwen baseline采用2048→5质量词logits，经softmax后对五个等级分数加权。已核验原PT的 `level_scores` 为28.62、40.79、52.96、65.13和77.30，入口为 `t06_video_quality_assessment/quality_token_batch_benchmark_200.py`。本任务复用其五档期望计算和TRAIN范围分档规则，采用8064→1024→5两层ReLU评分头。
 
-完整原生像素输入的一次前向已记录37个模块的输入输出和Conv3d、两次AdaptiveAvgPool2d尺寸，见 `runs/simulation/separate_inputs_original_merger_relu_distill10_s163_server_20261111/architecture_shapes.json`。
+当前候选已通过完整原生像素输入的前向尺寸核验，见 `runs/simulation/five_levels_ln192_remove_refine_s181_20261111/architecture_shapes.json`。旧37模块核验记录保留在对应历史run。
 
 ## 初始化和独立PT
 
@@ -140,7 +140,32 @@ TRAIN均值为49.7535400391、标准差为13.5796670914，用于损失尺度规�
 
 每个run保留配置、源提交、文件SHA、环境、样本ID、逐样本预测、指标和路由统计，保存best与last。完整训练后执行16次循环换位审计并生成独立 `LightGen.pt`。
 
-## 已有试验
+## 本轮五等级读出与LN消融结果
+
+四组100epoch配对试验使用相同种子、公共参数初值、训练配置与评价顺序。每对94个公共参数张量的初始化SHA完全一致，仅差投影后LN192的两个张量，共384个参数。2250 TRAIN与558 TEST开发评价身份一致。
+
+| 种子 | 保留LN192 | 删除LN192 | 删除减保留 |
+|---|---|---|---|
+| 163 | 0.7642689056 | 0.7689033958 | +0.0046344902 |
+| 173 | 0.7844558524 | 0.7767473117 | -0.0077085407 |
+| 均值 | 0.7743623790 | 0.7728253538 | -0.0015370253 |
+
+再从已完成的 `five_levels_ln192_keep_s173_20261111/best_checkpoint.pt` 删除投影后LN，所有其他张量逐位保留，生成明确标为未评价的初始化PT。随后分别进行50epoch恢复微调。此步骤采用已训练父权重，另行记录于配对结果之后。
+
+| run | 最佳开发SRCC |
+|---|---|
+| five_levels_ln192_remove_refine_s173_20261111 | 0.7876268067 |
+| five_levels_ln192_remove_refine_s181_20261111 | **0.7885892612** |
+
+当前选定 `five_levels_ln192_remove_refine_s181_20261111` 的epoch20，全部六组训练已完成。当前候选包含11,888,966个可训练参数，独立PT为52,519,776字节。参考SRCC为0.8043868643，绝对差0.0157976031，进入±0.02范围。
+
+保留两层末端FC，结构为8064→1024→ReLU→5→softmax→五档期望MOS。五个等级分数与四个分档边界均由2250 TRAIN标签按baseline规则生成，已与原Qwen baseline PT逐位核对一致。训练加入权重1.0的五档CE，同时使用既有回归、相关性、排序、TRAIN软标签和路由等约束。
+
+六组558条预测均已从CSV独立复算指标，并由导出的五档概率重算MOS，最大数值误差处于float32点乘舍入范围。选定PT通过prompt替换的视觉独立性检查、训练均值/标准差buffer替换后的MOS不变检查，以及空PYTHONPATH、从/tmp启动的原生视频推理。配对验证见 `assets/five_levels_ln_ablation_audit.json`，传输SHA清单见 `assets/five_levels_result_transfer_manifest.json`。
+
+删除LN的权重准备入口为 `python drop_projection_norm.py --source <五档且含LN的父PT> --output <初始化PT>`。恢复微调使用 `configs/trial_five_levels_ln192_remove_refine_s181.json` 配合 `run.py --initialize <初始化PT>`，原始命令、父PT的SHA和数据身份均保存在run内。
+
+## 历史试验
 
 以下精度来自历史schema3的GELU版本。schema4为历史全ReLU单值回归版本，已通过前向、反向与重载合同检查。当前schema5为五等级期望读出版本。旧PT加载时按其历史激活恢复，已与修改前的真实0.7822584592模型逐位核验预测及两级路由一致。
 
