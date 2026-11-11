@@ -155,7 +155,7 @@ def train(args):
         if args.initialize:raise ValueError('Select one initialization source')
         paper=torch.load(args.paper_initialize,map_location='cpu',weights_only=False)
         source=paper['state_dict'];target=model.state_dict();copied=[]
-        direct=['vision_adapter.','language_adapter.','visual_input_norm.','prompt_to_visual.','frame_merger.']
+        direct=['vision_adapter.','language_adapter.','visual_input_norm.','frame_merger.']
         globals_map={'frame_global.':'parallel_optics.','video_global.':'serial_optics.'}
         for name in target:
             original=None
@@ -176,7 +176,7 @@ def train(args):
                 target[name].copy_(source[original]);copied.append({'target':name,'source':original})
         model.load_state_dict(target,strict=True)
         initialization={'path':str(args.paper_initialize),'sha256':sha256(args.paper_initialize),
-                        'kind':'explicit front/merger/global whitelist; fresh MLP router/experts and final scoring head',
+                        'kind':'visual/language adapters, visual normalization, original merger, positions and globals',
                         'copied_tensors':copied,'optimizer':'new AdamW and cosine schedule'}
     if args.initialize:
         parent,record=load_lightgen(args.initialize,'cpu')

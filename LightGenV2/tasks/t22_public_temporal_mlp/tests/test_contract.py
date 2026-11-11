@@ -77,7 +77,20 @@ class Contracts(unittest.TestCase):
         self.assertIsInstance(model.frame_merger[2],nn.GELU)
         self.assertEqual(tuple(model.sequence_position.shape),(1,64,8))
         self.assertTrue(hasattr(model,'visual_input_norm'))
-        self.assertTrue(hasattr(model,'prompt_to_visual'))
+        self.assertFalse(hasattr(model,'prompt_to_visual'))
+
+    def test_visual_stage_is_independent_of_prompt(self):
+        cfg=ModelConfig(width=8,expert_hidden=16,router_hidden=8,readout_hidden=16,
+                        input_shift=0,phase_shift=0,ccd_shift=0,phase_dropout=0)
+        model=LightGenTemporal(cfg).eval()
+        pixels=torch.randn(1,16,4,49,1024)
+        with torch.inference_mode():
+            model.set_prompt(torch.randn(38,2048))
+            before=model.encode_frames(pixels)
+            model.set_prompt(torch.randn(38,2048)*100)
+            after=model.encode_frames(pixels)
+        self.assertTrue(torch.equal(before['frames'],after['frames']))
+        self.assertTrue(torch.equal(before['routing']['weights'],after['routing']['weights']))
 
     def test_teacher_matches_train_ids_and_rejects_test_entries(self):
         payload={'ids':['a','b','c'],'splits':['train','test','train'],'identity':{}}

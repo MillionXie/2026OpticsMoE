@@ -230,7 +230,6 @@ class LightGenTemporal(nn.Module):
         self.vision_adapter=nn.Sequential(nn.LayerNorm(1024),nn.Linear(1024,cfg.width))
         self.language_adapter=nn.Sequential(nn.LayerNorm(2048),nn.Linear(2048,cfg.width))
         self.visual_input_norm=nn.LayerNorm(cfg.width)
-        self.prompt_to_visual=nn.Sequential(nn.LayerNorm(cfg.width),nn.Linear(cfg.width,cfg.width*2))
         self.frame_router=Router(cfg,49);self.frame_experts=Experts(cfg)
         self.frame_global=GlobalStage(cfg,True)
         self.frame_merger=nn.Sequential(nn.LayerNorm(2*cfg.width),
@@ -250,20 +249,24 @@ class LightGenTemporal(nn.Module):
         if value.shape!=self.prompt_embedding.shape:raise ValueError('Fixed prompt shape mismatch')
         self.prompt_embedding.copy_(value.to(self.prompt_embedding));self.prompt_ready.fill_(True)
 
-    def forward(self,vision_tokens=None,*,pixels=None):
-        if (vision_tokens is None)==(pixels is None):raise ValueError('Provide exactly one of tokens/pixels')
-        if pixels is not None:vision_tokens=self.front(pixels)
+    def encode_frames(self,vision_tokens):
+        """Visual stage through the original merger, using only image features."""
         if tuple(vision_tokens.shape[1:])!=(16,4,49,1024):raise ValueError('Expected [B,16,4,49,1024]')
-        if not bool(self.prompt_ready):raise RuntimeError('Fixed prompt embedding is not populated')
-        prompt=self.language_adapter(self.prompt_embedding.float())
-        prompt_scale,prompt_shift=self.prompt_to_visual(prompt.mean(0)).chunk(2,-1)
-        vision=self.vision_adapter(vision_tokens.float())
-        vision=self.visual_input_norm(vision*(1+.10*torch.tanh(prompt_scale))+.10*prompt_shift)
+        vision=self.visual_input_norm(self.vision_adapter(vision_tokens.float()))
         r1=self.frame_router(vision)
         vision=self.frame_experts(vision,r1['weights'])
         vision,g1=self.frame_global(vision)
         frame_summary=torch.cat((vision.mean(-2),vision.amax(-2)),-1)
         frames=self.frame_merger(frame_summary)+self.frame_position
+        return {'frames':frames,'routing':r1,'guard_energy':g1}
+
+    def forward(self,vision_tokens=None,*,pixels=None):
+        if (vision_tokens is None)==(pixels is None):raise ValueError('Provide exactly one of tokens/pixels')
+        if pixels is not None:vision_tokens=self.front(pixels)
+        if not bool(self.prompt_ready):raise RuntimeError('Fixed prompt embedding is not populated')
+        visual=self.encode_frames(vision_tokens)
+        frames=visual['frames']
+        prompt=self.language_adapter(self.prompt_embedding.float())
         prompt=prompt[None,None].expand(len(frames),16,-1,-1)
         sequence=torch.cat((frames,prompt),dim=-2)
         sequence=sequence+self.sequence_position[:,None,:sequence.shape[-2]]
@@ -272,17 +275,17 @@ class LightGenTemporal(nn.Module):
         sequence,g2=self.video_global(sequence)
         normalized=self.readout(sequence).squeeze(-1)
         return {'prediction':normalized*self.target_std+self.target_mean,
-                'normalized_prediction':normalized,'routing':{'frame':r1,'video':r2},
-                'guard_energy':(g1+g2)/2}
+                'normalized_prediction':normalized,'routing':{'frame':visual['routing'],'video':r2},
+                'guard_energy':(visual['guard_energy']+g2)/2}
 
     def checkpoint(self,**metadata:Any):
-        return {'schema':2,'architecture':'t22_serial_mlp_top2_global2_relu_original_merger_fc2',
+        return {'schema':3,'architecture':'t22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2',
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
 
 def load_lightgen(path,device='cpu'):
     payload=torch.load(path,map_location='cpu',weights_only=True)
-    if payload['architecture']!='t22_serial_mlp_top2_global2_relu_original_merger_fc2':
+    if payload['architecture']!='t22_serial_mlp_top2_global2_relu_original_merger_separate_inputs_fc2':
         raise ValueError('Checkpoint uses a different T22 prototype architecture. Use its recorded Git version.')
     model=LightGenTemporal(ModelConfig(**payload['config']))
     model.load_state_dict(payload['model'],strict=True)
