@@ -20,7 +20,7 @@ if __package__:
     from .data import batch, groups, load_inputs, sha256
     from .evaluate_phase_robustness import plot_curves, plot_masks
     from .model import load_lightgen
-    from .phase_plotting import PHASE_DISPLAY, add_phase_colorbar, phase_display_norm
+    from .phase_plotting import PHASE_DISPLAY, add_phase_colorbar, phase_display_norm, phase_display_values
     from .phase_regularization import illumination_support
     from .plot_style import BODY_SIZE_PT, FONT_FAMILY, TITLE_SIZE_PT, save_figure
 else:
@@ -32,7 +32,7 @@ else:
     from data import batch, groups, load_inputs, sha256
     from evaluate_phase_robustness import plot_curves, plot_masks
     from model import load_lightgen
-    from phase_plotting import PHASE_DISPLAY, add_phase_colorbar, phase_display_norm
+    from phase_plotting import PHASE_DISPLAY, add_phase_colorbar, phase_display_norm, phase_display_values
     from phase_regularization import illumination_support
     from plot_style import BODY_SIZE_PT, FONT_FAMILY, TITLE_SIZE_PT, save_figure
 
@@ -64,21 +64,18 @@ def plot_phase_training(initial, trained, output, arrays_path, statistics_path,
             'slot0_RMS_rad': float(np.sqrt(np.mean(difference[0] ** 2))),
             'maximum_absolute_update_rad': float(np.abs(difference).max()),
         }
-    limit = max(float(np.abs(arrays[name + '_wrapped_update']).max()) for name in STAGES)
-    limit = max(limit, 1e-6)
     fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.4), layout='constrained')
     for row, name in enumerate(STAGES):
         stage = 'Vision' if row == 0 else 'Vision-language'
         for column, suffix in enumerate(('_initial', '_trained')):
             image = axes[row, column].imshow(
-                arrays[name + suffix][0], cmap='twilight', norm=phase_display_norm())
+                phase_display_values(arrays[name + suffix][0]), cmap='twilight', norm=phase_display_norm())
             axes[row, column].set_title(stage + (' initialization' if column == 0 else ' trained'))
         add_phase_colorbar(fig, image, list(axes[row, :2]))
         image = axes[row, 2].imshow(arrays[name + '_wrapped_update'][0],
-                                   cmap='RdBu_r', vmin=-limit, vmax=limit)
+                                   cmap='RdBu_r', norm=phase_display_norm())
         axes[row, 2].set_title('Wrapped training update')
-        fig.colorbar(image, ax=axes[row, 2], shrink=.6, aspect=14,
-                     label='Update (rad)', ticks=[-limit, 0, limit], format='%.2f')
+        add_phase_colorbar(fig,image,axes[row,2],label='Update (rad)')
     for ax in axes.flat:
         ax.set(xticks=[], yticks=[])
     fig.suptitle('Actual run initialization and selected weights, physical video slot 0')
@@ -199,7 +196,7 @@ def main():
         'title_size_pt': TITLE_SIZE_PT,
         'dpi': 300,
         'phase_display': PHASE_DISPLAY,
-        'phase_colorbar_ticks_rad': [0, math.pi, 2 * math.pi],
+        'phase_colorbar_ticks_rad': [-math.pi, 0, math.pi],
         'field_array_sources': field_sources,
         'initialization_sha256': sha256(ROOT / 'assets/initialization/initialization.pt'),
         'script_sha256': sha256(Path(__file__)),

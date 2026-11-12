@@ -23,12 +23,12 @@ if __package__:
     from .plot_style import save_figure
     from .infer import frames_from_video, iter_video_fields
     from .model import load_lightgen
-    from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
+    from .phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 else:
     from plot_style import save_figure
     from infer import frames_from_video, iter_video_fields
     from model import load_lightgen
-    from phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
+    from phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 
 ROOT = Path(__file__).resolve().parent
 
@@ -179,7 +179,7 @@ def plot_overview(stage, values, out):
     output_phase = np.where(intensity > intensity.max() * 1e-6, np.angle(propagated), np.nan)
     panels = [
         ('Incident amplitude |U|', values['incident_amplitude'], 'magma', {}),
-        ('Intended SLM phase', values['intended_phase'], 'twilight', {'norm': phase_display_norm()}),
+        ('Intended SLM phase', phase_display_values(values['intended_phase']), 'twilight', {'norm': phase_display_norm()}),
         ('Post-ORM amplitude |V|', np.abs(modulated), 'magma', {}),
         ('Post-ORM phase arg(V)', input_phase, 'twilight', {'vmin': -np.pi, 'vmax': np.pi}),
         ('Detector intensity |O|², linear', intensity, 'inferno', {'vmin': 0, 'vmax': upper}),

@@ -18,13 +18,13 @@ import torch
 
 if __package__:
     from .plot_style import save_figure
-    from .phase_plotting import phase_display_norm, add_phase_colorbar
+    from .phase_plotting import phase_display_norm, phase_display_values, add_phase_colorbar
     from .data import batch, groups, load_inputs, sha256
     from .model import load_lightgen
     from .phase_regularization import phase_statistics, illumination_support
 else:
     from plot_style import save_figure
-    from phase_plotting import phase_display_norm, add_phase_colorbar
+    from phase_plotting import phase_display_norm, phase_display_values, add_phase_colorbar
     from data import batch, groups, load_inputs, sha256
     from model import load_lightgen
     from phase_regularization import phase_statistics, illumination_support
@@ -173,7 +173,7 @@ def plot_phase_support(model, out):
             axes[row,column].set_title(stage_title+'\n'+['Full phase tile','Illumination support','Horizontal curvature'][column])
             axes[row,column].set(xticks=[],yticks=[])
             if column<2:
-                image=axes[row,column].imshow(array,cmap='twilight',norm=phase_display_norm())
+                image=axes[row,column].imshow(phase_display_values(array),cmap='twilight',norm=phase_display_norm())
                 add_phase_colorbar(fig,image,axes[row,column])
             else:
                 image=axes[row,column].imshow(array,cmap='RdBu_r',vmin=-np.pi,vmax=np.pi)

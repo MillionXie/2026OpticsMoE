@@ -23,14 +23,14 @@ if __package__:
     from .model import load_lightgen, translated, Propagation
     from .phase_regularization import phase_statistics
     from .run import evaluate
-    from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
+    from .phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 else:
     from plot_style import save_figure
     from data import load_inputs, sha256
     from model import load_lightgen, translated, Propagation
     from phase_regularization import phase_statistics
     from run import evaluate
-    from phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
+    from phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 
 
 def conditions():
@@ -115,7 +115,7 @@ def plot_masks(records,phases,out):
     for column,(label,value) in enumerate(phases.items()):
         for row,name in enumerate(('frame_global','video_global')):
             ax=axes[0,2*column+row]
-            image=ax.imshow(value[name],cmap='twilight',norm=phase_display_norm())
+            image=ax.imshow(phase_display_values(value[name]),cmap='twilight',norm=phase_display_norm())
             ax.set_title('Vision global' if row==0 else 'Vision-language global')
             ax.set(xticks=[],yticks=[])
             add_phase_colorbar(fig,image,ax)

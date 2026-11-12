@@ -20,14 +20,14 @@ if __package__:
     from .model import load_lightgen
     from .phase_regularization import phase_statistics, illumination_support
     from .run import evaluate, write
-    from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
+    from .phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 else:
     from plot_style import save_figure
     from data import load_inputs, sha256
     from model import load_lightgen
     from phase_regularization import phase_statistics, illumination_support
     from run import evaluate, write
-    from phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
+    from phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 
 
 STAGES = ('frame_global','video_global')
@@ -56,9 +56,6 @@ def constant_modulation(stage,centers,zero=False):
 
 def plot_phases(records,arrays,path):
     labels = list(records)
-    limit = max(float(np.abs(arrays[label][name+'_centered'][0]).max())
-                for label in labels for name in STAGES)
-    limit = max(limit,1e-6)
     fig,axes=plt.subplots(2,2*len(labels),figsize=(5.8*len(labels),4.4),
                           squeeze=False,layout='constrained')
     for column,label in enumerate(labels):
@@ -69,12 +66,12 @@ def plot_phases(records,arrays,path):
             centered = arrays[label][name+'_centered'][0]
             spread = records[label]['phase_statistics'][name]['mean_illuminated_circular_std_rad']
             title = 'Vision' if stage_index==0 else 'Vision-language'
-            artist=axes[row,col].imshow(phase,cmap='twilight',norm=phase_display_norm())
+            artist=axes[row,col].imshow(phase_display_values(phase),cmap='twilight',norm=phase_display_norm())
             axes[row,col].set_title(f'{title} phase')
             add_phase_colorbar(fig,artist,axes[row,col])
-            artist=axes[row,col+1].imshow(centered,cmap='RdBu_r',vmin=-limit,vmax=limit)
+            artist=axes[row,col+1].imshow(centered,cmap='RdBu_r',norm=phase_display_norm())
             axes[row,col+1].set_title(f'About circular mean\nIlluminated SD = {spread:.3f} rad')
-            fig.colorbar(artist,ax=axes[row,col+1],shrink=.6,aspect=14,label='Relative phase (rad)')
+            add_phase_colorbar(fig,artist,axes[row,col+1],label='Relative phase (rad)')
             for ax in axes[row,col:col+2]:
                 ax.set(xticks=[],yticks=[])
     fig.suptitle('Current phase masks, physical video slot 0')

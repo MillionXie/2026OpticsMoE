@@ -14,7 +14,7 @@ from ..phase_regularization import (phase_penalties, gaussian_phase, illuminatio
                                     initialize_phase, smooth_phase_gradients, smooth_phase_parameters)
 from ..training_policy import freeze_parameters,restrict_training_to
 from ..prepare_joint_router import expand_router
-from ..phase_plotting import phase_display_norm
+from ..phase_plotting import phase_display_norm, phase_display_values
 from ..analyze_phase_effect import constant_modulation
 
 
@@ -118,13 +118,18 @@ class Contracts(unittest.TestCase):
             expected=name.startswith('readout.') or name=='video_global.raw_global_phase'
             self.assertEqual(value.requires_grad,expected,name)
 
-    def test_nonlinear_phase_color_mapping_is_monotone_and_invertible(self):
+    def test_phase_display_is_linear_and_preserves_physical_phasors(self):
         import numpy as np
-        values=np.linspace(0,2*np.pi,101)
+        values=np.linspace(-np.pi,np.pi,101)
         norm=phase_display_norm()
         mapped=norm(values)
         self.assertTrue(np.all(np.diff(mapped)>0))
         self.assertTrue(np.allclose(norm.inverse(mapped),values,atol=1e-9))
+        self.assertTrue(np.allclose(mapped,np.linspace(0,1,101),atol=1e-12))
+        original=np.linspace(-4*np.pi,4*np.pi,100)
+        wrapped=phase_display_values(original)
+        self.assertTrue(np.all((wrapped>=-np.pi)&(wrapped<=np.pi)))
+        self.assertTrue(np.allclose(np.exp(1j*wrapped),np.exp(1j*original)))
 
     def test_native_tail_padding_matches_global_input_order(self):
         def decode(index):
