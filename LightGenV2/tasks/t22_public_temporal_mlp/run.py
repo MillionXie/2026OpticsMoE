@@ -61,6 +61,12 @@ def correlation(x,y):
     return (x*y).sum()/(x.square().sum()*y.square().sum()).clamp_min(1e-12).sqrt()
 
 
+def relative_frame_mixture_loss(output,target,valid):
+    error=(output-target).square().mean((-2,-1))
+    energy=target.square().mean((-2,-1)).clamp_min(1e-6)
+    return (error/energy)[valid].mean()
+
+
 def router_regularization(routes,valid,frame_scale=1.0):
     values={k:[] for k in ['balance','importance','diversity']}
     stats={}
@@ -242,6 +248,20 @@ def train(args):
     if args.device.startswith('cuda') and not args.allow_shared_gpu:
         admission=ensure_idle_gpu()  # Recheck after cache/hash work, before CUDA allocation.
     model=model.to(args.device)
+    routing_teacher=None
+    mixture={}
+    mixture_handle=None
+    if cfg.get('frame_mixture_distillation_weight',0):
+        if not args.routing_teacher:
+            raise ValueError('A routing teacher checkpoint is required')
+        routing_teacher,teacher_metadata=load_lightgen(args.routing_teacher,args.device)
+        if routing_teacher.cfg!=mc or teacher_metadata['dataset']['manifest']['sha256']!=payload['identity']['manifest']['sha256']:
+            raise ValueError('Routing teacher architecture or manifest differs')
+        routing_teacher.requires_grad_(False)
+        def capture_mixture(module,inputs,output):
+            mixture['tokens']=inputs[0]
+            mixture['output']=output
+        mixture_handle=model.frame_experts.register_forward_hook(capture_mixture)
     if cfg.get('trainable_parameter_prefixes'):
         if cfg.get('frozen_parameter_prefixes'):
             raise ValueError('Choose a trainable whitelist or a frozen list')
@@ -286,6 +306,9 @@ def train(args):
               'gpu_admission':admission,'command':sys.argv,'pid':os.getpid(),
               'model_parameters':sum(p.numel() for p in model.parameters()),'model_config':asdict(mc)}
     metadata['initialization']=initialization
+    if routing_teacher is not None:
+        metadata['routing_teacher']={'path':str(args.routing_teacher),
+            'sha256':sha256(args.routing_teacher),'role':'TRAIN frame-mixture distillation'}
     metadata['initial_phase_statistics'] = {
         name:phase_statistics(getattr(model,name)) for name in ('frame_global','video_global')}
     metadata['initial_raw_phase_maximum_absolute_value'] = {
@@ -331,6 +354,13 @@ def train(args):
             y=((item['target']-model.target_mean)/model.target_std)[keep]
             pred=result['normalized_prediction'][keep]
             loss=F.smooth_l1_loss(pred,y)+cfg['correlation_weight']*(1-correlation(pred,y))
+            if routing_teacher is not None:
+                with torch.no_grad():
+                    teacher_tokens=mixture['tokens'].detach()
+                    teacher_weights=routing_teacher.frame_router(teacher_tokens)['weights']
+                    teacher_mixture=routing_teacher.frame_experts(teacher_tokens,teacher_weights)
+                loss=loss+cfg['frame_mixture_distillation_weight']*relative_frame_mixture_loss(
+                    mixture['output'],teacher_mixture,keep)
             if cfg.get('quality_ce_weight', 0):
                 labels = torch.bucketize(item['target'][keep], model.level_boundaries)
                 loss = loss + cfg['quality_ce_weight'] * F.cross_entropy(
@@ -393,6 +423,8 @@ def train(args):
     if args.smoke_steps:
         write(out/'status.json',{'state':'smoke_passed','steps':args.smoke_steps,'formal_metrics':False})
         return
+    if mixture_handle is not None:
+        mixture_handle.remove()
     selected,selected_metadata=load_lightgen(out/'best_checkpoint.pt',args.device)
     selected_epoch=selected_metadata.get('epoch')
     final=evaluate(selected,payload,args.device,cfg['eval_batch_fields'],out,selected_epoch)
@@ -421,6 +453,7 @@ def main():
     p.add_argument('--initialize',type=Path,help='Weights-only continuation of the same surrogate; never the paper model')
     p.add_argument('--paper-initialize',type=Path,help='Explicitly whitelist matching front, merger, global tensors for initialization')
     p.add_argument('--train-soft-targets',type=Path)
+    p.add_argument('--routing-teacher',type=Path,help='TRAIN-only frame-mixture distillation teacher')
     p.add_argument('--smoke-steps',type=int,default=0)
     p.add_argument('--allow-shared-gpu',action='store_true',help='Allow nonexclusive GPU training and record the resource mode')
     args=p.parse_args()

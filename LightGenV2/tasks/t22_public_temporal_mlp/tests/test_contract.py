@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, Experts, load_lightgen
-from ..run import save_checkpoint, selection_score, router_regularization
+from ..run import save_checkpoint, selection_score, router_regularization, relative_frame_mixture_loss
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
 from ..phase_regularization import (phase_penalties, gaussian_phase, illumination_support,
@@ -58,6 +58,16 @@ class Contracts(unittest.TestCase):
                                          'selection_share_by_slot':[[.4,.1,.1,.4]]*8+[[.1,.4,.4,.1]]*8}}
         self.assertGreater(selection_score(uniform,config),selection_score(skewed,config))
         self.assertEqual(selection_score({**uniform,'srcc':.78999},config),-float('inf'))
+
+    def test_mixture_distillation_excludes_padded_videos(self):
+        target=torch.ones(1,2,4,3,8)
+        output=torch.zeros_like(target,requires_grad=True)
+        valid=torch.tensor([[True,False]])
+        loss=relative_frame_mixture_loss(output,target,valid)
+        self.assertAlmostEqual(float(loss.detach()),1.)
+        loss.backward()
+        self.assertTrue(bool(output.grad[0,0].abs().sum()>0))
+        self.assertTrue(torch.equal(output.grad[0,1],torch.zeros_like(output.grad[0,1])))
 
     def test_frame_regularization_scale_does_not_change_video_term(self):
         cfg=ModelConfig(width=8,router_hidden=8,router_noise=0)
