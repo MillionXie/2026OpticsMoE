@@ -441,3 +441,18 @@ Robust在本组mask/CCD位移试验中的最低SRCC为0.782075，Lens为0.775697
 对应的衍射网络研究将物理误差作为随机变量纳入前向训练，并展示了抗误差性能与设计自由度的取舍。[Diffractive interconnects](https://pmc.ncbi.nlm.nih.gov/articles/PMC11501510/)
 
 两种候选的独立PT分别在 `runs/simulation/phase_robust_refine_s239_local_20261112/LightGen.pt` 和 `runs/simulation/phase_lens_s227_local_20261112/LightGen.pt`。曲率指标、逐条件指标、相位原数组及曲线图保存在本轮审查目录。当前用户选定架构仍通过selected_linear.json登记，mask试验以独立候选记录供审查。
+
+两组候选又在服务器CPU上从558个原始视频逐条解码，核对前端与完整推理入口。由各自native_predictions.csv独立复算的结果如下。
+
+| 候选 | 缓存输入SRCC | 原始视频输入SRCC | 原始视频PLCC | 原始视频RMSE |
+|---|---|---|---|---|
+| Robust | 0.7862306820 | 0.7862470513 | 0.7861317841 | 8.7674002709 |
+| Lens | 0.7869916143 | 0.7870503229 | 0.7923386573 | 8.6674798997 |
+
+原始视频结果均处于既定精度范围内。冻结前端的CPU与历史CUDA缓存存在低精度数值差异。每组保存逐视频缓存/原生预测、558个ID、数据与权重SHA、平台及实际源码SHA，位置为本轮审查目录的native_robust和native_lens。两组均保持4,798,790个可训练参数、两层紧凑评分头和八个无偏置线性专家。
+
+本轮所有路由图从2790条真实决策复算，包含2232次帧级与558次视频级决策，剔除尾组padding。Optical expert share (%)按各专家被选中的次数除以总Top2选择次数计算。每条决策贡献两个选择，两个阶段的分母分别为4464和1116。平均路由权重另存mean_routing_weight.png。帧级选择偏向E1/E4，视频级选择更接近四等分；逐物理槽位结果保存在expert_share_by_slot.csv。
+
+路由输入为普通特征token，帧router将49×192展平为9408；专家保持49×192并执行XW_k^T，混合结果随后编码成27×27幅值场。视频级按相同顺序处理42×192特征，再编码到56×56。对角调制算子对应光场逐元素调制，其权重对角形式与输入token的组织方式应分别说明。
+
+本轮审查目录为 `runs/simulation/router_phase_review_20261112/`。baseline、smooth_robust_candidate和lens_candidate/routing分别保存三组完整路由统计。各自global_fields保存真实前向光场数组与PNG。robustness_cuda包含四模型、每模型26种数值条件的统一对比。verification_audit.json核验逐行Top2、计数、原生CSV指标、PT与源码SHA、可视化前向一致性。17项模型合同测试通过。
