@@ -58,7 +58,7 @@ def copy_results(run,output):
     summaries={}
     conditions={}
     for directory in (run/'global_ablation',run/'global_ablation/initialization_control'):
-        if json.loads((directory/'status.json').read_text())['state']!='completed':
+        if json.loads((directory/'status.json').read_text('utf-8-sig'))['state']!='completed':
             raise ValueError('Global ablation is incomplete')
         for row in read_csv(directory/'summary.csv'):
             summaries[row['kind'],row['stage']]=row
@@ -66,7 +66,7 @@ def copy_results(run,output):
             conditions[row['kind'],row['stage'],row['seed']]=row
     write_csv(output/'global_ablation_summary.csv',list(summaries.values()))
     write_csv(output/'global_ablation_seeds.csv',list(conditions.values()))
-    original=json.loads((run/'global_ablation/protocol.json').read_text())
+    original=json.loads((run/'global_ablation/protocol.json').read_text('utf-8-sig'))
     write_json(output/'global_ablation_protocol.json',{
         'role':'post_training_forward_interventions_on_original_TEST_development',
         'videos':558,'retraining':False,'random_seeds':original['seeds'],
@@ -83,7 +83,7 @@ def copy_results(run,output):
 
 
 def verify_manifest(directory):
-    manifest=json.loads((directory/'MANIFEST.json').read_text())
+    manifest=json.loads((directory/'MANIFEST.json').read_text('utf-8-sig'))
     for name,expected in manifest['files'].items():
         path=(directory/name).resolve()
         if not path.is_relative_to(directory.resolve()) or file_sha256(path)!=expected:
@@ -100,10 +100,10 @@ def main():
     if output.parent!=release_root or output.name!='current':
         raise ValueError('The generated distribution uses releases/current')
     release_root.mkdir(exist_ok=True)
-    stage=Path(tempfile.mkdtemp(prefix='.build-',dir=release_root)).resolve()
-    if not stage.is_relative_to(release_root):
+    stage=Path(tempfile.mkdtemp(prefix='lightgen-build-')).resolve()
+    if stage.parent!=Path(tempfile.gettempdir()).resolve():
         raise ValueError('Unexpected build directory')
-    profile=json.loads((ROOT/'configs/selected.json').read_text())
+    profile=json.loads((ROOT/'configs/selected.json').read_text('utf-8-sig'))
     source=ROOT/profile['checkpoint']
     if file_sha256(source)!=profile['checkpoint_sha256']:
         raise ValueError('Selected research checkpoint checksum differs')
@@ -111,7 +111,7 @@ def main():
         target=stage/name
         target.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(ROOT/name,target)
-    (stage/'README.md').write_text((ROOT/'README.md').read_text().split('\n## Author workspace',1)[0],'utf-8')
+    (stage/'README.md').write_text((ROOT/'README.md').read_text('utf-8-sig').split('\n## Author workspace',1)[0],'utf-8')
     shutil.copyfile(ROOT/'docs/MODEL_CARD.md',stage/'MODEL_CARD.md')
     exported=export_public_checkpoint(source,stage/'weights/LightGen.pt')
     (stage/'configs').mkdir()
@@ -139,7 +139,7 @@ def main():
     _,pixels=next(iter_video_fields([stage/'examples/demo.mp4']))
     with torch.inference_mode():
         expected=float(original(pixels=pixels)['prediction'][0,0])
-    predictions=json.loads((stage/'examples/expected_predictions.json').read_text())['predictions']
+    predictions=json.loads((stage/'examples/expected_predictions.json').read_text('utf-8-sig'))['predictions']
     if len(predictions)!=1 or abs(predictions[0]['MOS']-expected)>1e-4:
         raise ValueError('Standalone release inference differs from the source model')
     for path in stage.rglob('*'):
@@ -180,7 +180,7 @@ def main():
         if (release_root/'current.zip').exists():
             shutil.copyfile(release_root/'current.zip',backup/'current.zip')
     try:
-        stage.rename(output)
+        shutil.move(str(stage),str(output))
     except BaseException:
         if backup is not None:
             shutil.move(str(backup/'current'),str(output))
