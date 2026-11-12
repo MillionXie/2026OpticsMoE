@@ -22,12 +22,14 @@ from scipy.stats import spearmanr, kendalltau, pearsonr
 if __package__:
     from .model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
-    from .phase_regularization import model_phase_penalties, phase_statistics, smooth_phase_gradients
+    from .phase_regularization import (model_phase_penalties, phase_statistics,
+                                       smooth_phase_gradients, smooth_phase_parameters)
     from .training_policy import freeze_parameters,restrict_training_to
 else:
     from model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from data import load_inputs, groups, batch, sha256, attach_train_soft_targets
-    from phase_regularization import model_phase_penalties, phase_statistics, smooth_phase_gradients
+    from phase_regularization import (model_phase_penalties, phase_statistics,
+                                      smooth_phase_gradients, smooth_phase_parameters)
     from training_policy import freeze_parameters,restrict_training_to
 
 ROOT=Path(__file__).resolve().parent
@@ -237,6 +239,7 @@ def train(args):
         (phase if name.endswith('raw_global_phase') else electronic).append(param)
     parameter_groups = [{'params':electronic,'lr':cfg['learning_rate'],'name':'electronic'},
                         {'params':phase,'lr':cfg['phase_learning_rate'],'name':'phase',
+                         'eps':cfg.get('phase_adam_epsilon',1e-8),
                          'weight_decay':cfg.get('phase_weight_decay',cfg['weight_decay'])}]
     if 'router_learning_rate' in cfg:
         router_parameters = [param for module in (model.frame_router,model.video_router)
@@ -339,10 +342,13 @@ def train(args):
                 model.train()
             if not bool(torch.isfinite(loss)):raise FloatingPointError('Nonfinite training loss')
             loss.backward()
-            smooth_phase_gradients(model,cfg.get('phase_gradient_smoothing_sigma',0.))
+            smooth_phase_gradients(model,cfg.get('phase_gradient_smoothing_sigma',0.),
+                                   cfg.get('phase_slot_gradient_average_weight',0.))
             norm=torch.nn.utils.clip_grad_norm_(model.parameters(),5.)
             if not bool(torch.isfinite(norm)):raise FloatingPointError('Nonfinite gradient')
-            optimizer.step();losses.append(float(loss.detach()))
+            optimizer.step()
+            smooth_phase_parameters(model,cfg.get('phase_parameter_smoothing_sigma',0.))
+            losses.append(float(loss.detach()))
         scheduler.step()
         row={'epoch':epoch,'loss':float(np.mean(losses)),'elapsed_seconds':time.time()-started,
              'learning_rates':{group['name']:group['lr'] for group in optimizer.param_groups}}

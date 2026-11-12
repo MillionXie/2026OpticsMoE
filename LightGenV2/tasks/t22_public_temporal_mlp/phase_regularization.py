@@ -28,26 +28,44 @@ def model_phase_penalties(model):
             for name in ('slope', 'curvature')}
 
 
-@torch.no_grad()
-def smooth_phase_gradients(model, sigma):
-    """Gaussian gradient preconditioning without a prescribed phase pattern."""
+def gaussian_blur(value, sigma):
     if sigma <= 0:
-        return
+        return value
     radius = math.ceil(3 * sigma)
+    coordinates = torch.arange(-radius, radius + 1,
+                               device=value.device, dtype=value.dtype)
+    kernel = torch.exp(-coordinates.square() / (2 * sigma * sigma))
+    kernel = kernel / kernel.sum()
+    output = value[:, None]
+    output = F.conv2d(F.pad(output, (radius, radius, 0, 0), mode='replicate'),
+                      kernel.reshape(1, 1, 1, -1))
+    output = F.conv2d(F.pad(output, (0, 0, radius, radius), mode='replicate'),
+                      kernel.reshape(1, 1, -1, 1))
+    return output[:, 0]
+
+
+@torch.no_grad()
+def smooth_phase_gradients(model, sigma, slot_average_weight=0.):
+    """Spatial preconditioning and optional cross-slot gradient regularization."""
+    if not 0 <= slot_average_weight <= 1:
+        raise ValueError('Phase slot averaging weight must lie in [0,1]')
     for stage in (model.frame_global, model.video_global):
         gradient = stage.raw_global_phase.grad
         if gradient is None:
             continue
-        coordinates = torch.arange(-radius, radius + 1,
-                                   device=gradient.device, dtype=gradient.dtype)
-        kernel = torch.exp(-coordinates.square() / (2 * sigma * sigma))
-        kernel = kernel / kernel.sum()
-        value = gradient[:, None]
-        value = F.conv2d(F.pad(value, (radius, radius, 0, 0), mode='replicate'),
-                         kernel.reshape(1, 1, 1, -1))
-        value = F.conv2d(F.pad(value, (0, 0, radius, radius), mode='replicate'),
-                         kernel.reshape(1, 1, -1, 1))
-        gradient.copy_(value[:, 0])
+        if slot_average_weight:
+            gradient.lerp_(gradient.mean(0,keepdim=True).expand_as(gradient),slot_average_weight)
+        gradient.copy_(gaussian_blur(gradient,sigma))
+
+
+@torch.no_grad()
+def smooth_phase_parameters(model, sigma):
+    if sigma <= 0:
+        return
+    for stage in (model.frame_global, model.video_global):
+        raw = stage.raw_global_phase
+        if raw.requires_grad:
+            raw.copy_(gaussian_blur(raw,sigma))
 
 
 def gaussian_phase(phase, sigma):

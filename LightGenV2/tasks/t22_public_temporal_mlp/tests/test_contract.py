@@ -11,7 +11,7 @@ from ..run import save_checkpoint, selection_score, router_regularization
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
 from ..phase_regularization import (phase_penalties, gaussian_phase, illumination_support,
-                                    initialize_phase, smooth_phase_gradients)
+                                    initialize_phase, smooth_phase_gradients, smooth_phase_parameters)
 from ..training_policy import freeze_parameters,restrict_training_to
 from ..prepare_joint_router import expand_router
 from ..phase_plotting import phase_display_norm
@@ -357,6 +357,21 @@ class Contracts(unittest.TestCase):
         self.assertTrue(torch.equal(stage.modulation(),constant_modulation(stage,centers)))
         self.assertTrue(torch.equal(constant_modulation(stage,centers,zero=True),
                                     torch.ones(16,111,111,dtype=torch.complex64)))
+
+    def test_slot_gradient_averaging_and_constant_raw_projection(self):
+        cfg=ModelConfig(width=8,expert_mode='linear',orm_mode='amplitude')
+        model=LightGenTemporal(cfg)
+        values=torch.arange(16,dtype=torch.float32)[:,None,None].expand(16,111,111).clone()
+        model.frame_global.raw_global_phase.grad=values
+        smooth_phase_gradients(model,0.,1.)
+        self.assertTrue(torch.equal(model.frame_global.raw_global_phase.grad,
+                                     torch.full((16,111,111),7.5)))
+        with torch.no_grad():
+            model.frame_global.raw_global_phase.zero_()
+            model.video_global.raw_global_phase.zero_()
+        smooth_phase_parameters(model,.4)
+        self.assertEqual(int(model.frame_global.raw_global_phase.count_nonzero()),0)
+        self.assertEqual(int(model.video_global.raw_global_phase.count_nonzero()),0)
 
     def test_manuscript_amplitude_orm(self):
         cfg = ModelConfig(width=8, orm_mode='amplitude', alpha_eval=2/3,
