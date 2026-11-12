@@ -20,10 +20,12 @@ import torch
 from torch.nn import functional as F
 
 if __package__:
+    from .plot_style import save_figure
     from .infer import frames_from_video, iter_video_fields
     from .model import load_lightgen
     from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 else:
+    from plot_style import save_figure
     from infer import frames_from_video, iter_video_fields
     from model import load_lightgen
     from phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
@@ -177,14 +179,14 @@ def plot_overview(stage, values, out):
     output_phase = np.where(intensity > intensity.max() * 1e-6, np.angle(propagated), np.nan)
     panels = [
         ('Incident amplitude |U|', values['incident_amplitude'], 'magma', {}),
-        ('Intended SLM phase, asinh color scale', values['intended_phase'], 'twilight', {'norm': phase_display_norm()}),
+        ('Intended SLM phase', values['intended_phase'], 'twilight', {'norm': phase_display_norm()}),
         ('Post-ORM amplitude |V|', np.abs(modulated), 'magma', {}),
         ('Post-ORM phase arg(V)', input_phase, 'twilight', {'vmin': -np.pi, 'vmax': np.pi}),
         ('Detector intensity |O|², linear', intensity, 'inferno', {'vmin': 0, 'vmax': upper}),
         ('Detector intensity |O|², log', intensity, 'inferno', {'norm': LogNorm(lower, upper)}),
         ('Propagated phase arg(O)', output_phase, 'twilight', {'vmin': -np.pi, 'vmax': np.pi}),
-        ('CCD regions after mean / clip / log1p', values['processed_mosaic'], 'viridis', {'vmin': 0, 'vmax': np.log(9)})]
-    fig, axes = plt.subplots(2, 4, figsize=(18, 9), constrained_layout=True)
+        ('CCD mean / clip / log1p', values['processed_mosaic'], 'viridis', {'vmin': 0, 'vmax': np.log(9)})]
+    fig, axes = plt.subplots(2, 4, figsize=(8.4, 4.7), constrained_layout=True)
     for ax, (title, array, cmap, limits) in zip(axes.flat, panels):
         artist = ax.imshow(array, cmap=cmap, interpolation='nearest', **limits)
         ax.add_patch(Rectangle((19.5, 19.5), 478, 478, fill=False, edgecolor='#46cbd5', lw=.8))
@@ -192,10 +194,10 @@ def plot_overview(stage, values, out):
         if title.startswith('Intended SLM phase'):
             add_phase_colorbar(fig,artist,ax)
         else:
-            fig.colorbar(artist, ax=ax, shrink=.75, pad=.02)
+            fig.colorbar(artist, ax=ax, shrink=.6, aspect=14, pad=.02)
     label = 'Vision global, 16 videos × 4 frames' if stage.frame_level else 'Vision-language global, 16 video fields'
-    fig.suptitle(label + '\nSimulated fields from the selected linear PT\n518 canvas / 478 active', fontsize=15)
-    fig.savefig(out, dpi=180)
+    fig.suptitle(label + '\n518 × 518 canvas, 478 × 478 active region')
+    save_figure(fig,out)
     plt.close(fig)
     return {'intensity_display_upper_percentile': 99.8, 'intensity_display_upper': upper,
             'log_intensity_display_lower': lower, 'phase_visibility_threshold_fraction': 1e-6,
@@ -203,7 +205,7 @@ def plot_overview(stage, values, out):
 
 
 def plot_inputs(pixels, ids, out):
-    fig, axes = plt.subplots(4, 4, figsize=(12, 12), constrained_layout=True)
+    fig, axes = plt.subplots(4, 4, figsize=(7.2, 7.2), constrained_layout=True)
     images = pixels.permute(0, 1, 3, 4, 2).numpy()
     for slot, ax in enumerate(axes.flat):
         mosaic = np.concatenate((np.concatenate(images[slot, :2], axis=1),
@@ -212,12 +214,12 @@ def plot_inputs(pixels, ids, out):
         ax.set_title(f'Slot {slot:02d}  |  {ids[slot][:12]}', fontsize=9)
         ax.axis('off')
     fig.suptitle('Actual cropped video frames; each slot shows t1 t2 / t3 t4', fontsize=15)
-    fig.savefig(out, dpi=150)
+    save_figure(fig,out)
     plt.close(fig)
 
 
 def plot_detail(pixels, values, result, slot, sample_id, out):
-    fig, axes = plt.subplots(3, 4, figsize=(15, 11), constrained_layout=True)
+    fig, axes = plt.subplots(3, 4, figsize=(8.4, 6.1), constrained_layout=True)
     fractions = np.linspace(.1, .9, 4)
     raw = values['frame']['detector_patches'][slot]
     high = max(float(np.percentile(raw, 99.8)), 1e-8)
@@ -248,13 +250,13 @@ def plot_detail(pixels, values, result, slot, sample_id, out):
                    xticks=range(5), xticklabels=['Bad', 'Poor', 'Fair', 'Good', 'Excellent'], ylim=(0, 1))
     axes[2, 3].tick_params(axis='x', rotation=30)
     fig.suptitle(f'Slot {slot:02d} | {sample_id}\nSelected linear model, traced optical fields', fontsize=13)
-    fig.savefig(out, dpi=180)
+    save_figure(fig,out)
     plt.close(fig)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', type=Path, default=ROOT/'configs/selected_joint.json')
+    parser.add_argument('--profile', type=Path, default=ROOT/'configs/selected.json')
     inputs = parser.add_mutually_exclusive_group(required=True)
     inputs.add_argument('--paths', type=Path, help='Internal cached-feature dataset configuration')
     inputs.add_argument('--videos', type=Path, nargs='+', help='Native video input, standalone inference')

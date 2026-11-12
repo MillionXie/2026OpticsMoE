@@ -27,7 +27,7 @@ def main():
     p.add_argument('--paths',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--dispatch-dir',type=Path,required=True)
-    p.add_argument('--config',type=Path,default=Path(__file__).parent/'configs/trial_relu_s163.json')
+    p.add_argument('--config',type=Path,default=Path(__file__).parent/'configs/train.json')
     p.add_argument('--max-wait-seconds',type=int,default=1800)
     p.add_argument('--poll-seconds',type=int,default=30)
     p.add_argument('--initialize',type=Path)

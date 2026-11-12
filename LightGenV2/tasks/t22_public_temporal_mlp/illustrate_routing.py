@@ -12,10 +12,12 @@ import numpy as np
 import torch
 
 if __package__:
+    from .plot_style import save_figure
     from .analyze_routing import COLORS
     from .data import batch,groups,load_inputs,sha256
     from .model import load_lightgen
 else:
+    from plot_style import save_figure
     from analyze_routing import COLORS
     from data import batch,groups,load_inputs,sha256
     from model import load_lightgen
@@ -29,6 +31,30 @@ def routing_bar(ax,probabilities,gates):
         ax.text(position,value+2,f'{value:.1f}',ha='center',fontsize=9)
     ax.set(xticks=x,xticklabels=['E1','E2','E3','E4'],ylim=(0,105),ylabel='Softmax probability (%)')
     ax.spines[['top','right']].set_visible(False)
+
+
+def plot_example(identity,inputs,probabilities,gates,joint_probabilities,joint_gates,path):
+    fig=plt.figure(figsize=(7.2,4.8),layout='constrained')
+    grid=fig.add_gridspec(3,4,height_ratios=[1.2,1,1])
+    for index in range(4):
+        ax=fig.add_subplot(grid[0,index])
+        ax.imshow(plt.imread(inputs/f'frame{index+1}.png'))
+        ax.set_title(f'Frame {index+1}, index {identity["frame_indices"][index]}')
+        ax.axis('off')
+        ax=fig.add_subplot(grid[1,index])
+        routing_bar(ax,probabilities[index],gates[index])
+        ax.set_title(f'Vision router, frame {index+1}')
+    ax=fig.add_subplot(grid[2,:2])
+    routing_bar(ax,joint_probabilities,joint_gates)
+    ax.set_title('Vision-language router, whole video')
+    ax=fig.add_subplot(grid[2,2:]);ax.axis('off')
+    ax.text(.02,.9,'Vision: one decision per frame, shared by 49 tokens.\n\n'
+            'Merger: 4 visual + 38 text = 42 tokens.\n\n'
+            'Vision-language: one decision for all 42 tokens.',
+            ha='left',va='top')
+    fig.suptitle('Four-expert softmax probabilities with Top2 outlines')
+    save_figure(fig,path)
+    plt.close(fig)
 
 
 def main():
@@ -58,32 +84,9 @@ def main():
     gates=frame['weights'][0,0].numpy()
     joint_probabilities=joint['probabilities'][0,0].numpy()
     joint_gates=joint['weights'][0,0].numpy()
-    fig=plt.figure(figsize=(13,10),layout='constrained')
-    grid=fig.add_gridspec(3,4,height_ratios=[1.2,1,1])
-    for index in range(4):
-        ax=fig.add_subplot(grid[0,index])
-        ax.imshow(plt.imread(args.inputs/f'frame{index+1}.png'))
-        ax.set_title(f'Frame {index+1}: image index {identity["frame_indices"][index]}')
-        ax.axis('off')
-        ax=fig.add_subplot(grid[1,index])
-        routing_bar(ax,probabilities[index],gates[index])
-        ax.set_title(f'Vision routing for frame {index+1}')
-    ax=fig.add_subplot(grid[2,:2])
-    routing_bar(ax,joint_probabilities,joint_gates)
-    ax.set_title('Second-stage routing for this whole video')
-    ax=fig.add_subplot(grid[2,2:]);ax.axis('off')
-    ax.text(.02,.9,'First stage: four separate routing decisions\n'
-            'Each decision gates all 49 tokens of one frame.\n\n'
-            'Merger -> four visual tokens\n'
-            '+ 38 prompt tokens -> 42-token sequence\n\n'
-            'Second stage: one routing decision\n'
-            'Its two gates apply to all 42 sequence tokens.',
-            ha='left',va='top',fontsize=11)
-    fig.suptitle('One real input video, four frame decisions, one joint-stage decision\n'
-                 'Displayed bars show all-four softmax probabilities with dark outlines for Top2',fontsize=15)
     args.out.mkdir(parents=True)
-    fig.savefig(args.out/'routing_example.png',dpi=180)
-    plt.close(fig)
+    plot_example(identity,args.inputs,probabilities,gates,
+                 joint_probabilities,joint_gates,args.out/'routing_example.png')
     record={'input_identity':identity,'checkpoint_SHA256':sha256(args.weights),
             'feature_source':'matching original TEST cache; first field, physical slot 0',
             'frame_probabilities':probabilities.tolist(),'frame_gates':gates.tolist(),

@@ -15,12 +15,14 @@ import numpy as np
 import torch
 
 if __package__:
+    from .plot_style import save_figure
     from .data import load_inputs, sha256
     from .model import load_lightgen
     from .phase_regularization import phase_statistics, illumination_support
     from .run import evaluate, write
     from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 else:
+    from plot_style import save_figure
     from data import load_inputs, sha256
     from model import load_lightgen
     from phase_regularization import phase_statistics, illumination_support
@@ -57,23 +59,26 @@ def plot_phases(records,arrays,path):
     limit = max(float(np.abs(arrays[label][name+'_centered'][0]).max())
                 for label in labels for name in STAGES)
     limit = max(limit,1e-6)
-    fig,axes=plt.subplots(4,len(labels),figsize=(4.3*len(labels),12),
+    fig,axes=plt.subplots(2,2*len(labels),figsize=(5.8*len(labels),4.4),
                           squeeze=False,layout='constrained')
     for column,label in enumerate(labels):
         for stage_index,name in enumerate(STAGES):
-            row = 2*stage_index
+            row = stage_index
+            col = 2*column
             phase = arrays[label][name][0]
             centered = arrays[label][name+'_centered'][0]
             spread = records[label]['phase_statistics'][name]['mean_illuminated_circular_std_rad']
             title = 'Vision' if stage_index==0 else 'Vision-language'
-            artist=axes[row,column].imshow(phase,cmap='twilight',norm=phase_display_norm())
-            axes[row,column].set_title(f'{label}: {title}\nActual phase, slot 0')
-            add_phase_colorbar(fig,artist,axes[row,column])
-            artist=axes[row+1,column].imshow(centered,cmap='RdBu_r',vmin=-limit,vmax=limit)
-            axes[row+1,column].set_title(f'Phase relative to illuminated circular mean\nActive circular SD, mean of 16 slots: {spread:.4f} rad')
-            fig.colorbar(artist,ax=axes[row+1,column],shrink=.7,label='Relative phase (rad)')
-    fig.suptitle('Absolute and centered phase use common color limits across checkpoints',fontsize=15)
-    fig.savefig(path,dpi=170)
+            artist=axes[row,col].imshow(phase,cmap='twilight',norm=phase_display_norm())
+            axes[row,col].set_title(f'{title} phase')
+            add_phase_colorbar(fig,artist,axes[row,col])
+            artist=axes[row,col+1].imshow(centered,cmap='RdBu_r',vmin=-limit,vmax=limit)
+            axes[row,col+1].set_title(f'About circular mean\nIlluminated SD = {spread:.3f} rad')
+            fig.colorbar(artist,ax=axes[row,col+1],shrink=.6,aspect=14,label='Relative phase (rad)')
+            for ax in axes[row,col:col+2]:
+                ax.set(xticks=[],yticks=[])
+    fig.suptitle('Current phase masks, physical video slot 0')
+    save_figure(fig,path)
     plt.close(fig)
 
 

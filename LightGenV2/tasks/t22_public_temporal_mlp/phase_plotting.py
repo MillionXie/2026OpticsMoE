@@ -19,6 +19,7 @@ def phase_display_norm():
 
 
 def add_phase_colorbar(fig,artist,ax):
-    bar=fig.colorbar(artist,ax=ax,shrink=.7,label='Phase (rad), asinh color scale',
-                    ticks=[0,math.pi-.5,math.pi,math.pi+.5,2*math.pi])
-    bar.ax.set_yticklabels(['0','pi-0.5','pi','pi+0.5','2pi'])
+    bar=fig.colorbar(artist,ax=ax,shrink=.6,aspect=14,pad=.03,
+                    label='Phase (rad)',ticks=[0,math.pi,2*math.pi])
+    bar.ax.set_yticklabels(['0','π','2π'])
+    return bar

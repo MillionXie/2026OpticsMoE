@@ -27,7 +27,7 @@ else:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', type=Path, default=ROOT/'configs/selected_linear.json')
+    parser.add_argument('--profile', type=Path, default=ROOT/'configs/selected.json')
     parser.add_argument('--paths', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--device', default='cpu')

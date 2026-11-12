@@ -17,10 +17,14 @@ import numpy as np
 import torch
 
 if __package__:
+    from .plot_style import save_figure
+    from .phase_plotting import phase_display_norm, add_phase_colorbar
     from .data import batch, groups, load_inputs, sha256
     from .model import load_lightgen
     from .phase_regularization import phase_statistics, illumination_support
 else:
+    from plot_style import save_figure
+    from phase_plotting import phase_display_norm, add_phase_colorbar
     from data import batch, groups, load_inputs, sha256
     from model import load_lightgen
     from phase_regularization import phase_statistics, illumination_support
@@ -40,7 +44,7 @@ def write_csv(path, rows):
 
 
 def plot_shares(shares, out, ylabel='Optical expert share (%)'):
-    fig,ax = plt.subplots(figsize=(4.8,4.8),layout='constrained')
+    fig,ax = plt.subplots(figsize=(3.35,3.2),layout='constrained')
     bottom = np.zeros(2)
     for expert,color in enumerate(COLORS):
         height = np.array([shares[name][expert]*100 for name in ('frame','video')])
@@ -52,12 +56,12 @@ def plot_shares(shares, out, ylabel='Optical expert share (%)'):
            ylabel=ylabel)
     ax.legend(frameon=False,bbox_to_anchor=(1.02,1),loc='upper left')
     ax.spines[['top','right']].set_visible(False)
-    fig.savefig(out,dpi=220)
+    save_figure(fig,out)
     plt.close(fig)
 
 
 def plot_slot_shares(slot_shares, out):
-    fig,axes = plt.subplots(1,2,figsize=(10,6),layout='constrained')
+    fig,axes = plt.subplots(1,2,figsize=(6.0,4.4),layout='constrained')
     for ax,name in zip(axes,('frame','video')):
         values = slot_shares[name]*100
         artist=ax.imshow(values,cmap='Blues',vmin=0,vmax=50,aspect='auto')
@@ -65,10 +69,10 @@ def plot_slot_shares(slot_shares, out):
             for column in range(4):
                 ax.text(column,row,f'{values[row,column]:.1f}',ha='center',va='center',
                         color='white' if values[row,column]>32 else '#182737',fontsize=8)
-        ax.set(title=name.capitalize()+' router',xticks=range(4),xticklabels=EXPERTS,
+        ax.set(title='Vision router' if name=='frame' else 'Vision-language router',xticks=range(4),xticklabels=EXPERTS,
                yticks=range(16),ylabel='Physical video slot')
-        fig.colorbar(artist,ax=ax,label='Optical expert share (%)')
-    fig.savefig(out,dpi=180)
+        fig.colorbar(artist,ax=ax,shrink=.6,aspect=14,label='Optical expert share (%)')
+    save_figure(fig,out)
     plt.close(fig)
 
 
@@ -80,34 +84,35 @@ def plot_expert_operation(model, tokens, weights, out):
     output_limit = max(float(np.percentile(np.abs(outputs),99.5)),1e-6)
     energies = np.sqrt(np.mean((outputs*weights[:,None,None])**2,axis=-1)).reshape(4,7,7)
     energy_limit = max(float(energies.max()),1e-6)
-    fig,axes = plt.subplots(3,4,figsize=(14,10),layout='constrained')
+    fig,axes = plt.subplots(3,4,figsize=(7.6,5.6),layout='constrained')
     for i,color in enumerate(COLORS):
         axes[0,i].imshow(matrices[i],cmap='RdBu_r',vmin=-limit,vmax=limit,aspect='auto')
-        axes[0,i].set(title=f'{EXPERTS[i]} weight matrix, 192 × 192',xlabel='Input channel',ylabel='Output channel')
+        axes[0,i].set(title=f'{EXPERTS[i]} matrix, 192 × 192',xlabel='Input channel',ylabel='Output channel')
         axes[1,i].imshow(outputs[i],cmap='RdBu_r',vmin=-output_limit,vmax=output_limit,aspect='auto')
         axes[1,i].set(title='Expert output, 49 × 192',xlabel='Channel',ylabel='Token')
         cmap=LinearSegmentedColormap.from_list(EXPERTS[i],['white',color,'#333333'])
         axes[2,i].imshow(energies[i],cmap=cmap,vmin=0,vmax=energy_limit)
-        axes[2,i].set(title=f'Weighted token RMS, g = {weights[i]:.3f}',xlabel='7-token spatial column',ylabel='7-token spatial row')
+        state='Selected' if weights[i]>0 else 'Inactive'
+        axes[2,i].set(title=f'{state}: weighted RMS',xlabel='Token column',ylabel='Token row')
         for spine in axes[2,i].spines.values():
             spine.set_edgecolor(color)
             spine.set_linewidth(3 if weights[i]>0 else 1)
-    fig.suptitle('Frame experts in the electronic feature domain\nX[49,192] -> X Wkᵀ -> Top2-weighted sum[49,192]',fontsize=14)
-    fig.savefig(out,dpi=180)
+    fig.suptitle('Vision experts in electronic feature space')
+    save_figure(fig,out)
     plt.close(fig)
 
 
 def plot_virtual_activation(tokens, weights, out):
     energy=tokens.square().mean(-1).sqrt().numpy().reshape(7,7)
-    fig,axes=plt.subplots(2,2,figsize=(7,7),layout='constrained')
+    fig,axes=plt.subplots(2,2,figsize=(4.2,4.0),layout='constrained')
     high=max(float(energy.max()*weights.max()),1e-6)
     for i,ax in enumerate(axes.flat):
         cmap=LinearSegmentedColormap.from_list(EXPERTS[i],['white',COLORS[i],'#333333'])
         ax.imshow(energy*weights[i],cmap=cmap,vmin=0,vmax=high)
-        ax.set_title(f'{EXPERTS[i]}   gate = {weights[i]:.3f}')
+        ax.set_title(f'{EXPERTS[i]}  '+('Selected' if weights[i]>0 else 'Inactive'))
         ax.set(xticks=[],yticks=[])
-    fig.suptitle('Virtual E1-E4 positions for showing routing\nWeighted input-token RMS in feature space',fontsize=13)
-    fig.savefig(out,dpi=180)
+    fig.suptitle('Virtual expert layout, weighted input-token RMS')
+    save_figure(fig,out)
     plt.close(fig)
 
 
@@ -119,21 +124,20 @@ def plot_router_sensitivity(model,tokens,out):
         gradient=torch.autograd.grad(routing['probabilities'][0,expert],value,retain_graph=True)[0]
         maps.append(gradient.square().mean(-1).sqrt().detach().cpu().numpy().reshape(7,7))
     high=max(float(np.max(maps)),1e-12)
-    fig,axes=plt.subplots(1,4,figsize=(12,3.8),layout='constrained')
+    fig,axes=plt.subplots(1,4,figsize=(7.2,2.3),layout='constrained')
     for expert,ax in enumerate(axes):
         image=ax.imshow(maps[expert],cmap='viridis',vmin=0,vmax=high)
         probability=float(routing['probabilities'][0,expert].detach())
-        gate=float(routing['weights'][0,expert].detach())
-        ax.set_title(f'{EXPERTS[expert]}  p={probability:.3f}, g={gate:.3f}')
-        ax.set(xlabel='Spatial token column',ylabel='Spatial token row')
-        fig.colorbar(image,ax=ax,shrink=.7)
-    fig.suptitle('Frame router sensitivity to 7 × 7 input-token positions\nChannel RMS of gradient of pre-Top2 expert probability',fontsize=13)
-    fig.savefig(out,dpi=180)
+        ax.set_title(f'{EXPERTS[expert]}  p={probability:.3f}')
+        ax.set(xlabel='Token column',ylabel='Token row')
+        fig.colorbar(image,ax=ax,shrink=.6,aspect=14)
+    fig.suptitle('Vision router sensitivity, gradient RMS of softmax probability')
+    save_figure(fig,out)
     plt.close(fig)
 
 
 def plot_layout(out):
-    fig,axes=plt.subplots(1,2,figsize=(13,7),layout='constrained')
+    fig,axes=plt.subplots(1,2,figsize=(7.2,4.0),layout='constrained')
     for frame_level,ax in zip((True,False),axes):
         ax.add_patch(Rectangle((0,0),518,518,facecolor='#f3f3f3',edgecolor='none'))
         ax.add_patch(Rectangle((20,20),478,478,facecolor='white',edgecolor='#222222',lw=1.2))
@@ -149,15 +153,15 @@ def plot_layout(out):
                 ax.add_patch(Rectangle((x+29,y+29),56,56,facecolor='#e2e2e2',edgecolor='none'))
                 ax.add_patch(Rectangle((x+29,y+29),56,42,facecolor='#75b2ce',edgecolor='none'))
         ax.set(xlim=(0,518),ylim=(518,0),aspect='equal',xlabel='x (simulation pixel)',ylabel='y (simulation pixel)')
-        ax.set_title('Frame global: 4 × 4 videos, 2 × 2 frames each\n64 frame patches form an 8 × 8 arrangement' if frame_level
-                     else 'Video global: 4 × 4 videos\n16 encoded fields; gray rows are padding')
-    fig.suptitle('Both stages use the same 518 canvas and 478 active region',fontsize=15)
-    fig.savefig(out,dpi=180)
+        ax.set_title('Vision global\n16 videos × 4 frames, 8 × 8 patches' if frame_level
+                     else 'Vision-language global\n16 video fields, 4 × 4 patches')
+    fig.suptitle('518 × 518 canvas, 478 × 478 active region')
+    save_figure(fig,out)
     plt.close(fig)
 
 
 def plot_phase_support(model, out):
-    fig,axes=plt.subplots(2,3,figsize=(11,7),layout='constrained')
+    fig,axes=plt.subplots(2,3,figsize=(7.2,4.6),layout='constrained')
     for row,name in enumerate(('frame_global','video_global')):
         stage=getattr(model,name)
         phase=(2*math.pi*torch.sigmoid(stage.raw_global_phase.detach()))[0].cpu().numpy()
@@ -165,11 +169,18 @@ def plot_phase_support(model, out):
         visible=np.where(support,phase,np.nan)
         phase_curvature=np.angle(np.exp(1j*(phase[:,2:]-2*phase[:,1:-1]+phase[:,:-2])))
         for column,array in enumerate((phase,visible,phase_curvature)):
-            image=axes[row,column].imshow(array,cmap='twilight' if column<2 else 'RdBu_r',
-                                          vmin=0 if column<2 else -np.pi,vmax=2*np.pi if column<2 else np.pi)
-            axes[row,column].set_title(name.replace('_',' ')+'\n'+['Full phase tile','Potentially illuminated phase','Circular horizontal curvature'][column])
-            fig.colorbar(image,ax=axes[row,column],shrink=.7,label='rad')
-    fig.savefig(out,dpi=180)
+            stage_title='Vision' if row==0 else 'Vision-language'
+            axes[row,column].set_title(stage_title+'\n'+['Full phase tile','Illumination support','Horizontal curvature'][column])
+            axes[row,column].set(xticks=[],yticks=[])
+            if column<2:
+                image=axes[row,column].imshow(array,cmap='twilight',norm=phase_display_norm())
+                add_phase_colorbar(fig,image,axes[row,column])
+            else:
+                image=axes[row,column].imshow(array,cmap='RdBu_r',vmin=-np.pi,vmax=np.pi)
+                bar=fig.colorbar(image,ax=axes[row,column],shrink=.6,aspect=14,
+                                 label='Curvature (rad)',ticks=[-np.pi,0,np.pi])
+                bar.ax.set_yticklabels(['−π','0','π'])
+    save_figure(fig,out)
     plt.close(fig)
 
 

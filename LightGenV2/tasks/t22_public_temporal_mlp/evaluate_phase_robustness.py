@@ -18,12 +18,14 @@ import numpy as np
 import torch
 
 if __package__:
+    from .plot_style import save_figure
     from .data import load_inputs, sha256
     from .model import load_lightgen, translated, Propagation
     from .phase_regularization import phase_statistics
     from .run import evaluate
     from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 else:
+    from plot_style import save_figure
     from data import load_inputs, sha256
     from model import load_lightgen, translated, Propagation
     from phase_regularization import phase_statistics
@@ -88,11 +90,11 @@ def evaluate_condition(model,payload,device,condition):
 
 
 def plot_curves(records,out):
-    fig,axes=plt.subplots(1,3,figsize=(13,4.5),layout='constrained')
+    fig,axes=plt.subplots(1,3,figsize=(7.2,2.35),layout='constrained')
     for label,record in records.items():
         clean=record['conditions'][0]['metrics']['srcc']
         for ax,kind,title,levels in zip(axes,('phase_shift','ccd_shift','phase_noise'),
-                ('Phase-mask shift','CCD registration shift','Static independent phase noise'),
+                ('Phase-mask shift','CCD registration shift','Phase noise'),
                 ([1,2],[1,2],[.02,.05])):
             means=[clean];lower=[clean];upper=[clean]
             for level in levels:
@@ -104,20 +106,21 @@ def plot_curves(records,out):
             ax.fill_between(x,lower,upper,alpha=.12)
             ax.set(title=title,ylabel='Development SRCC',xlabel='Simulation pixels' if kind!='phase_noise' else 'Standard deviation (rad)')
     axes[-1].legend(frameon=False)
-    fig.savefig(out,dpi=200)
+    save_figure(fig,out)
     plt.close(fig)
 
 
 def plot_masks(records,phases,out):
-    fig,axes=plt.subplots(2,len(records),figsize=(4*len(records),7),squeeze=False,layout='constrained')
+    fig,axes=plt.subplots(1,2*len(records),figsize=(5.8*len(records),2.6),squeeze=False,layout='constrained')
     for column,(label,value) in enumerate(phases.items()):
         for row,name in enumerate(('frame_global','video_global')):
-            image=axes[row,column].imshow(value[name],cmap='twilight',norm=phase_display_norm())
-            rough=records[label]['phase_statistics'][name]['curvature_penalty']
-            axes[row,column].set_title(f'{label}\n{name.replace("_"," ")}, curvature {rough:.3g}')
-            add_phase_colorbar(fig,image,axes[row,column])
-    fig.suptitle('Phase at physical video slot 0\nCurvature is averaged over all 16 phase tiles', fontsize=14)
-    fig.savefig(out,dpi=180)
+            ax=axes[0,2*column+row]
+            image=ax.imshow(value[name],cmap='twilight',norm=phase_display_norm())
+            ax.set_title('Vision global' if row==0 else 'Vision-language global')
+            ax.set(xticks=[],yticks=[])
+            add_phase_colorbar(fig,image,ax)
+    fig.suptitle('Learned phase, physical video slot 0')
+    save_figure(fig,out)
     plt.close(fig)
 
 

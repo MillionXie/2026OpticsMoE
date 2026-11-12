@@ -9,6 +9,11 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 
+if __package__:
+    from .plot_style import save_figure
+else:
+    from plot_style import save_figure
+
 
 def box(ax,x,y,width,height,text,color):
     ax.add_patch(FancyBboxPatch((x,y),width,height,boxstyle='round,pad=0.08',
@@ -22,7 +27,7 @@ def arrow(ax,start,end):
 
 
 def draw_network(path):
-    fig,ax=plt.subplots(figsize=(13,9),layout='constrained')
+    fig,ax=plt.subplots(figsize=(7.2,5.0),layout='constrained')
     ax.set(xlim=(0,13),ylim=(0,9));ax.axis('off')
     box(ax,.4,7.7,8.2,.8,'One video: four RGB frames -> extracted Qwen patch / position\n49 x 1024 per frame -> LN / linear adapter -> 49 x 192','#e4edf9')
     box(ax,.4,6.15,8.2,1.0,'VISION STAGE   (frame_*)\nEach frame passes through router -> Top2 linear experts -> optical global\nFour separate frames retain shape 4 x 49 x 192','#d9e8f8')
@@ -37,11 +42,12 @@ def draw_network(path):
     box(ax,.4,.5,12,.8,'Flatten 8064 -> Linear 256 -> ReLU -> Linear 5 -> softmax -> expected MOS','#e5f1e7')
     arrow(ax,(6.4,1.9),(6.4,1.35))
     ax.set_title('Two serial global operations per forward pass\nThe prompt enters after the first global and the Frame Merger',fontsize=16)
-    fig.savefig(path,dpi=180);plt.close(fig)
+    save_figure(fig,path)
+    plt.close(fig)
 
 
 def draw_frame(path):
-    fig,ax=plt.subplots(figsize=(13,10),layout='constrained')
+    fig,ax=plt.subplots(figsize=(7.2,5.5),layout='constrained')
     ax.set(xlim=(0,13),ylim=(0,10));ax.axis('off')
     box(ax,3.5,8.7,6,.8,'Each frame has 7 x 7 spatial token positions\n49 tokens, each with 192 channels -> X[49,192]','#e4edf9')
     box(ax,.4,6.7,5.4,1.2,'Router\nLN -> Flatten 9408 -> FC128 -> ReLU -> FC4\nsoftmax over four -> Top2 -> L1 renormalize','#fff0d6')
@@ -56,7 +62,8 @@ def draw_frame(path):
     box(ax,2.2,.8,8.6,.9,'RMS normalize -> pack all 64 frame fields on the canvas\nOne full coherent propagation -> read this frame CCD -> 49 x 192','#d9e8f8')
     arrow(ax,(6.5,2.35),(6.5,1.75))
     ax.set_title('Frame token processing and optical encoding\nFour frames use this same set of parameters and make separate routing decisions',fontsize=16)
-    fig.savefig(path,dpi=180);plt.close(fig)
+    save_figure(fig,path)
+    plt.close(fig)
 
 
 def main():

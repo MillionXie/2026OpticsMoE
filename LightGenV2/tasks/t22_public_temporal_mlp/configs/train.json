@@ -1,10 +1,10 @@
 {
-  "seed": 281,
+  "seed": 277,
   "epochs": 150,
   "batch_fields": 8,
   "eval_batch_fields": 4,
-  "learning_rate": 0.00003,
-  "router_learning_rate": 0.000002,
+  "learning_rate": 3e-05,
+  "router_learning_rate": 2e-06,
   "phase_learning_rate": 0.001,
   "weight_decay": 0.0001,
   "eval_interval": 5,
@@ -25,14 +25,11 @@
   "phase_curvature_weight": 0.4,
   "phase_initialization": {
     "frame_global": {
-      "kind": "lens",
-      "focal_length_m": 1.0,
-      "sigma_pixels": 1.0,
-      "residual_scale": 0.05
+      "kind": "keep"
     },
     "video_global": {
       "kind": "lens",
-      "focal_length_m": 0.5,
+      "focal_length_m": 0.35,
       "sigma_pixels": 1,
       "residual_scale": 0.05
     }
@@ -47,5 +44,40 @@
     "video_global.output",
     "video_global.norm"
   ],
-  "model": {}
+  "model": {
+    "width": 192,
+    "expert_hidden": 384,
+    "router_hidden": 128,
+    "fusion_router_input": "all_tokens",
+    "readout_hidden": 256,
+    "expert_mode": "linear",
+    "orm_mode": "amplitude",
+    "alpha_min": 0.6666666666666666,
+    "alpha_max": 0.6666666666666666,
+    "alpha_eval": 0.6666666666666666,
+    "mlp_activation": "relu",
+    "readout_mode": "five_levels",
+    "visual_output_norm": false,
+    "prompt_length": 38,
+    "videos": 16,
+    "frames": 4,
+    "tokens": 49,
+    "temperature": 1.1,
+    "router_noise": 0.0,
+    "input_shift": 1,
+    "phase_shift": 1,
+    "ccd_shift": 1,
+    "phase_dropout": 0.0,
+    "phase_dropout_cell": 4,
+    "phase_noise_std": 0.02,
+    "leakage_min": 0.2,
+    "leakage_max": 0.35,
+    "leakage_eval": 0.2,
+    "wavelength_nm": 532.0,
+    "pitch_um": 17.0,
+    "distance_m": 0.1,
+    "cutoff_deg": 0.5,
+    "canvas": 518,
+    "active": 478
+  }
 }

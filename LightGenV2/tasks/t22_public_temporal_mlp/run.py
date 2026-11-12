@@ -363,7 +363,7 @@ def train(args):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--config',type=Path,default=ROOT/'configs/trial_relu_s163.json')
+    p.add_argument('--config',type=Path,default=ROOT/'configs/train.json')
     p.add_argument('--paths',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--device',default='cuda')
