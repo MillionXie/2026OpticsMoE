@@ -25,7 +25,10 @@
   "phase_curvature_weight": 0.4,
   "phase_initialization": {
     "frame_global": {
-      "kind": "keep"
+      "kind": "lens",
+      "focal_length_m": 1.0,
+      "sigma_pixels": 1.0,
+      "residual_scale": 0.05
     },
     "video_global": {
       "kind": "lens",

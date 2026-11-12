@@ -107,11 +107,12 @@ def main():
             arrays[label][name+'_centered']=centered.cpu().numpy()
         record={'checkpoint_SHA256':sha256(checkpoint),'phase_statistics':statistics,'conditions':{}}
         cases={'learned':(), 'flat_vision':('frame_global',),
-               'flat_joint':('video_global',),'flat_both':STAGES,'zero_both':STAGES}
+               'flat_joint':('video_global',),'flat_both':STAGES,
+               'zero_vision':('frame_global',),'zero_joint':('video_global',),'zero_both':STAGES}
         for case,names in cases.items():
             with ExitStack() as stack:
                 for name in names:
-                    value=constant_modulation(getattr(model,name),centers[name],zero=case=='zero_both')
+                    value=constant_modulation(getattr(model,name),centers[name],zero=case.startswith('zero_'))
                     stack.enter_context(patch.object(getattr(model,name),'modulation',lambda value=value:value))
                 dest=args.out/label/case
                 dest.mkdir(parents=True)
