@@ -5,6 +5,7 @@ import argparse
 import csv
 import json
 import math
+import subprocess
 from pathlib import Path
 
 import matplotlib
@@ -38,17 +39,17 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
-def plot_shares(shares, out):
+def plot_shares(shares, out, ylabel='Optical expert share (%)'):
     fig,ax = plt.subplots(figsize=(4.8,4.8),layout='constrained')
     bottom = np.zeros(2)
     for expert,color in enumerate(COLORS):
         height = np.array([shares[name][expert]*100 for name in ('frame','video')])
         ax.bar([0,1],height,bottom=bottom,width=.64,color=color,label=EXPERTS[expert])
         for x,y,h in zip([0,1],bottom,height):
-            ax.text(x,y+h/2,f'{h:.1f}',ha='center',va='center',fontsize=11)
+            ax.text(x,y+h/2,f'{h:.2f}',ha='center',va='center',fontsize=11)
         bottom += height
     ax.set(ylim=(0,100),xticks=[0,1],xticklabels=['Frame\nrouter','Video\nrouter'],
-           ylabel='Optical expert share (%)')
+           ylabel=ylabel)
     ax.legend(frameon=False,bbox_to_anchor=(1.02,1),loc='upper left')
     ax.spines[['top','right']].set_visible(False)
     fig.savefig(out,dpi=220)
@@ -226,6 +227,8 @@ def main():
     write_csv(args.out/'expert_share.csv',summary)
     write_csv(args.out/'expert_share_by_slot.csv',slot_rows)
     plot_shares(shares,args.out/'optical_expert_share.png')
+    plot_shares({name:weight_mass[name]/(counts[name].sum()/2) for name in counts},
+                args.out/'mean_routing_weight.png','Mean routing weight (%)')
     plot_slot_shares(slot_shares,args.out/'expert_share_by_slot.png')
     plot_expert_operation(model,sample['tokens'],sample['weights'],args.out/'expert_matrix_and_tokens.png')
     plot_virtual_activation(sample['tokens'],sample['weights'],args.out/'virtual_expert_activation.png')
@@ -236,6 +239,9 @@ def main():
     stats['phase_statistics']={name:phase_statistics(getattr(model,name)) for name in ('frame_global','video_global')}
     stats['figure2d_palette']=dict(zip(EXPERTS,COLORS))
     stats['data_identity']=payload['identity']
+    stats['example']={'sample_id':payload['ids'][int(indices[0,0])],'physical_slot':0,'frame':0}
+    stats['source_commit']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
+    stats['source_SHA256']={name:sha256(ROOT/name) for name in ('model.py','analyze_routing.py','phase_regularization.py')}
     stats['output_SHA256']={p.name:sha256(p) for p in args.out.iterdir() if p.is_file()}
     (args.out/'routing_analysis.json').write_text(json.dumps(stats,indent=2)+'\n','utf-8')
     print(json.dumps({name:stats[name] for name in ('frame','video')}),flush=True)
