@@ -109,8 +109,10 @@ def main():
         writer.writerows(records)
     cached_metrics = regression_metrics(cached_predictions, targets)
     native_metrics = regression_metrics(native_predictions, targets)
-    if abs(cached_metrics['srcc'] - profile['evaluation']['srcc']) > 1e-5:
-        raise ValueError('Cached evaluation differs from the selected result')
+    saved_metrics = regression_metrics(
+        [saved_predictions[row['sample_id']] for row in records], targets)
+    if abs(saved_metrics['srcc'] - profile['evaluation']['srcc']) > 1e-12:
+        raise ValueError('Saved predictions differ from the selected result')
     differences = np.abs(np.asarray(native_predictions)-np.asarray(cached_predictions))
     cached_saved_error = max(abs(row['cached_prediction']-saved_predictions[row['sample_id']]) for row in records)
     if cached_saved_error > 2e-4:
@@ -118,7 +120,7 @@ def main():
     commit = subprocess.check_output(['git','rev-parse','HEAD'], cwd=ROOT, text=True).strip()
     record = {'state': 'completed', 'videos': 558, 'groups': len(indices), 'padding_excluded': True,
               'elapsed_seconds': time.time()-started, 'checkpoint_sha256': sha256(weights),
-              'cached_metrics': cached_metrics, 'native_metrics': native_metrics,
+              'saved_metrics': saved_metrics, 'cached_metrics': cached_metrics, 'native_metrics': native_metrics,
               'maximum_MOS_difference': float(differences.max()), 'mean_MOS_difference': float(differences.mean()),
               'cached_batch1_vs_saved_batch4_max_MOS_difference': cached_saved_error,
               'maximum_feature_difference': maximum_feature_error,
