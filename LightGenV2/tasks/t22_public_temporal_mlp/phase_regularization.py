@@ -67,8 +67,6 @@ def gaussian_phase(phase, sigma):
 
 
 def initialize_phase(phase, config, geometry):
-    if config['kind'] == 'zero':
-        return torch.zeros_like(phase)
     smoothed = gaussian_phase(phase, config.get('sigma_pixels', 0.))
     if config['kind'] == 'gaussian':
         return smoothed
@@ -93,11 +91,7 @@ def initialize_phase(phase, config, geometry):
     return (offset+lens+residual).remainder(2*math.pi)
 
 
-def phase_to_raw(phase, parameterization='bounded'):
-    if parameterization == 'direct':
-        return phase.clone()
-    if parameterization != 'bounded':
-        raise ValueError('Unsupported phase parameterization')
+def phase_to_raw(phase):
     probability = (phase.remainder(2*math.pi)/(2*math.pi)).clamp(1e-4,1-1e-4)
     return torch.logit(probability)
 
@@ -130,6 +124,9 @@ def phase_statistics(stage):
             'active_neighbor_difference_RMS_rad':float(active_rms),
             'geometric_illumination_fraction':float(support.float().mean()),
             'wrapped_phase_RMS_rad':float(wrapped.square().mean().sqrt()),
+            'raw_parameter_RMS':float(stage.raw_global_phase.detach().cpu().square().mean().sqrt()),
+            'relative_to_pi_RMS_rad':float(circular_difference(phase-math.pi).square().mean().sqrt()),
+            'illuminated_relative_to_pi_RMS_rad':float(circular_difference(phase[:,support]-math.pi).square().mean().sqrt()),
             'illuminated_wrapped_phase_RMS_rad':float(wrapped[:,support].square().mean().sqrt()),
             'illuminated_circular_std_rad':float((-2*resultant.clamp(1e-12,1).log()).sqrt().mean()),
             'maximum_absolute_wrapped_phase_rad':float(wrapped.abs().max())}

@@ -20,7 +20,6 @@ RELU_ARCHITECTURE = GELU_ARCHITECTURE + '_allrelu'
 FIVE_LEVEL_ARCHITECTURE = RELU_ARCHITECTURE + '_five_levels'
 AMPLITUDE_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v6'
 JOINT_ROUTER_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v7_joint_router'
-DIRECT_PHASE_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v8_direct_phase_joint_router'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -60,7 +59,6 @@ class ModelConfig:
     cutoff_deg: float = 0.50
     canvas: int = 518
     active: int = 478
-    phase_parameterization: str = 'bounded'
 
     def __post_init__(self):
         if (self.videos,self.frames,self.tokens,self.canvas,self.active)!=(16,4,49,518,478):
@@ -75,10 +73,6 @@ class ModelConfig:
             raise ValueError('Unsupported fusion router input')
         if self.fusion_router_input == 'all_tokens' and self.orm_mode != 'amplitude':
             raise ValueError('The joint router requires the current amplitude architecture')
-        if self.phase_parameterization not in ('bounded', 'direct'):
-            raise ValueError('Unsupported phase parameterization')
-        if self.phase_parameterization == 'direct' and self.fusion_router_input != 'all_tokens':
-            raise ValueError('Direct phase requires the joint image-text router architecture')
         if not math.isfinite(self.phase_noise_std) or self.phase_noise_std < 0:
             raise ValueError('Phase noise standard deviation must be finite and nonnegative')
         if self.orm_mode not in ('legacy_energy', 'amplitude'):
@@ -215,10 +209,7 @@ class GlobalStage(nn.Module):
         if frame_level:
             self.tokens_to_field=nn.Linear(cfg.tokens,side)
         self.raw_global_phase=nn.Parameter(torch.empty(16,111,111))
-        if cfg.phase_parameterization == 'direct':
-            nn.init.zeros_(self.raw_global_phase)
-        else:
-            nn.init.normal_(self.raw_global_phase,0,0.25)
+        nn.init.normal_(self.raw_global_phase,0,0.25)
         self.propagation=Propagation(cfg)
         self.norm=nn.LayerNorm(96);self.output=nn.Linear(96,cfg.width)
         support=torch.zeros(518,518,dtype=torch.bool)
@@ -241,10 +232,7 @@ class GlobalStage(nn.Module):
         return value/value.square().mean((-2,-1),keepdim=True).clamp_min(1e-12).sqrt()
 
     def phase(self, *, wrapped=False):
-        if self.cfg.phase_parameterization == 'direct':
-            value = self.raw_global_phase
-        else:
-            value = 2 * math.pi * torch.sigmoid(self.raw_global_phase)
+        value = 2 * math.pi * torch.sigmoid(self.raw_global_phase)
         return value.remainder(2 * math.pi) if wrapped else value
 
     def modulation(self):
@@ -404,9 +392,6 @@ class LightGenTemporal(nn.Module):
             if self.cfg.fusion_router_input == 'all_tokens':
                 architecture = JOINT_ROUTER_ARCHITECTURE + '_' + self.cfg.expert_mode + suffix
                 schema = 7
-                if self.cfg.phase_parameterization == 'direct':
-                    architecture = DIRECT_PHASE_ARCHITECTURE + '_' + self.cfg.expert_mode + suffix
-                    schema = 8
         return {'schema':schema, 'architecture':architecture,
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
@@ -417,8 +402,7 @@ def load_lightgen(path,device='cpu'):
     activations = {GELU_ARCHITECTURE: 'gelu', RELU_ARCHITECTURE: 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_ln192': 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_no_ln192': 'relu'}
-    amplitude_prefixes = (AMPLITUDE_ARCHITECTURE, JOINT_ROUTER_ARCHITECTURE, DIRECT_PHASE_ARCHITECTURE)
-    for prefix in amplitude_prefixes:
+    for prefix in (AMPLITUDE_ARCHITECTURE,JOINT_ROUTER_ARCHITECTURE):
         for expert in ('mlp', 'linear'):
             for norm in ('_ln192', '_no_ln192'):
                 activations[prefix + '_' + expert + norm] = 'relu'
@@ -430,7 +414,7 @@ def load_lightgen(path,device='cpu'):
         config.setdefault('visual_output_norm', True)
         if config['readout_mode'] != 'scalar' or not config['visual_output_norm']:
             raise ValueError('Historical scalar architecture conflicts with its configuration')
-    elif architecture.startswith(tuple(prefix + '_' for prefix in amplitude_prefixes)):
+    elif architecture.startswith((AMPLITUDE_ARCHITECTURE + '_',JOINT_ROUTER_ARCHITECTURE + '_')):
         expected_norm = not architecture.endswith('_no_ln192')
         expected_expert = 'linear' if '_linear_' in architecture else 'mlp'
         if (config.get('readout_mode') != 'five_levels'
@@ -438,19 +422,14 @@ def load_lightgen(path,device='cpu'):
                 or config.get('expert_mode') != expected_expert
                 or config.get('orm_mode') != 'amplitude'):
             raise ValueError('Amplitude architecture conflicts with its configuration')
-        expected_input = ('all_tokens' if architecture.startswith(
-            (JOINT_ROUTER_ARCHITECTURE + '_', DIRECT_PHASE_ARCHITECTURE + '_')) else 'visual')
+        expected_input = 'all_tokens' if architecture.startswith(JOINT_ROUTER_ARCHITECTURE+'_') else 'visual'
         if config.get('fusion_router_input','visual') != expected_input:
             raise ValueError('Fusion router input conflicts with its architecture identity')
     else:
         expected_norm = architecture == FIVE_LEVEL_ARCHITECTURE + '_ln192'
         if config.get('readout_mode') != 'five_levels' or config.get('visual_output_norm') != expected_norm:
             raise ValueError('Five-level architecture conflicts with its configuration')
-    expected_phase = 'direct' if architecture.startswith(DIRECT_PHASE_ARCHITECTURE + '_') else 'bounded'
-    config.setdefault('phase_parameterization', expected_phase)
-    if config['phase_parameterization'] != expected_phase:
-        raise ValueError('Phase parameterization conflicts with its architecture identity')
-    if not architecture.startswith(tuple(prefix + '_' for prefix in amplitude_prefixes)):
+    if not architecture.startswith((AMPLITUDE_ARCHITECTURE + '_',JOINT_ROUTER_ARCHITECTURE + '_')):
         config.setdefault('expert_mode', 'mlp')
         config.setdefault('orm_mode', 'legacy_energy')
         if config['expert_mode'] != 'mlp' or config['orm_mode'] != 'legacy_energy':

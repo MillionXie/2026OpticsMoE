@@ -1,6 +1,7 @@
 {
-  "description": "Exact-zero phase, random electronic initialization, staged optimization",
+  "description": "Zero raw parameters with original sigmoid, physical phase pi, staged optimization",
   "base": {
+    "raw_phase_initialization": "zeros",
     "seed": 307,
     "epochs": 150,
     "batch_fields": 8,
@@ -59,8 +60,7 @@
       "distance_m": 0.1,
       "cutoff_deg": 0.5,
       "canvas": 518,
-      "active": 478,
-      "phase_parameterization": "direct"
+      "active": 478
     },
     "minimum_learning_rate_ratio": 0.15,
     "phase_weight_decay": 0.0,

@@ -175,6 +175,10 @@ def train(args):
     mc=ModelConfig(**cfg.get('model',{}))
     if mc.prompt_length!=len(payload['prompt']):raise ValueError('Prompt length mismatch')
     model=LightGenTemporal(mc);model.front.load_state_dict(small_front['front'],strict=True)
+    if cfg.get('raw_phase_initialization') == 'zeros' and not (args.initialize or args.paper_initialize):
+        with torch.no_grad():
+            model.frame_global.raw_global_phase.zero_()
+            model.video_global.raw_global_phase.zero_()
     model.set_prompt(payload['prompt'])
     train_idx=[i for i,s in enumerate(payload['splits']) if s=='train']
     train_y=payload['target'][train_idx]
@@ -265,6 +269,9 @@ def train(args):
     metadata['initialization']=initialization
     metadata['initial_phase_statistics'] = {
         name:phase_statistics(getattr(model,name)) for name in ('frame_global','video_global')}
+    metadata['initial_raw_phase_maximum_absolute_value'] = {
+        name:float(getattr(model,name).raw_global_phase.detach().abs().max())
+        for name in ('frame_global','video_global')}
     metadata['frozen_parameter_names']=frozen_parameters
     metadata['optimization_parameters']=sum(p.numel() for p in model.parameters() if p.requires_grad)
     metadata['initial_parameter_SHA256'] = {

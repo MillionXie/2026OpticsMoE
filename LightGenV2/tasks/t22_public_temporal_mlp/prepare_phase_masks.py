@@ -42,15 +42,13 @@ def main():
         for name in ('frame_global','video_global'):
             stage = getattr(model,name)
             audit[name] = {'before':phase_statistics(stage)}
-            phase = getattr(parent,name).phase()
+            phase = stage.phase()
             initialization = config['phase_initialization'].get(name,config['phase_initialization'])
-            if initialization['kind'] == 'zero' and cfg.phase_parameterization != 'direct':
-                raise ValueError('Exact zero initialization requires direct phase parameters')
-            if initialization['kind'] != 'keep':
+            if initialization['kind'] == 'raw_zero':
+                stage.raw_global_phase.zero_()
+            elif initialization['kind'] != 'keep':
                 phase = initialize_phase(phase,initialization,cfg)
-            if (initialization['kind'] != 'keep'
-                    or cfg.phase_parameterization != parent.cfg.phase_parameterization):
-                stage.raw_global_phase.copy_(phase_to_raw(phase,cfg.phase_parameterization))
+                stage.raw_global_phase.copy_(phase_to_raw(phase))
             audit[name]['after'] = phase_statistics(stage)
     parent_state = parent.state_dict()
     changed = [name for name,value in model.state_dict().items()

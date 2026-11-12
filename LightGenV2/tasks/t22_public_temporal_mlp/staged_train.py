@@ -1,4 +1,4 @@
-"""Run the declared zero-phase training stages through the existing trainer."""
+"""Run staged training from zero raw parameters in the original sigmoid model."""
 from __future__ import annotations
 
 import argparse
@@ -34,8 +34,8 @@ def main():
     parser.add_argument('--max-wait-seconds', type=int, default=3600)
     args = parser.parse_args()
     profile = json.loads(args.config.read_text('utf-8'))
-    if profile['base']['model']['phase_parameterization'] != 'direct':
-        raise ValueError('This workflow requires exact-zero direct phase initialization')
+    if profile['base'].get('raw_phase_initialization') != 'zeros':
+        raise ValueError('This workflow requires zero initialization of raw phase parameters')
     args.out = args.out.resolve()
     args.out.mkdir(parents=True, exist_ok=False)
     (args.out / 'configs').mkdir()
@@ -48,7 +48,7 @@ def main():
         'pid': os.getpid(),
         'source_commit': os.environ.get('LIGHTGEN_SOURCE_COMMIT', commit),
         'electronic_initialization': 'random',
-        'phase_initialization': 'exact zero in both global stages',
+        'phase_initialization': 'raw parameters zero, physical phase pi in both global stages',
         'fixed_front': 'extracted Qwen patch, position and prompt buffers',
     })
     visible = os.environ.get('CUDA_VISIBLE_DEVICES')
