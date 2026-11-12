@@ -11,6 +11,7 @@ from ..run import save_checkpoint, selection_score, router_regularization
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
 from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support
+from ..training_policy import freeze_parameters
 
 
 class Contracts(unittest.TestCase):
@@ -42,6 +43,18 @@ class Contracts(unittest.TestCase):
         visual,_=router_regularization({'frame':routes['frame']},valid)
         for name in combined:
             self.assertTrue(torch.allclose(scaled[name]-combined[name],visual[name],atol=1e-6))
+
+    def test_training_freeze_is_checked_and_preserves_forward(self):
+        cfg=ModelConfig(width=8,router_hidden=8,router_noise=0)
+        model=LightGenTemporal(cfg).eval()
+        value=torch.randn(1,16,4,49,1024)
+        before=model.frame_router(model.vision_adapter(value))['weights']
+        frozen=freeze_parameters(model,['vision_adapter','frame_router'])
+        self.assertTrue(frozen)
+        self.assertTrue(all(not p.requires_grad for n,p in model.named_parameters() if n in frozen))
+        after=model.frame_router(model.vision_adapter(value))['weights']
+        self.assertTrue(torch.equal(before,after))
+        with self.assertRaises(ValueError):freeze_parameters(model,['missing_module'])
 
     def test_native_tail_padding_matches_global_input_order(self):
         def decode(index):

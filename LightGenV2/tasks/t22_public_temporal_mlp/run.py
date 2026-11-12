@@ -23,10 +23,12 @@ if __package__:
     from .model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
     from .phase_regularization import model_phase_penalties, phase_statistics
+    from .training_policy import freeze_parameters
 else:
     from model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from data import load_inputs, groups, batch, sha256, attach_train_soft_targets
     from phase_regularization import model_phase_penalties, phase_statistics
+    from training_policy import freeze_parameters
 
 ROOT=Path(__file__).resolve().parent
 
@@ -218,8 +220,11 @@ def train(args):
     if args.device.startswith('cuda') and not args.allow_shared_gpu:
         admission=ensure_idle_gpu()  # Recheck after cache/hash work, before CUDA allocation.
     model=model.to(args.device)
+    frozen_parameters=freeze_parameters(model,cfg.get('frozen_parameter_prefixes',[]))
     phase=[];electronic=[]
     for name,param in model.named_parameters():
+        if not param.requires_grad:
+            continue
         (phase if name.endswith('raw_global_phase') else electronic).append(param)
     parameter_groups = [{'params':electronic,'lr':cfg['learning_rate']},
                         {'params':phase,'lr':cfg['phase_learning_rate']}]
@@ -244,6 +249,8 @@ def train(args):
               'gpu_admission':admission,'command':sys.argv,'pid':os.getpid(),
               'model_parameters':sum(p.numel() for p in model.parameters()),'model_config':asdict(mc)}
     metadata['initialization']=initialization
+    metadata['frozen_parameter_names']=frozen_parameters
+    metadata['optimization_parameters']=sum(p.numel() for p in model.parameters() if p.requires_grad)
     metadata['initial_parameter_SHA256'] = {
         name: hashlib.sha256(value.detach().cpu().contiguous().numpy().tobytes()).hexdigest()
         for name, value in model.named_parameters()}
