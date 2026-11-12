@@ -106,7 +106,10 @@ def verify_manifest(directory):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out',type=Path,default=ROOT/'releases/current')
+    parser.add_argument('--readme-pdf',type=Path,help='PDF reading edition of the public README')
     args=parser.parse_args()
+    if args.readme_pdf is not None and (args.readme_pdf.suffix.lower() != '.pdf' or not args.readme_pdf.is_file()):
+        raise ValueError('The README reading edition must be an existing PDF file')
     output=args.out.resolve()
     release_root=(ROOT/'releases').resolve()
     if output.parent!=release_root or output.name!='current':
@@ -123,7 +126,11 @@ def main():
         target=stage/name
         target.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(ROOT/name,target)
-    (stage/'README.md').write_text((ROOT/'README.md').read_text('utf-8-sig').split('\n## Author workspace',1)[0],'utf-8')
+    readme = (ROOT/'README.md').read_text('utf-8-sig').split('\n## Author workspace',1)[0]
+    readme = readme.replace('](docs/MODEL_CARD.md)', '](MODEL_CARD.md)')
+    (stage/'README.md').write_text(readme, 'utf-8')
+    if args.readme_pdf is not None:
+        shutil.copyfile(args.readme_pdf, stage/'README.pdf')
     shutil.copyfile(ROOT/'docs/MODEL_CARD.md',stage/'MODEL_CARD.md')
     exported=export_public_checkpoint(source,stage/'weights/LightGen.pt')
     (stage/'configs').mkdir()
