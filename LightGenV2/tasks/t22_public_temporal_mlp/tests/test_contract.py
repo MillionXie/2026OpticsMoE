@@ -17,11 +17,24 @@ from ..training_policy import freeze_parameters,restrict_training_to
 from ..prepare_joint_router import expand_router
 from ..phase_plotting import phase_display_norm, phase_display_values
 from ..analyze_phase_effect import constant_modulation
+from ..analyze_global_ablation import identity_global, ablation_metrics
 
 
 class Contracts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):torch.set_num_threads(4)
+
+    def test_global_identity_bypass_preserves_token_shape(self):
+        tokens=torch.randn(2,16,4,49,8)
+        output,guard=identity_global(tokens)
+        self.assertIs(output,tokens)
+        self.assertEqual(tuple(guard.shape),())
+        self.assertEqual(float(guard),0.)
+
+    def test_constant_ablation_reports_undefined_correlation(self):
+        metrics=ablation_metrics([1.,1.],[0.,2.])
+        self.assertIsNone(metrics['srcc'])
+        self.assertEqual(metrics['rmse'],1.)
 
     def test_router_exactly_top2_and_l1(self):
         cfg=ModelConfig(width=8,router_hidden=8)
