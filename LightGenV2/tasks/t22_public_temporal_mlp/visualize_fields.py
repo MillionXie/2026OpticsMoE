@@ -22,9 +22,11 @@ from torch.nn import functional as F
 if __package__:
     from .infer import frames_from_video, iter_video_fields
     from .model import load_lightgen
+    from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 else:
     from infer import frames_from_video, iter_video_fields
     from model import load_lightgen
+    from phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 
 ROOT = Path(__file__).resolve().parent
 
@@ -149,7 +151,7 @@ def trace(model, vision):
         patches, processed_mosaic = detector_regions(stage, values['intensity'])
         tensor = torch.from_numpy(patches)
         processed = torch.log1p((tensor / tensor.mean((-2, -1), keepdim=True).clamp_min(1e-6)).clamp_max(8))
-        token_count = 49 if stage.frame_level else 42
+        token_count = 49 if stage.frame_level else 4+stage.cfg.prompt_length
         pooled = F.adaptive_avg_pool2d(processed.reshape(-1, 1, *patches.shape[-2:]), (token_count, 96))[:, 0]
         pooling_error = float((pooled - values['pooled']).abs().max())
         if pooling_error > 5e-5:
@@ -175,7 +177,7 @@ def plot_overview(stage, values, out):
     output_phase = np.where(intensity > intensity.max() * 1e-6, np.angle(propagated), np.nan)
     panels = [
         ('Incident amplitude |U|', values['incident_amplitude'], 'magma', {}),
-        ('Intended SLM phase', values['intended_phase'], 'twilight', {'vmin': 0, 'vmax': 2*np.pi}),
+        ('Intended SLM phase, asinh color scale', values['intended_phase'], 'twilight', {'norm': phase_display_norm()}),
         ('Post-ORM amplitude |V|', np.abs(modulated), 'magma', {}),
         ('Post-ORM phase arg(V)', input_phase, 'twilight', {'vmin': -np.pi, 'vmax': np.pi}),
         ('Detector intensity |O|², linear', intensity, 'inferno', {'vmin': 0, 'vmax': upper}),
@@ -187,13 +189,17 @@ def plot_overview(stage, values, out):
         artist = ax.imshow(array, cmap=cmap, interpolation='nearest', **limits)
         ax.add_patch(Rectangle((19.5, 19.5), 478, 478, fill=False, edgecolor='#46cbd5', lw=.8))
         ax.set(title=title, xlabel='x (pixel)', ylabel='y (pixel)')
-        fig.colorbar(artist, ax=ax, shrink=.75, pad=.02)
-    label = 'Frame global, 16 videos × 4 frames' if stage.frame_level else 'Video global, 16 video fields'
+        if title.startswith('Intended SLM phase'):
+            add_phase_colorbar(fig,artist,ax)
+        else:
+            fig.colorbar(artist, ax=ax, shrink=.75, pad=.02)
+    label = 'Vision global, 16 videos × 4 frames' if stage.frame_level else 'Vision-language global, 16 video fields'
     fig.suptitle(label + '\nSimulated fields from the selected linear PT; 518 canvas / 478 active', fontsize=15)
     fig.savefig(out, dpi=180)
     plt.close(fig)
     return {'intensity_display_upper_percentile': 99.8, 'intensity_display_upper': upper,
-            'log_intensity_display_lower': lower, 'phase_visibility_threshold_fraction': 1e-6}
+            'log_intensity_display_lower': lower, 'phase_visibility_threshold_fraction': 1e-6,
+            'SLM_phase_display':PHASE_DISPLAY}
 
 
 def plot_inputs(pixels, ids, out):
@@ -224,18 +230,18 @@ def plot_detail(pixels, values, result, slot, sample_id, out):
         artist = axes[1, frame].imshow(raw[frame], cmap='inferno', norm=LogNorm(low, high))
         axes[1, frame].set_title(f'Frame-global CCD region {frame+1}')
         fig.colorbar(artist, ax=axes[1, frame], shrink=.7)
-    routes = result['routing']['frame']['weights'][0, slot].cpu().numpy()
+    routes = result['routing']['frame']['probabilities'][0, slot].cpu().numpy()
     artist = axes[2, 0].imshow(routes, vmin=0, vmax=1, cmap='Blues')
-    axes[2, 0].set(title='Frame Top2 routing weights', xlabel='Expert', ylabel='Frame',
+    axes[2, 0].set(title='Vision softmax probabilities', xlabel='Expert', ylabel='Frame',
                    xticks=range(4), yticks=range(4))
     fig.colorbar(artist, ax=axes[2, 0], shrink=.7)
     video_raw = values['video']['detector_patches'][slot]
     artist = axes[2, 1].imshow(video_raw, cmap='inferno')
     axes[2, 1].set_title('Video-global CCD region, linear')
     fig.colorbar(artist, ax=axes[2, 1], shrink=.7)
-    weights = result['routing']['video']['weights'][0, slot].cpu().numpy()
+    weights = result['routing']['video']['probabilities'][0, slot].cpu().numpy()
     axes[2, 2].bar(range(4), weights, color='#3174a4')
-    axes[2, 2].set(title='Video Top2 routing weights', xlabel='Expert', ylim=(0, 1))
+    axes[2, 2].set(title='Fusion softmax probabilities', xlabel='Expert', ylim=(0, 1))
     probabilities = result['quality_probabilities'][0, slot].cpu().numpy()
     axes[2, 3].bar(range(5), probabilities, color='#3174a4')
     axes[2, 3].set(title=f'MOS = {float(result["prediction"][0, slot]):.4f}',
