@@ -1,24 +1,22 @@
 {
   "schema": 2,
-  "selection": "raw_zero_sigmoid_masks_with_fixed_trained_electronics",
+  "selection": "balanced_visual_router_and_finer_learned_masks",
   "run_id": "current",
-  "training_run_id": "raw_zero_staged_20261112/electronic_transfer/05_smooth_mask_only",
+  "training_run_id": "router_balance_20261112/08_finer_masks",
   "checkpoint": "runs/simulation/current/LightGen.pt",
-  "checkpoint_sha256": "410cb0fc67b199eafce500f3389b0524cca1aaa13da4fff1fe4d78399725ab2f",
+  "checkpoint_sha256": "8c34a360227e258f86acb738fbb0da02af59ab38430a52986df0a09e9beec359",
   "architecture": "t22_serial_top2_global2_five_levels_amplitude_v7_joint_router_linear_no_ln192",
   "model_parameters": 5732678,
   "optimized_parameters_in_selected_run": 394272,
-  "selected_epoch": 122,
+  "selected_epoch": 86,
+  "completed_epochs": 260,
   "fusion_router_tokens": 42,
   "fusion_router_input_width": 8064,
   "gate_normalization": "softmax_all4_top2_L1",
   "readout_hidden": 256,
   "initialization": {
-    "raw_phase_value": 0.0,
-    "physical_phase": "pi",
-    "parameterization": "2*pi*sigmoid(raw)",
-    "electronic_weights": "retained trained T22 weights",
-    "checkpoint_sha256": "e2d74b5c7d91878af7c33cce5786f00705fbf5929a6b0413c0eb838f7ed749d9"
+    "checkpoint_sha256": "752cf0b555aaab494d4be9787b7e05a49847f1142d807dedb20722e7f26b539b",
+    "kind": "continued trained masks after visual-router and expert balancing"
   },
   "evaluation": {
     "role": "original_TEST_development",
@@ -26,8 +24,9 @@
     "frames_per_video": 4,
     "videos_per_field": 16,
     "grouping": "original_manifest_order_with_cyclic_tail_padding",
-    "srcc": 0.7876236295014944,
-    "slot_cycle_mean_srcc": 0.7824810667504165,
-    "slot_cycle_minimum_srcc": 0.7778999434536631
+    "minimum_requested_srcc": 0.79,
+    "srcc": 0.7991007778931448,
+    "slot_cycle_mean_srcc": 0.7901063063148197,
+    "slot_cycle_minimum_srcc": 0.7857706829711324
   }
 }

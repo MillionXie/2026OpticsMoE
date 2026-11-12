@@ -4,19 +4,19 @@
 
 ## 当前版本
 
-本轮沿用已训练的 T22 电子参数，将两级 `raw_global_phase` 全部置 0，再训练相位。相位映射为原来的 `2π·sigmoid(raw)`，初始物理相位为 π。
+本轮先优化视觉 router 与四个线性专家，使 Top2 选择份额接近均衡，再固定这部分参数，继续训练两级 global 相位。原始初始化沿用 `raw=0 → 2π·sigmoid(raw)=π`，本轮相位阶段从上一版已学习的 mask 继续优化。
 
-最终选中第 122 轮，完整预算为 200 轮。相对初始化，变化的模型张量为 `frame_global.raw_global_phase` 与 `video_global.raw_global_phase`。电子参数和前端 buffer 的逐张量核验保存在 `selection.json`。
+相位阶段完成 260 轮，选中第 86 轮。视觉 router 训练使用真实 Top2 选择次数反馈调整现有输出偏置，并用 TRAIN 上的专家混合输出和视频评分进行蒸馏。模型权重、初始化和逐张量核验保存在 `selection.json`，前序训练记录在 `training_stages/`。
 
 | 558 条原 TEST 开发评价条件 | SRCC |
 |---|---|
-| 当前学习到的两级相位 | 0.7876236295 |
-| 视觉相位替换为初始常相位 π | 0.7808204787 |
-| 图文融合相位替换为初始常相位 π | 0.7819602196 |
-| 两级相位同时替换为 π | 0.7776207227 |
-| 两级相位同时替换为各 tile 的照明区域圆均值 | 0.7777879386 |
+| 当前学习到的两级相位 | 0.7991007779 |
+| 视觉相位替换为常相位 π | 0.7940065649 |
+| 图文融合相位替换为常相位 π | 0.7908598884 |
+| 两级相位同时替换为 π | 0.7891170378 |
+| 两级相位同时替换为各 tile 的照明区域圆均值 | 0.7889792107 |
 
-原仿真参考 SRCC 为 0.8043868643，本轮绝对差为 0.0167632348，处于既定 ±0.02 范围。电子参数全随机初始化的对照最好为 0.7615998407。对照及其他尝试已归档。
+原仿真参考 SRCC 为 0.8043868643，本轮绝对差为 0.0052860864，达到本轮 SRCC ≥0.79 的要求。
 
 ## 先看这些文件
 
@@ -32,8 +32,9 @@
 | `runs/simulation/current/routing/` | 专家选择次数及逐槽位统计 |
 | `runs/simulation/current/metadata.json` | 实际配置、训练源码、平台及数据身份 |
 | `runs/simulation/current/history.json`、`logs/` | 训练曲线与原始日志 |
+| `runs/simulation/current/training_stages/` | 当前模型前序 router／专家训练的配置、指标和日志 |
 | `runs/simulation/current/validation/` | 复算、视频入口与初始化核验 |
-| `assets/initialization/initialization.pt` | 两级 raw 参数归零后的实际初始化 |
+| `assets/initialization/initialization.pt` | 本轮相位阶段的实际初始化，包含已均衡训练的 router 和专家 |
 
 ```text
 configs/
@@ -57,6 +58,7 @@ runs/simulation/current/
   test_predictions.csv
   selection.json
   logs/
+  training_stages/
   fields/
   routing/
   routing_example/
@@ -93,15 +95,17 @@ runs/simulation/current/
 
 ## 相位训练与实际改变量
 
-本轮仅优化两级相位，共 394,272 个原始相位参数。模型总参数为 5,732,678。优化使用空间高斯梯度平滑、跨视频槽位的部分梯度平均，以及更新后的轻度原始参数平滑。完整数值与训练损失权重见 `configs/train.json`。
+最后阶段优化两级相位，共 394,272 个原始相位参数。模型总参数为 5,732,678。此前视觉 router 与线性专家的优化记录在 `training_stages/`。`configs/train.json` 保存最后相位阶段的实际配置。
+
+上一版采用 σ=6 像素的梯度平滑、σ=0.35 的参数平滑，以及 75% 的跨槽位梯度平均。这些设置偏向大块、相似的相位结构。本轮分别减弱至 2.5 像素、0.15 和 50%，同时保留相邻相位及曲率约束。视觉照明区由四个 27×27 帧区域构成，图文融合照明区为中央 42×56，局部训练纹理主要出现在这些区域。
 
 | 统计，覆盖全部 16 个相位 tile | 视觉 | 图文融合 |
 |---|---|---|
-| 相对初始 π 的相位 RMS 改变量，rad | 0.737768 | 0.309679 |
-| 照明区域内的 RMS 改变量，rad | 0.780761 | 0.504561 |
-| 照明区域相邻像素相位差 RMS，rad | 0.088143 | 0.058931 |
+| 相对原始常相位 π 的相位 RMS 改变量，rad | 0.806523 | 0.382342 |
+| 照明区域内相对 π 的 RMS 改变量，rad | 0.876972 | 0.673452 |
+| 照明区域相邻像素相位差 RMS，rad | 0.141774 | 0.140192 |
 
-`figures/phase_training_update.png` 显示实际初始化、训练后的相位与 wrapped 差值，原始数组在 `fields/phase_training_arrays.npz`。消融时固定电子权重、传播、探测与输入，替换指定阶段的相位。`pi_*` 表示物理相位 π，`zero_*` 表示物理相位 0，`flat_*` 表示各 tile 照明区域的圆均值。
+`figures/phase_training_update.png` 比较本轮相位优化前后的 mask，并显示 wrapped 差值，原始数组在 `fields/phase_training_arrays.npz`。消融时固定电子权重、传播、探测与输入，替换指定阶段的相位。`pi_*` 表示物理相位 π，`zero_*` 表示物理相位 0，`flat_*` 表示各 tile 照明区域的圆均值。
 
 ## 运行
 
@@ -121,7 +125,7 @@ pip install -r requirements-visualization.txt
 python render_figures.py --paths paths.local.json --device cpu
 ```
 
-`paths.local.json` 保存本机缓存路径。重绘脚本核对权重、数据清单和示例图片的身份，图输出到 `runs/simulation/current/figures/`。全部图使用 Arial，正文、坐标、刻度和图例为 7 pt，标题为 8 pt，PNG 为 300 dpi。相位显示使用共同的单调 asinh 映射，范围为 0–2π，仅标注 0、π、2π。
+`paths.local.json` 保存本机缓存路径。重绘脚本核对权重、数据清单和示例图片的身份，图输出到 `runs/simulation/current/figures/`。全部图使用 Arial，正文、坐标、刻度和图例为 7 pt，标题为 8 pt，PNG 为 300 dpi。相位通过 `atan2(sinφ, cosφ)` 显示在 −π 至 π，采用线性色标，刻度为 −π、0、π。
 
 | 图 | 内容 |
 |---|---|
@@ -135,15 +139,22 @@ python render_figures.py --paths paths.local.json --device cpu
 | `global_layout.png` | 两级 8×8 与 4×4 输入区布局 |
 | `robustness_curves.png` | 相位位移、CCD 位移和相位噪声测试 |
 
-Optical expert share (%) 为某专家被 Top2 选中的次数除以全部选中次数。视觉阶段 E1/E2/E3/E4 的份额为 38.87% / 13.37% / 8.53% / 39.22%，当前仍偏向 E1/E4。
+Optical expert share (%) 为某专家被 Top2 选中的次数除以全部选中次数。
+
+| 阶段 | E1 | E2 | E3 | E4 |
+|---|---|---|---|---|
+| 视觉 | 26.79% | 25.09% | 23.34% | 24.78% |
+| 图文融合 | 21.95% | 28.05% | 27.51% | 22.49% |
+
+视觉阶段共 2232 次路由、4464 次 Top2 选择，各专家次数为 1196、1120、1042、1106。逐视频、逐帧及逐槽位记录保存在 `routing/`。
 
 ## 评价与日志
 
 沿用 2250 TRAIN 与 558 条原 TEST。原 TEST 用于开发选模，完整 558 条主指标来自缓存特征复算。固定原输入顺序，每 16 视频组场，尾组有 2 条补齐输入，指标仅统计 558 条真实视频。
 
-16 次循环换位的平均 SRCC 为 0.7824810668，最低为 0.7778999435。26 项鲁棒性条件为数值扰动测试。
+16 次循环换位的平均 SRCC 为 0.7901063063，最低为 0.7857706830。26 项鲁棒性条件为数值扰动测试。8 bit 相位量化的 SRCC 为 0.7989927886，检测面平移 2 像素条件中的最低值为 0.7823957337。
 
-558 条原始视频已通过独立视频入口完整复算，SRCC 为 0.7875790110，记录保存在 `validation/native_full_558/`。同一服务器 CPU 的缓存输入复算为 0.7876337826，与训练平台保存的逐视频预测最大 MOS 差为 0.000031。视频输入与缓存输入的平均绝对 MOS 差为 0.006785，最大为 0.061352。首个 16 视频光场还通过了本机 `infer.py` 命令行入口核验，记录保存在 `validation/native_first_field/`。
+独立视频入口与缓存输入的逐视频核验记录保存在 `validation/`，包括权重和输入 SHA256、同一光场的预测对照及运行环境。
 
 选定相位训练在 Windows、Python 3.11.9、PyTorch 2.11.0+cu128、RTX 4070 Laptop 上完成。训练源码提交、命令、缓存 SHA、初始化 SHA 和优化参数名单保存在 `metadata.json`，最佳轮次与独立 PT 的对应关系保存在 `selection.json`。
 
@@ -151,11 +162,11 @@ Optical expert share (%) 为某专家被 Top2 选中的次数除以全部选中�
 
 ```powershell
 $env:CUDA_VISIBLE_DEVICES='0'
-python run.py --config configs/train.json --paths paths.local.json --initialize assets/initialization/initialization.pt --train-soft-targets assets/training_only_teacher_predictions.pt --out runs/simulation/reproduce_raw_zero --device cuda --allow-shared-gpu
+python run.py --config configs/train.json --paths paths.local.json --initialize assets/initialization/initialization.pt --train-soft-targets assets/training_only_teacher_predictions.pt --out runs/simulation/reproduce_finer_masks --device cuda --allow-shared-gpu
 ```
 
 该示例会在运行元数据中记录桌面 GPU 的非独占资源模式。复算与可视化使用各自保存的完整分组及输入顺序。
 
 ## 归档
 
-此前版本与其他训练尝试保存在 `E:\2026LightGen2Data\_internal_archives\t22_raw_zero_20261112\`，包含 ZIP、逐文件 SHA256 与选择回执。活动目录统一使用当前模型及相应数据。
+此前版本与其他训练尝试保存在 `E:\2026LightGen2Data\_internal_archives\t22_router_balance_20261112\`，包含上一版、此次训练尝试、逐文件 SHA256 与选择回执。活动结果统一位于 `runs/simulation/current/`。
