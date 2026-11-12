@@ -43,7 +43,14 @@ ROOT=_paths.ROOT
 def write(path,value):
     path=Path(path);temp=path.with_suffix(path.suffix+'.tmp')
     temp.write_text(json.dumps(value,indent=2,ensure_ascii=False,allow_nan=False)+'\n','utf-8')
-    temp.replace(path)
+    for attempt in range(8):
+        try:
+            temp.replace(path)
+            return
+        except PermissionError:
+            if attempt == 7:
+                raise
+            time.sleep(.25*(attempt+1))
 
 
 def save_checkpoint(path,payload):
