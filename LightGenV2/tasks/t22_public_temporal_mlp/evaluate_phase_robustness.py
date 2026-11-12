@@ -22,11 +22,13 @@ if __package__:
     from .model import load_lightgen, translated, Propagation
     from .phase_regularization import phase_statistics
     from .run import evaluate
+    from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 else:
     from data import load_inputs, sha256
     from model import load_lightgen, translated, Propagation
     from phase_regularization import phase_statistics
     from run import evaluate
+    from phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 
 
 def conditions():
@@ -110,10 +112,10 @@ def plot_masks(records,phases,out):
     fig,axes=plt.subplots(2,len(records),figsize=(4*len(records),7),squeeze=False,layout='constrained')
     for column,(label,value) in enumerate(phases.items()):
         for row,name in enumerate(('frame_global','video_global')):
-            image=axes[row,column].imshow(value[name],cmap='twilight',vmin=0,vmax=2*np.pi)
+            image=axes[row,column].imshow(value[name],cmap='twilight',norm=phase_display_norm())
             rough=records[label]['phase_statistics'][name]['curvature_penalty']
             axes[row,column].set_title(f'{label}\n{name.replace("_"," ")}, curvature {rough:.3g}')
-            fig.colorbar(image,ax=axes[row,column],shrink=.7,label='Phase (rad)')
+            add_phase_colorbar(fig,image,axes[row,column])
     fig.suptitle('Phase at physical video slot 0\nCurvature is averaged over all 16 phase tiles', fontsize=14)
     fig.savefig(out,dpi=180)
     plt.close(fig)
@@ -164,6 +166,7 @@ def main():
         'data_identity':payload['identity'],'phase_shift_directions':['+y','-y','+x','-x'],
         'noise_trials':3,'noise_is_static_across_dataset':True,'same_noise_seeds_for_all_checkpoints':True,
         'conditions_are_numerical_assumptions':True,'hardware_measurement':False,
+        'phase_display':PHASE_DISPLAY,
         'scope':'phase-mask/CCD shifts, independent phase noise, 8-bit numerical phase quantization, distance +/-1%',
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
         'source_SHA256':{name:sha256(root/name) for name in ('model.py','evaluate_phase_robustness.py','phase_regularization.py')},

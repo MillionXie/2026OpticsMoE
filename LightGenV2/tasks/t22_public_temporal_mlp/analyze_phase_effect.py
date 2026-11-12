@@ -19,11 +19,13 @@ if __package__:
     from .model import load_lightgen
     from .phase_regularization import phase_statistics, illumination_support
     from .run import evaluate, write
+    from .phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 else:
     from data import load_inputs, sha256
     from model import load_lightgen
     from phase_regularization import phase_statistics, illumination_support
     from run import evaluate, write
+    from phase_plotting import phase_display_norm,add_phase_colorbar,PHASE_DISPLAY
 
 
 STAGES = ('frame_global','video_global')
@@ -64,9 +66,9 @@ def plot_phases(records,arrays,path):
             centered = arrays[label][name+'_centered'][0]
             spread = records[label]['phase_statistics'][name]['mean_illuminated_circular_std_rad']
             title = 'Vision' if stage_index==0 else 'Vision-language'
-            artist=axes[row,column].imshow(phase,cmap='twilight',vmin=0,vmax=2*math.pi)
+            artist=axes[row,column].imshow(phase,cmap='twilight',norm=phase_display_norm())
             axes[row,column].set_title(f'{label}: {title}\nActual phase, slot 0')
-            fig.colorbar(artist,ax=axes[row,column],shrink=.7,label='Phase (rad)')
+            add_phase_colorbar(fig,artist,axes[row,column])
             artist=axes[row+1,column].imshow(centered,cmap='RdBu_r',vmin=-limit,vmax=limit)
             axes[row+1,column].set_title(f'Phase relative to illuminated circular mean\nActive circular SD, mean of 16 slots: {spread:.4f} rad')
             fig.colorbar(artist,ax=axes[row+1,column],shrink=.7,label='Relative phase (rad)')
@@ -124,6 +126,7 @@ def main():
           'role':'post_training_phase_pattern_ablation_on_development_data',
           'electronic_weights_fixed':True,'constant_phase':'circular mean within each geometrically illuminated tile',
           'zero_phase':'phase zero in both stages, modulation recomputed by the existing model rule',
+          'phase_display':PHASE_DISPLAY,
           'hardware_measurement':False,'script_SHA256':sha256(Path(__file__)),
           'files':{p.name:sha256(p) for p in args.out.iterdir() if p.is_file()}})
 

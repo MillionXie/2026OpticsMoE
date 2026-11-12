@@ -19,6 +19,7 @@ GELU_ARCHITECTURE = 't22_serial_mlp_top2_global2_relu_original_merger_separate_i
 RELU_ARCHITECTURE = GELU_ARCHITECTURE + '_allrelu'
 FIVE_LEVEL_ARCHITECTURE = RELU_ARCHITECTURE + '_five_levels'
 AMPLITUDE_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v6'
+JOINT_ROUTER_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v7_joint_router'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -27,6 +28,7 @@ class ModelConfig:
     width: int = 192
     expert_hidden: int = 384
     router_hidden: int = 128
+    fusion_router_input: str = 'visual'
     readout_hidden: int = 1024
     expert_mode: str = 'mlp'
     orm_mode: str = 'legacy_energy'
@@ -67,6 +69,10 @@ class ModelConfig:
             raise ValueError('Invalid model width/temperature')
         if self.expert_mode not in ('mlp', 'linear'):
             raise ValueError('Unsupported expert mode')
+        if self.fusion_router_input not in ('visual','all_tokens'):
+            raise ValueError('Unsupported fusion router input')
+        if self.fusion_router_input == 'all_tokens' and self.orm_mode != 'amplitude':
+            raise ValueError('The joint router requires the current amplitude architecture')
         if not math.isfinite(self.phase_noise_std) or self.phase_noise_std < 0:
             raise ValueError('Phase noise standard deviation must be finite and nonnegative')
         if self.orm_mode not in ('legacy_energy', 'amplitude'):
@@ -295,7 +301,8 @@ class LightGenTemporal(nn.Module):
         self.frame_position=nn.Parameter(torch.zeros(1,1,4,cfg.width))
         self.sequence_position=nn.Parameter(torch.zeros(1,64,cfg.width))
         nn.init.normal_(self.frame_position,std=.02);nn.init.normal_(self.sequence_position,std=.02)
-        self.video_router=Router(cfg,4);self.video_experts=Experts(cfg)
+        router_tokens = 4+cfg.prompt_length if cfg.fusion_router_input == 'all_tokens' else 4
+        self.video_router=Router(cfg,router_tokens);self.video_experts=Experts(cfg)
         self.video_global=GlobalStage(cfg,False)
         self.readout=nn.Sequential(nn.Flatten(-2),nn.Linear((4+cfg.prompt_length)*cfg.width,cfg.readout_hidden),
             mlp_activation(cfg),nn.Linear(cfg.readout_hidden,5 if cfg.readout_mode == 'five_levels' else 1))
@@ -345,7 +352,8 @@ class LightGenTemporal(nn.Module):
         prompt=prompt[None,None].expand(len(frames),16,-1,-1)
         sequence=torch.cat((frames,prompt),dim=-2)
         sequence=sequence+self.sequence_position[:,None,:sequence.shape[-2]]
-        r2=self.video_router(sequence[...,:4,:])
+        router_input = sequence if self.cfg.fusion_router_input == 'all_tokens' else sequence[...,:4,:]
+        r2=self.video_router(router_input)
         sequence=self.video_experts(sequence,r2['weights'])
         sequence,g2=self.video_global(sequence)
         output = self.readout(sequence)
@@ -377,6 +385,9 @@ class LightGenTemporal(nn.Module):
             suffix = '_ln192' if self.cfg.visual_output_norm else '_no_ln192'
             architecture = AMPLITUDE_ARCHITECTURE + '_' + self.cfg.expert_mode + suffix
             schema = 6
+            if self.cfg.fusion_router_input == 'all_tokens':
+                architecture = JOINT_ROUTER_ARCHITECTURE + '_' + self.cfg.expert_mode + suffix
+                schema = 7
         return {'schema':schema, 'architecture':architecture,
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
@@ -387,9 +398,10 @@ def load_lightgen(path,device='cpu'):
     activations = {GELU_ARCHITECTURE: 'gelu', RELU_ARCHITECTURE: 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_ln192': 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_no_ln192': 'relu'}
-    for expert in ('mlp', 'linear'):
-        for norm in ('_ln192', '_no_ln192'):
-            activations[AMPLITUDE_ARCHITECTURE + '_' + expert + norm] = 'relu'
+    for prefix in (AMPLITUDE_ARCHITECTURE,JOINT_ROUTER_ARCHITECTURE):
+        for expert in ('mlp', 'linear'):
+            for norm in ('_ln192', '_no_ln192'):
+                activations[prefix + '_' + expert + norm] = 'relu'
     if architecture not in activations:
         raise ValueError('Checkpoint uses a different T22 prototype architecture. Use its recorded Git version.')
     config = dict(payload['config'])
@@ -398,7 +410,7 @@ def load_lightgen(path,device='cpu'):
         config.setdefault('visual_output_norm', True)
         if config['readout_mode'] != 'scalar' or not config['visual_output_norm']:
             raise ValueError('Historical scalar architecture conflicts with its configuration')
-    elif architecture.startswith(AMPLITUDE_ARCHITECTURE + '_'):
+    elif architecture.startswith((AMPLITUDE_ARCHITECTURE + '_',JOINT_ROUTER_ARCHITECTURE + '_')):
         expected_norm = not architecture.endswith('_no_ln192')
         expected_expert = 'linear' if '_linear_' in architecture else 'mlp'
         if (config.get('readout_mode') != 'five_levels'
@@ -406,11 +418,14 @@ def load_lightgen(path,device='cpu'):
                 or config.get('expert_mode') != expected_expert
                 or config.get('orm_mode') != 'amplitude'):
             raise ValueError('Amplitude architecture conflicts with its configuration')
+        expected_input = 'all_tokens' if architecture.startswith(JOINT_ROUTER_ARCHITECTURE+'_') else 'visual'
+        if config.get('fusion_router_input','visual') != expected_input:
+            raise ValueError('Fusion router input conflicts with its architecture identity')
     else:
         expected_norm = architecture == FIVE_LEVEL_ARCHITECTURE + '_ln192'
         if config.get('readout_mode') != 'five_levels' or config.get('visual_output_norm') != expected_norm:
             raise ValueError('Five-level architecture conflicts with its configuration')
-    if not architecture.startswith(AMPLITUDE_ARCHITECTURE + '_'):
+    if not architecture.startswith((AMPLITUDE_ARCHITECTURE + '_',JOINT_ROUTER_ARCHITECTURE + '_')):
         config.setdefault('expert_mode', 'mlp')
         config.setdefault('orm_mode', 'legacy_energy')
         if config['expert_mode'] != 'mlp' or config['orm_mode'] != 'legacy_energy':

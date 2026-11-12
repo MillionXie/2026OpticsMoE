@@ -23,12 +23,12 @@ if __package__:
     from .model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
     from .phase_regularization import model_phase_penalties, phase_statistics
-    from .training_policy import freeze_parameters
+    from .training_policy import freeze_parameters,restrict_training_to
 else:
     from model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from data import load_inputs, groups, batch, sha256, attach_train_soft_targets
     from phase_regularization import model_phase_penalties, phase_statistics
-    from training_policy import freeze_parameters
+    from training_policy import freeze_parameters,restrict_training_to
 
 ROOT=Path(__file__).resolve().parent
 
@@ -220,7 +220,12 @@ def train(args):
     if args.device.startswith('cuda') and not args.allow_shared_gpu:
         admission=ensure_idle_gpu()  # Recheck after cache/hash work, before CUDA allocation.
     model=model.to(args.device)
-    frozen_parameters=freeze_parameters(model,cfg.get('frozen_parameter_prefixes',[]))
+    if cfg.get('trainable_parameter_prefixes'):
+        if cfg.get('frozen_parameter_prefixes'):
+            raise ValueError('Choose a trainable whitelist or a frozen list')
+        frozen_parameters=restrict_training_to(model,cfg['trainable_parameter_prefixes'])
+    else:
+        frozen_parameters=freeze_parameters(model,cfg.get('frozen_parameter_prefixes',[]))
     phase=[];electronic=[]
     for name,param in model.named_parameters():
         if not param.requires_grad:
@@ -229,7 +234,8 @@ def train(args):
     parameter_groups = [{'params':electronic,'lr':cfg['learning_rate']},
                         {'params':phase,'lr':cfg['phase_learning_rate']}]
     if 'router_learning_rate' in cfg:
-        router_parameters = list(model.frame_router.parameters())+list(model.video_router.parameters())
+        router_parameters = [param for module in (model.frame_router,model.video_router)
+                             for param in module.parameters() if param.requires_grad]
         router_ids = {id(param) for param in router_parameters}
         parameter_groups[0]['params'] = [param for param in electronic if id(param) not in router_ids]
         parameter_groups.append({'params':router_parameters,'lr':cfg['router_learning_rate']})

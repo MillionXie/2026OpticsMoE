@@ -23,13 +23,11 @@ else:
 
 def routing_bar(ax,probabilities,gates):
     x=np.arange(4)
-    ax.bar(x-.18,probabilities*100,width=.36,color='#eeeeee',edgecolor='#666666',
-           label='All-four softmax')
-    ax.bar(x+.18,gates*100,width=.36,color=COLORS,label='Top2 after L1 renormalization')
-    for position,value in zip(x+.18,gates*100):
-        if value>0:
-            ax.text(position,value+2,f'{value:.1f}',ha='center',fontsize=9)
-    ax.set(xticks=x,xticklabels=['E1','E2','E3','E4'],ylim=(0,105),ylabel='Weight (%)')
+    ax.bar(x,probabilities*100,width=.65,color=COLORS,
+           edgecolor=['#222222' if gate>0 else '#cccccc' for gate in gates])
+    for position,value in zip(x,probabilities*100):
+        ax.text(position,value+2,f'{value:.1f}',ha='center',fontsize=9)
+    ax.set(xticks=x,xticklabels=['E1','E2','E3','E4'],ylim=(0,105),ylabel='Softmax probability (%)')
     ax.spines[['top','right']].set_visible(False)
 
 
@@ -73,7 +71,6 @@ def main():
     ax=fig.add_subplot(grid[2,:2])
     routing_bar(ax,joint_probabilities,joint_gates)
     ax.set_title('Second-stage routing for this whole video')
-    ax.legend(frameon=False,fontsize=9)
     ax=fig.add_subplot(grid[2,2:]);ax.axis('off')
     ax.text(.02,.9,'First stage: four separate routing decisions\n'
             'Each decision gates all 49 tokens of one frame.\n\n'
@@ -83,7 +80,7 @@ def main():
             'Its two gates apply to all 42 sequence tokens.',
             ha='left',va='top',fontsize=11)
     fig.suptitle('One real input video, four frame decisions, one joint-stage decision\n'
-                 'Gray bars sum to 100%; the two nonzero colored bars also sum to 100%',fontsize=15)
+                 'Displayed bars are the all-four softmax probabilities; dark outlines indicate Top2',fontsize=15)
     args.out.mkdir(parents=True)
     fig.savefig(args.out/'routing_example.png',dpi=180)
     plt.close(fig)

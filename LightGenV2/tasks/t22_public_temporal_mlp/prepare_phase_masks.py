@@ -43,13 +43,16 @@ def main():
             stage = getattr(model,name)
             audit[name] = {'before':phase_statistics(stage)}
             phase = 2*math.pi*torch.sigmoid(stage.raw_global_phase)
-            initialized = initialize_phase(phase,config['phase_initialization'],cfg)
-            stage.raw_global_phase.copy_(phase_to_raw(initialized))
+            initialization = config['phase_initialization'].get(name,config['phase_initialization'])
+            if initialization['kind'] != 'keep':
+                initialized = initialize_phase(phase,initialization,cfg)
+                stage.raw_global_phase.copy_(phase_to_raw(initialized))
             audit[name]['after'] = phase_statistics(stage)
     parent_state = parent.state_dict()
     changed = [name for name,value in model.state_dict().items()
                if not torch.equal(value,parent_state[name])]
-    if changed != ['frame_global.raw_global_phase','video_global.raw_global_phase']:
+    allowed = {'frame_global.raw_global_phase','video_global.raw_global_phase'}
+    if not changed or not set(changed).issubset(allowed):
         raise ValueError('Unexpected tensors changed during phase initialization: '+str(changed))
     config['model'] = asdict(cfg)
     args.out.mkdir(parents=True)

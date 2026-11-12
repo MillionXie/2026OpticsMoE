@@ -11,7 +11,8 @@ from ..run import save_checkpoint, selection_score, router_regularization
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
 from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support, initialize_phase
-from ..training_policy import freeze_parameters
+from ..training_policy import freeze_parameters,restrict_training_to
+from ..prepare_joint_router import expand_router
 
 
 class Contracts(unittest.TestCase):
@@ -66,6 +67,40 @@ class Contracts(unittest.TestCase):
         after=model.frame_router(model.vision_adapter(value))['weights']
         self.assertTrue(torch.equal(before,after))
         with self.assertRaises(ValueError):freeze_parameters(model,['missing_module'])
+
+    def test_joint_router_expansion_preserves_fixed_prompt_and_responds_to_text(self):
+        cfg=ModelConfig(width=8,expert_mode='linear',orm_mode='amplitude',
+                        router_hidden=8,readout_hidden=16,input_shift=0,phase_shift=0,
+                        ccd_shift=0,phase_dropout=0,router_noise=0)
+        parent=LightGenTemporal(cfg).eval()
+        parent.set_prompt(torch.randn(38,2048))
+        parent.set_quality_levels(torch.tensor([0.,100.]))
+        model=expand_router(parent,277)
+        self.assertEqual(model.video_router.fc1.in_features,42*8)
+        value=torch.randn(1,16,4,49,1024)
+        with torch.no_grad():
+            before=parent(value)
+            after=model(value)
+            self.assertTrue(torch.allclose(before['prediction'],after['prediction'],atol=2e-5))
+            model.set_prompt(model.prompt_embedding.roll(13,-1))
+            changed=model(value)
+        self.assertTrue(torch.equal(after['routing']['frame']['weights'],changed['routing']['frame']['weights']))
+        self.assertGreater(float((after['routing']['video']['probabilities']-
+                                  changed['routing']['video']['probabilities']).abs().max()),1e-6)
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'joint.pt'
+            torch.save(model.checkpoint(),path)
+            restored,_=load_lightgen(path)
+            self.assertEqual(restored.cfg.fusion_router_input,'all_tokens')
+            self.assertEqual(restored.checkpoint()['schema'],7)
+
+    def test_trainable_whitelist_freezes_all_other_parameters(self):
+        model=LightGenTemporal(ModelConfig(width=8,readout_hidden=16))
+        frozen=restrict_training_to(model,['readout','video_global.raw_global_phase'])
+        self.assertTrue(frozen)
+        for name,value in model.named_parameters():
+            expected=name.startswith('readout.') or name=='video_global.raw_global_phase'
+            self.assertEqual(value.requires_grad,expected,name)
 
     def test_native_tail_padding_matches_global_input_order(self):
         def decode(index):
