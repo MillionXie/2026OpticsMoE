@@ -24,6 +24,17 @@ class Contracts(unittest.TestCase):
         self.assertTrue(torch.all((r['weights']>0).sum(-1)==2))
         self.assertTrue(torch.allclose(r['weights'].sum(-1),torch.ones(2,16,4)))
 
+    def test_all_four_softmax_then_selected_pair_renormalization(self):
+        cfg=ModelConfig(width=8,router_hidden=8)
+        router=Router(cfg,49).eval()
+        expected=torch.tensor([.1,.2,.3,.4])
+        with torch.no_grad():
+            router.fc1.weight.zero_();router.fc1.bias.zero_()
+            router.fc2.bias.copy_(expected.log()*cfg.temperature)
+        result=router(torch.randn(1,49,8))
+        self.assertTrue(torch.allclose(result['probabilities'][0],expected,atol=1e-6))
+        self.assertTrue(torch.allclose(result['weights'][0],torch.tensor([0.,0.,3/7,4/7]),atol=1e-6))
+
     def test_balance_selection_preserves_accuracy_floor_and_default(self):
         metrics={'srcc':.79,'frame_routing':{'selection_share':[.4,.1,.1,.4]}}
         self.assertEqual(selection_score(metrics,{}),.79)
