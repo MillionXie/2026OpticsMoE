@@ -7,7 +7,8 @@ from unittest.mock import Mock, patch
 import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, Experts, load_lightgen
-from ..run import save_checkpoint, selection_score, router_regularization, relative_frame_mixture_loss
+from ..run import (save_checkpoint, selection_score, router_regularization,
+                   relative_frame_mixture_loss, update_router_bias)
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
 from ..phase_regularization import (phase_penalties, gaussian_phase, illumination_support,
@@ -68,6 +69,15 @@ class Contracts(unittest.TestCase):
         loss.backward()
         self.assertTrue(bool(output.grad[0,0].abs().sum()>0))
         self.assertTrue(torch.equal(output.grad[0,1],torch.zeros_like(output.grad[0,1])))
+
+    def test_router_bias_feedback_excludes_padding_and_preserves_common_offset(self):
+        router=Router(ModelConfig(width=8,router_hidden=8),49)
+        with torch.no_grad():
+            router.fc2.bias.zero_()
+        choices=torch.tensor([[[[True,False,False,True]]*4,
+                               [[False,True,True,False]]*4]])
+        update_router_bias(router,choices,torch.tensor([[True,False]]),.01)
+        self.assertTrue(torch.allclose(router.fc2.bias,torch.tensor([-.01,.01,.01,-.01])))
 
     def test_frame_regularization_scale_does_not_change_video_term(self):
         cfg=ModelConfig(width=8,router_hidden=8,router_noise=0)

@@ -67,6 +67,17 @@ def relative_frame_mixture_loss(output,target,valid):
     return (error/energy)[valid].mean()
 
 
+@torch.no_grad()
+def update_router_bias(router,selected,valid,rate):
+    if not rate:
+        return
+    if rate < 0 or not router.fc2.bias.requires_grad:
+        raise ValueError('Router bias correction requires a positive rate and a trainable bias')
+    share=selected[valid].float().reshape(-1,4).mean(0)/2
+    correction=rate*torch.sign(.25-share)
+    router.fc2.bias.add_(correction-correction.mean())
+
+
 def router_regularization(routes,valid,frame_scale=1.0):
     values={k:[] for k in ['balance','importance','diversity']}
     stats={}
@@ -393,6 +404,8 @@ def train(args):
             norm=torch.nn.utils.clip_grad_norm_(model.parameters(),5.)
             if not bool(torch.isfinite(norm)):raise FloatingPointError('Nonfinite gradient')
             optimizer.step()
+            update_router_bias(model.frame_router,result['routing']['frame']['selected'],keep,
+                               cfg.get('frame_router_bias_update_rate',0.))
             smooth_phase_parameters(model,cfg.get('phase_parameter_smoothing_sigma',0.))
             losses.append(float(loss.detach()))
         scheduler.step()
