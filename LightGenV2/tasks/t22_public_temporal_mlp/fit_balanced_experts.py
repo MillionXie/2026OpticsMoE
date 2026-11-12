@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import platform
 import subprocess
+import sys
 import time
 
 import torch
@@ -101,7 +102,7 @@ def main():
         python=platform.python_version(),
         torch=str(torch.__version__),
         device=args.device,
-        command=list(__import__('sys').argv),
+        command=list(sys.argv),
         gpu_name=torch.cuda.get_device_name(0) if args.device.startswith('cuda') else None,
         nonexclusive_GPU=args.allow_shared_gpu,
     )

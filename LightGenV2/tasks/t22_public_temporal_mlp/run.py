@@ -400,7 +400,7 @@ def train(args):
     write(out/'phase_statistics.json', {name:phase_statistics(getattr(selected,name))
                                        for name in ('frame_global','video_global')})
     final['within_target']=final['absolute_srcc_difference']<=cfg['allowed_absolute_srcc_difference']
-    final['selection_constraints_satisfied']=np.isfinite(selection_score(final,cfg))
+    final['selection_constraints_satisfied']=bool(np.isfinite(selection_score(final,cfg)))
     cycles=[evaluate(selected,payload,args.device,cfg['eval_batch_fields'],slot_shift=k)['srcc'] for k in range(16)]
     write(out/'slot_cycle_audit.json',{'srcc_by_shift':cycles,'mean_srcc':float(np.mean(cycles)),
                                     'minimum_srcc':float(np.min(cycles))})
