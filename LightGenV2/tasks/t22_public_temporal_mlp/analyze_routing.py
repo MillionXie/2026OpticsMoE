@@ -111,6 +111,27 @@ def plot_virtual_activation(tokens, weights, out):
     plt.close(fig)
 
 
+def plot_router_sensitivity(model,tokens,out):
+    value=tokens.detach().clone().requires_grad_(True)
+    routing=model.frame_router(value[None])
+    maps=[]
+    for expert in range(4):
+        gradient=torch.autograd.grad(routing['probabilities'][0,expert],value,retain_graph=True)[0]
+        maps.append(gradient.square().mean(-1).sqrt().detach().cpu().numpy().reshape(7,7))
+    high=max(float(np.max(maps)),1e-12)
+    fig,axes=plt.subplots(1,4,figsize=(12,3.8),layout='constrained')
+    for expert,ax in enumerate(axes):
+        image=ax.imshow(maps[expert],cmap='viridis',vmin=0,vmax=high)
+        probability=float(routing['probabilities'][0,expert].detach())
+        gate=float(routing['weights'][0,expert].detach())
+        ax.set_title(f'{EXPERTS[expert]}  p={probability:.3f}, g={gate:.3f}')
+        ax.set(xlabel='Spatial token column',ylabel='Spatial token row')
+        fig.colorbar(image,ax=ax,shrink=.7)
+    fig.suptitle('Frame router sensitivity to 7 × 7 input-token positions\nChannel RMS of gradient of pre-Top2 expert probability',fontsize=13)
+    fig.savefig(out,dpi=180)
+    plt.close(fig)
+
+
 def plot_layout(out):
     fig,axes=plt.subplots(1,2,figsize=(13,7),layout='constrained')
     for frame_level,ax in zip((True,False),axes):
@@ -232,6 +253,7 @@ def main():
     plot_slot_shares(slot_shares,args.out/'expert_share_by_slot.png')
     plot_expert_operation(model,sample['tokens'],sample['weights'],args.out/'expert_matrix_and_tokens.png')
     plot_virtual_activation(sample['tokens'],sample['weights'],args.out/'virtual_expert_activation.png')
+    plot_router_sensitivity(model,sample['tokens'].to(args.device),args.out/'router_sensitivity.png')
     plot_layout(args.out/'layout_4x4_and_8x8.png')
     plot_phase_support(model,args.out/'phase_illumination_support.png')
     stats['definition']='share = selected count / all Top2 selection counts; each decision contributes two selections'
