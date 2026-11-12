@@ -255,6 +255,8 @@ def main():
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--group', type=int, default=0)
     parser.add_argument('--detail-slot', type=int, default=0)
+    parser.add_argument('--skip-input-preview', action='store_true',
+                        help='Export cached fields when the original video previews are unavailable')
     parser.add_argument('--device', default='cpu')
     args = parser.parse_args()
     if args.out.exists():
@@ -287,7 +289,8 @@ def main():
         ids = [payload['ids'][i] for i in index[0]]
         sources = [payload['video_paths'][i] for i in index[0]]
         targets = [float(payload['target'][i]) for i in index[0]]
-        pixels = torch.stack([frames_from_video(path) for path in sources])
+        pixels = (None if args.skip_input_preview else
+                  torch.stack([frames_from_video(path) for path in sources]))
         data_identity = payload['identity']
         feature_source = 'original_TEST_cached_features'
     else:
@@ -319,8 +322,9 @@ def main():
         arrays = {key: value for key, value in values.items() if isinstance(value, np.ndarray)}
         np.savez_compressed(args.out/(name + '_global_arrays.npz'), **arrays)
         display[name] = plot_overview(stage, values, args.out/(name + '_global.png'))
-    plot_inputs(pixels, ids, args.out/'input_frames.png')
-    plot_detail(pixels, captured, result, args.detail_slot, ids[args.detail_slot], args.out/'slot_detail.png')
+    if not args.skip_input_preview:
+        plot_inputs(pixels, ids, args.out/'input_frames.png')
+        plot_detail(pixels, captured, result, args.detail_slot, ids[args.detail_slot], args.out/'slot_detail.png')
     records = []
     for slot in range(16):
         records.append({'slot': slot, 'sample_id': ids[slot],
@@ -340,6 +344,7 @@ def main():
     record = {'role': 'SELECTED_LINEAR_SIMULATED_OPTICAL_FIELDS', 'group_index': args.group,
               'weights_sha256': sha256(weights), 'profile': profile, 'inputs': records,
               'data_identity': data_identity, 'feature_source': feature_source, 'audits': audits,
+              'input_preview_exported': not args.skip_input_preview,
               'trace_prediction_bitwise_equal_to_unhooked_forward': True,
               'display': display, 'intensity_unit': 'arbitrary, after per-field input RMS normalization',
               'phase_unit': 'radians', 'array_shape': [518, 518], 'active_bounds_yx': [20, 498, 20, 498],

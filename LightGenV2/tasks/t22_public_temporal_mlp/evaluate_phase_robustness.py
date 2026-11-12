@@ -112,7 +112,7 @@ def plot_masks(records,phases,out):
         for row,name in enumerate(('frame_global','video_global')):
             image=axes[row,column].imshow(value[name],cmap='twilight',vmin=0,vmax=2*np.pi)
             rough=records[label]['phase_statistics'][name]['curvature_penalty']
-            axes[row,column].set_title(f'{label}\n{name.replace("_"," ")}, curvature {rough:.4f}')
+            axes[row,column].set_title(f'{label}\n{name.replace("_"," ")}, curvature {rough:.3g}')
             fig.colorbar(image,ax=axes[row,column],shrink=.7,label='Phase (rad)')
     fig.savefig(out,dpi=180)
     plt.close(fig)
