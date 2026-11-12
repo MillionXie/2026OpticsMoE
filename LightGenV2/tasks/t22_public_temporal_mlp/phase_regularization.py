@@ -48,6 +48,13 @@ def initialize_phase(phase, config, geometry):
     smoothed = gaussian_phase(phase, config.get('sigma_pixels', 0.))
     if config['kind'] == 'gaussian':
         return smoothed
+    if config['kind'] == 'contrast':
+        scale = config['deviation_scale']
+        if scale <= 0:
+            raise ValueError('Phase deviation scale must be positive')
+        offset = torch.atan2(smoothed.sin().mean((-2,-1),keepdim=True),
+                             smoothed.cos().mean((-2,-1),keepdim=True))
+        return (offset+scale*circular_difference(smoothed-offset)).remainder(2*math.pi)
     if config['kind'] != 'lens':
         raise ValueError('Unknown phase initialization')
     focal_length = config['focal_length_m']

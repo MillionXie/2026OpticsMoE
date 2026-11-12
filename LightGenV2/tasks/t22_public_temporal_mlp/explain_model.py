@@ -24,7 +24,7 @@ def arrow(ax,start,end):
 def draw_network(path):
     fig,ax=plt.subplots(figsize=(13,9),layout='constrained')
     ax.set(xlim=(0,13),ylim=(0,9));ax.axis('off')
-    box(ax,.4,7.7,8.2,.8,'One video: four RGB frames -> extracted Qwen front -> 4 x 49 x 192','#e4edf9')
+    box(ax,.4,7.7,8.2,.8,'One video: four RGB frames -> extracted Qwen patch / position\n49 x 1024 per frame -> LN / linear adapter -> 49 x 192','#e4edf9')
     box(ax,.4,6.15,8.2,1.0,'VISION STAGE   (code: frame_*)\nEach frame: router -> Top2 linear experts -> optical global\nFour frames stay separate: 4 x 49 x 192','#d9e8f8')
     arrow(ax,(4.5,7.7),(4.5,7.2))
     box(ax,.4,4.8,8.2,.8,'Original Frame Merger: each 49 x 192 -> one 192-D token\nOne video: 4 x 192 visual tokens','#e4edf9')

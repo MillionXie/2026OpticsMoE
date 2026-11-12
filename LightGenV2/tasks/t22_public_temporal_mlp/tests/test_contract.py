@@ -10,7 +10,7 @@ from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Rou
 from ..run import save_checkpoint, selection_score, router_regularization
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
-from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support
+from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support, initialize_phase
 from ..training_policy import freeze_parameters
 
 
@@ -97,6 +97,14 @@ class Contracts(unittest.TestCase):
         self.assertTrue(torch.equal(stage.modulation(),stage.modulation()))
         stage.train()
         self.assertFalse(torch.equal(stage.modulation(),stage.modulation()))
+
+    def test_phase_contrast_initialization_uses_existing_smooth_structure(self):
+        phase=2+.01*torch.randn(2,111,111)
+        unchanged=initialize_phase(phase,{'kind':'contrast','sigma_pixels':0,'deviation_scale':1},ModelConfig())
+        amplified=initialize_phase(phase,{'kind':'contrast','sigma_pixels':0,'deviation_scale':2},ModelConfig())
+        self.assertTrue(torch.allclose(unchanged,phase,atol=1e-6))
+        self.assertTrue(torch.isfinite(amplified).all())
+        self.assertGreater(float(amplified.std()),float(phase.std()))
 
     def test_dark_relu_field_has_finite_backward(self):
         cfg=ModelConfig(width=8,input_shift=0,phase_shift=0,ccd_shift=0,phase_dropout=0)
