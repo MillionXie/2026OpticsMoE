@@ -89,6 +89,8 @@ def copy_results(run,output):
     shutil.copyfile(run/'phase_effect/phase_effect.json', output/'phase_controls.json')
     if (run/'propagation_controls.json').exists():
         shutil.copyfile(run/'propagation_controls.json', output/'propagation_controls.json')
+    if (run/'electronic_capacity_control.json').exists():
+        shutil.copyfile(run/'electronic_capacity_control.json', output/'electronic_capacity_control.json')
 
 
 def verify_manifest(directory):

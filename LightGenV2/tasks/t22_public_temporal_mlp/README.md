@@ -2,7 +2,7 @@
 
 A compact reference model for temporal video-quality assessment, with Top2
 routing, four linear experts per stage, two simulated optical global stages,
-and a five-level electronic readout. The model has 4,164,998 parameters.
+and a five-level electronic readout. The model has 3,777,350 parameters.
 
 ## Quick start
 
@@ -37,7 +37,7 @@ The final group is cyclically padded from the beginning of the input list.
 | Fixed prompt concatenation | 42 × 192 |
 | Joint Top2 router and linear experts | 42 × 192 |
 | Joint global and detector processing | 42 × 96 |
-| Two-layer readout, 4032 → 128 → 5, and grade expectation | one MOS |
+| Two-layer readout, 4032 → 32 → 5, and grade expectation | one MOS |
 
 The global simulations use a 518×518 canvas with a central 478×478 active area.
 The vision field contains an 8×8 arrangement of frame patches. The joint field
@@ -52,11 +52,16 @@ custom mean/max frame merger are retained.
 ## Reference results
 
 The original 558-video TEST split was used for development selection. The
-fixed-group cached-feature SRCC, evaluated through the full model, is 0.79897.
-The 128-unit readout is selected at epoch 225 of 400 TRAIN-only fine-tuning
+fixed-group cached-feature SRCC, evaluated through the full model, is 0.79890.
+The 32-unit readout is selected at epoch 290 of 400 TRAIN-only fine-tuning
 epochs using the requested 0.790–0.799 development-SRCC range.
 Full evaluation conditions and selected-weight checks are described in
 `MODEL_CARD.md`.
+
+An electronic-capacity check with 942,341 parameters and an 8064 → 32 → 5 head
+achieved development SRCC 0.78425 after training its retained electronic layers.
+The optical reference fine-tunes its readout. The differing head input sizes and
+optimization scopes are described in `MODEL_CARD.md`.
 
 Post-training phase and propagation controls retain each stage's input/output
 interface. Their condition definitions and selected-weight results are supplied

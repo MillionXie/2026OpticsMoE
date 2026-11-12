@@ -10,7 +10,7 @@ The text adapter projects the prompt at runtime. Five TRAIN-derived grade
 scores are combined using predicted probabilities to produce one mean opinion
 score (MOS) per video.
 
-The parameter count is 4,164,998. Each input contributes four 448×448 RGB
+The parameter count is 3,777,350. Each input contributes four 448×448 RGB
 frames. Ordered groups of sixteen videos share a coherent optical simulation.
 The order and cyclic tail-padding convention affect the physical field.
 
@@ -32,8 +32,8 @@ Adaptive average pooling supplies 49×96 values per vision frame and 42×96
 values per joint-stage video. Each pooled token passes through LayerNorm96 and
 ReLU. The vision stage then applies a 96-to-192 projection. The joint-stage
 projection and the first readout matrix are merged into a single linear map.
-The resulting readout is Flatten4032, Linear4032→128, ReLU, and Linear128→5,
-followed by softmax and the grade expectation.
+The resulting readout is Flatten4032, Linear4032→32, ReLU, and Linear32→5,
+followed by softmax and the grade expectation. The readout has 129,221 parameters.
 
 The optical input encoders, coherent propagation, phase parameters, routers,
 experts, text adapter, and frame merger retain the selected parent model's
@@ -47,11 +47,11 @@ samples are excluded from metrics.
 
 | Evaluation | SRCC |
 |---|---:|
-| Original ordered groups, cached features, full-model forward | 0.7989651231 |
-| Direct video input, full 558 videos | 0.7992074548 |
-| Mean over sixteen cyclic slot shifts | 0.7960946657 |
-| Minimum over sixteen cyclic slot shifts | 0.7901525881 |
-| Numerical 8-bit phase quantization | 0.7993673839 |
+| Original ordered groups, cached features, full-model forward | 0.7988976462 |
+| Direct video input, full 558 videos | 0.7992454773 |
+| Mean over sixteen cyclic slot shifts | 0.7953460324 |
+| Minimum over sixteen cyclic slot shifts | 0.7885972250 |
+| Numerical 8-bit phase quantization | 0.7993216603 |
 
 Full-model evaluation determines the reference metric. Head-only cached-feature
 evaluation during fine-tuning has a slightly different GPU matrix shape.
@@ -59,9 +59,33 @@ Development selection applies the requested 0.790–0.799 SRCC range to cached-f
 full-model evaluation. Direct-video input is evaluated separately. Input-order and
 numerical-boundary sensitivity are evaluated on the selected full model.
 
-The direct-video/cache mean absolute MOS difference is 0.018583,
-with maximum 1.472984. The lowest SRCC among the tested
-two-pixel detector shifts is 0.7780928779.
+The direct-video/cache mean absolute MOS difference is 0.019374,
+with maximum 2.122620. The lowest tested two-pixel
+detector-shift SRCC is 0.7747974614.
+
+## Electronic-capacity check
+
+A companion electronic model uses the input adapters, custom mean/max frame
+merger, position parameters, and a two-layer 8064→32→5 readout. Its parameter
+count is 942,341, and its development SRCC is 0.7937765654. Its retained
+electronic layers are optimized on the 2250 TRAIN videos for 400 epochs from
+the corresponding parent initialization. The optical reference optimizes the
+129,221 readout parameters over 400 epochs and uses a 4032-dimensional head
+input. This capacity comparison has different head input dimensions and
+optimization scopes, which must be accounted for in interpreting the result.
+
+The electronic control selects hidden units from all 256 parent units using
+its TRAIN activations. It uses seed 713 and selects its highest evaluated
+development SRCC without an upper bound.
+
+| Metric | Optical reference | Electronic capacity control |
+|---|---:|---:|
+| SRCC | 0.7988976462 | 0.7937765654 |
+| PLCC | 0.8005052856 | 0.8074254715 |
+| RMSE | 8.4795709019 | 8.2045499911 |
+| MAE | 6.3281161469 | 6.2657914521 |
+
+Both models reach the 0.79 SRCC range in this single-seed comparison.
 
 ## Phase and propagation controls
 
@@ -76,11 +100,11 @@ processing.
 
 | Both-stage intervention | Development SRCC |
 |---|---:|
-| Learned phases | 0.7989651231 |
-| Constant phase pi | 0.7944393854 |
-| Identity propagation | 0.6455167380 |
-| Uniform random phase, ten seeds | 0.3831020843 ± 0.0669603449 |
-| Default random raw phase, ten seeds | 0.7042872013 ± 0.0258067855 |
+| Learned phases | 0.7988976462 |
+| Constant phase pi | 0.7945205413 |
+| Identity propagation | 0.6436202435 |
+| Uniform random phase, ten seeds | 0.4412689405 ± 0.0662973695 |
+| Default random raw phase, ten seeds | 0.7101837287 ± 0.0184968802 |
 
 Random-condition SD is the sample SD across ten fixed seeds. The constant-phase
 and identity-propagation conditions fix the remaining trained modules.
@@ -90,9 +114,9 @@ Per-condition definitions, seeds, and metrics are supplied in `results/`.
 
 The selected parent was prepared through visual-router and linear-expert tuning,
 followed by phase optimization. The current model merges the final detector
-projection into the readout, selects 128 ReLU hidden units using TRAIN activation
+projection into the readout, selects 32 ReLU hidden units using TRAIN activation
 contributions, and fine-tunes that readout for 400 epochs. Development selection
-chooses epoch 225 within the requested SRCC range. Optimization and
+chooses epoch 290 within the requested SRCC range. Optimization and
 teacher-prediction distillation use the 2250 TRAIN videos. The distillation loss
 consumes TRAIN teacher predictions.
 

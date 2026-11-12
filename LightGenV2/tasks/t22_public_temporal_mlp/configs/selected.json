@@ -1,23 +1,23 @@
 {
   "schema": 3,
-  "selection": "relative_intensity_fused_readout128_requested_range",
+  "selection": "relative_intensity_fused_readout32_requested_range",
   "checkpoint": "runs/simulation/current/LightGen.pt",
-  "checkpoint_sha256": "e4766ee9c2cecc49351ce4a20b4b41e85e047d023822afa38189c52d043b82a7",
+  "checkpoint_sha256": "60a9f3aab63f2c0f4de6e3df273cc444a2f0b6a390f0ec0dfdf94e99c416c63b",
   "architecture": "t22_serial_top2_global2_fused_readout_v8_relative_intensity_linear_no_ln192",
-  "model_parameters": 4164998,
-  "selected_epoch": 225,
+  "model_parameters": 3777350,
+  "selected_epoch": 290,
   "completed_epochs": 400,
   "evaluation": {
     "role": "original_TEST_development",
     "videos": 558,
-    "srcc": 0.7989651230570776,
+    "srcc": 0.7988976461907575,
     "selection_interval": [
       0.79,
       0.799
     ],
-    "slot_cycle_mean_srcc": 0.7960946656784769,
-    "slot_cycle_minimum_srcc": 0.790152588115201
+    "slot_cycle_mean_srcc": 0.7953460323798703,
+    "slot_cycle_minimum_srcc": 0.7885972250393563
   },
   "run_id": "current",
-  "training_run_id": "electronic_simplification_20261113/head128_requested_range"
+  "training_run_id": "readout_capacity_20261113/head32"
 }

@@ -8,6 +8,7 @@ import torch
 from torch import nn
 
 from ..model import GlobalStage, LightGenTemporal, ModelConfig, load_lightgen
+from ..tools.simplify_checkpoint import fold_final_projection, prune_hidden_units
 
 
 class SimplificationContracts(unittest.TestCase):
@@ -106,6 +107,55 @@ class SimplificationContracts(unittest.TestCase):
         with torch.no_grad():
             actual = restored(value)['prediction']
         self.assertTrue(torch.equal(actual, expected))
+
+    def test_final_projection_folding_preserves_full_model_predictions(self):
+        source = self.ready_model()
+        value = torch.randn(1, 16, 4, 49, 1024)
+        folded = fold_final_projection(source)
+        self.assertFalse(source.cfg.fused_readout)
+        self.assertTrue(folded.cfg.fused_readout)
+        self.assertIsInstance(folded.video_global.output, nn.Identity)
+        self.assertEqual(folded.readout[1].in_features, 42 * 96)
+        with torch.no_grad():
+            expected = source(value)
+            actual = folded(value)
+        self.assertTrue(torch.allclose(
+            actual['quality_logits'], expected['quality_logits'], atol=1e-4, rtol=1e-5))
+        self.assertTrue(torch.allclose(
+            actual['prediction'], expected['prediction'], atol=1e-4, rtol=1e-5))
+
+    def test_hidden_unit_pruning_copies_selected_relu_basis_and_bias_correction(self):
+        source = fold_final_projection(self.ready_model())
+        features = torch.randn(24, 42, 96)
+        with torch.no_grad():
+            activations = source.readout[2](source.readout[1](features.flatten(-2)))
+            importance = (activations.square().mean(0).sqrt()
+                          * source.readout[3].weight.square().sum(0).sqrt())
+            expected_indices = importance.topk(4).indices.sort().values
+        pruned, selected = prune_hidden_units(source, features, hidden_width=4)
+        self.assertEqual(selected, expected_indices.tolist())
+        self.assertEqual(selected, sorted(set(selected)))
+        self.assertEqual(len(selected), 4)
+        self.assertEqual(source.cfg.readout_hidden, 8)
+        self.assertEqual(pruned.cfg.readout_hidden, 4)
+        self.assertTrue(torch.equal(
+            pruned.readout[1].weight, source.readout[1].weight[expected_indices]))
+        self.assertTrue(torch.equal(
+            pruned.readout[1].bias, source.readout[1].bias[expected_indices]))
+        self.assertTrue(torch.equal(
+            pruned.readout[3].weight, source.readout[3].weight[:, expected_indices]))
+        removed = [index for index in range(8) if index not in selected]
+        with torch.no_grad():
+            expected_bias = (source.readout[3].bias
+                             + source.readout[3].weight[:, removed]
+                             @ activations[:, removed].mean(0))
+            logits = pruned.readout(features)
+            prediction = pruned(torch.randn(1, 16, 4, 49, 1024))['prediction']
+        self.assertTrue(torch.equal(pruned.readout[3].bias, expected_bias))
+        self.assertEqual(tuple(logits.shape), (24, 5))
+        self.assertTrue(bool(torch.isfinite(logits).all()))
+        self.assertEqual(tuple(prediction.shape), (1, 16))
+        self.assertTrue(bool(torch.isfinite(prediction).all()))
 
     def test_historical_checkpoint_without_added_config_keys_roundtrips(self):
         model = self.ready_model()

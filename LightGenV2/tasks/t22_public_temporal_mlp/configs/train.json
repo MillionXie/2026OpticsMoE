@@ -5,7 +5,7 @@
     "sha256": "8c34a360227e258f86acb738fbb0da02af59ab38430a52986df0a09e9beec359"
   },
   "refinement": {
-    "hidden": 128,
+    "hidden": 32,
     "epochs": 400,
     "learning_rate": 0.0003,
     "teacher_weight": 10,
@@ -18,7 +18,7 @@
     "expert_hidden": 384,
     "router_hidden": 128,
     "fusion_router_input": "all_tokens",
-    "readout_hidden": 128,
+    "readout_hidden": 32,
     "expert_mode": "linear",
     "orm_mode": "amplitude",
     "alpha_min": 0.6666666666666666,
