@@ -134,7 +134,7 @@ def trace(model, vision):
         with torch.inference_mode():
             fields = stage.fields(values['tokens'])[0].cpu().numpy()
             tile_modulation = stage.modulation().cpu().numpy()
-            phases = (2 * np.pi * torch.sigmoid(stage.raw_global_phase)).cpu().numpy()
+            phases = stage.phase(wrapped=True).cpu().numpy()
             operators = torch.stack([expert.weight for expert in experts.experts])
             effective = torch.einsum('...k,koi->...oi', values['expert_weights'], operators)
             equivalent = torch.einsum('...ti,...oi->...to', values['expert_tokens'], effective)

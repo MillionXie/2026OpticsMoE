@@ -49,10 +49,8 @@ def plot_phase_training(initial, trained, output, arrays_path, statistics_path):
     arrays = {}
     statistics = {}
     for name in STAGES:
-        initial_phase = 2 * math.pi * torch.sigmoid(
-            getattr(initial, name).raw_global_phase.detach()).cpu().numpy()
-        trained_phase = 2 * math.pi * torch.sigmoid(
-            getattr(trained, name).raw_global_phase.detach()).cpu().numpy()
+        initial_phase = getattr(initial, name).phase(wrapped=True).detach().cpu().numpy()
+        trained_phase = getattr(trained, name).phase(wrapped=True).detach().cpu().numpy()
         difference = np.arctan2(np.sin(trained_phase - initial_phase),
                                 np.cos(trained_phase - initial_phase))
         support = illumination_support(getattr(trained, name).frame_level).numpy()

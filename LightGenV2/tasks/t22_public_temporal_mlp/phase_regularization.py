@@ -22,10 +22,32 @@ def phase_penalties(phase):
 
 
 def model_phase_penalties(model):
-    values = [phase_penalties(2*math.pi*torch.sigmoid(stage.raw_global_phase))
+    values = [phase_penalties(stage.phase())
               for stage in (model.frame_global, model.video_global)]
     return {name: torch.stack([item[name] for item in values]).mean()
             for name in ('slope', 'curvature')}
+
+
+@torch.no_grad()
+def smooth_phase_gradients(model, sigma):
+    """Gaussian gradient preconditioning without a prescribed phase pattern."""
+    if sigma <= 0:
+        return
+    radius = math.ceil(3 * sigma)
+    for stage in (model.frame_global, model.video_global):
+        gradient = stage.raw_global_phase.grad
+        if gradient is None:
+            continue
+        coordinates = torch.arange(-radius, radius + 1,
+                                   device=gradient.device, dtype=gradient.dtype)
+        kernel = torch.exp(-coordinates.square() / (2 * sigma * sigma))
+        kernel = kernel / kernel.sum()
+        value = gradient[:, None]
+        value = F.conv2d(F.pad(value, (radius, radius, 0, 0), mode='replicate'),
+                         kernel.reshape(1, 1, 1, -1))
+        value = F.conv2d(F.pad(value, (0, 0, radius, radius), mode='replicate'),
+                         kernel.reshape(1, 1, -1, 1))
+        gradient.copy_(value[:, 0])
 
 
 def gaussian_phase(phase, sigma):
@@ -45,6 +67,8 @@ def gaussian_phase(phase, sigma):
 
 
 def initialize_phase(phase, config, geometry):
+    if config['kind'] == 'zero':
+        return torch.zeros_like(phase)
     smoothed = gaussian_phase(phase, config.get('sigma_pixels', 0.))
     if config['kind'] == 'gaussian':
         return smoothed
@@ -69,7 +93,11 @@ def initialize_phase(phase, config, geometry):
     return (offset+lens+residual).remainder(2*math.pi)
 
 
-def phase_to_raw(phase):
+def phase_to_raw(phase, parameterization='bounded'):
+    if parameterization == 'direct':
+        return phase.clone()
+    if parameterization != 'bounded':
+        raise ValueError('Unsupported phase parameterization')
     probability = (phase.remainder(2*math.pi)/(2*math.pi)).clamp(1e-4,1-1e-4)
     return torch.logit(probability)
 
@@ -86,7 +114,7 @@ def illumination_support(frame_level):
 
 
 def phase_statistics(stage):
-    phase = (2*math.pi*torch.sigmoid(stage.raw_global_phase.detach())).cpu()
+    phase = stage.phase().detach().cpu()
     support = illumination_support(stage.frame_level)
     edge_x = support[:,1:] & support[:,:-1]
     edge_y = support[1:,:] & support[:-1,:]
@@ -94,7 +122,14 @@ def phase_statistics(stage):
     dy = circular_difference(phase[:,1:,:]-phase[:,:-1,:])[:,edge_y]
     active_rms = torch.cat((dx.flatten(),dy.flatten())).square().mean().sqrt()
     penalties = phase_penalties(phase)
+    wrapped = circular_difference(phase)
+    active = phase[:,support]
+    resultant = torch.complex(active.cos().mean(-1), active.sin().mean(-1)).abs()
     return {'slope_penalty':float(penalties['slope']),
             'curvature_penalty':float(penalties['curvature']),
             'active_neighbor_difference_RMS_rad':float(active_rms),
-            'geometric_illumination_fraction':float(support.float().mean())}
+            'geometric_illumination_fraction':float(support.float().mean()),
+            'wrapped_phase_RMS_rad':float(wrapped.square().mean().sqrt()),
+            'illuminated_wrapped_phase_RMS_rad':float(wrapped[:,support].square().mean().sqrt()),
+            'illuminated_circular_std_rad':float((-2*resultant.clamp(1e-12,1).log()).sqrt().mean()),
+            'maximum_absolute_wrapped_phase_rad':float(wrapped.abs().max())}

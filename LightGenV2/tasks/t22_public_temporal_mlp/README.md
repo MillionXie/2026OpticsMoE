@@ -2,6 +2,18 @@
 
 当前唯一模型由 `configs/selected.json` 指定。权重、数值记录和图统一放在 `runs/simulation/current/`。本目录由当前对话维护。
 
+## 零相位分阶段重训
+
+2026-11-12 新试验统一位于 `runs/simulation/zero_phase_20261112/`，配置为 `configs/zero_phase_staged.json`。两级物理相位精确从 0 初始化，电子模块随机初始化，冻结前端和固定 prompt 使用已提取的组件。
+
+优化依次进行读出热身、相位重点训练、全部电子与相位联合训练、相位和读出微调。每阶段在同一试验目录下保存配置、日志、best/last、逐视频结果和相位统计。自由相位参数直接以弧度表示，任务梯度配合局部高斯平滑及周期曲率正则进行优化。
+
+```powershell
+python staged_train.py --config configs/zero_phase_staged.json --paths paths.local.json --train-soft-targets assets/training_only_teacher_predictions.pt --out runs/simulation/zero_phase_20261112
+```
+
+调度器选择空闲 GPU，阶段间使用上一阶段选定权重继续训练。原始初始化保存为该试验根目录的 `initialization.pt`。评价沿用 2250 TRAIN、558 条原 TEST 开发选模及原视频分组规则。
+
 ## 先看这些文件
 
 | 文件 | 用途 |

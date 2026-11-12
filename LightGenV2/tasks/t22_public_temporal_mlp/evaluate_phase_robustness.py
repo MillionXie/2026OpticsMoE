@@ -54,7 +54,7 @@ def modulation_for_condition(stage, condition, stage_index):
         def modulation():
             return translated(original(),condition['dy'],condition['dx'],fill=1+0j)
         return modulation
-    phase=2*math.pi*torch.sigmoid(stage.raw_global_phase.detach())
+    phase=stage.phase().detach()
     if condition['kind']=='phase_noise':
         generator=torch.Generator(device=phase.device).manual_seed(3701+100*stage_index+condition['trial'])
         phase=phase+condition['level']*torch.randn(phase.shape,device=phase.device,generator=generator)
@@ -149,7 +149,7 @@ def main():
         model.eval()
         record={'checkpoint':str(path),'sha256':sha256(path),'conditions':[],
                 'phase_statistics':{name:phase_statistics(getattr(model,name)) for name in ('frame_global','video_global')}}
-        phases[label]={name:(2*math.pi*torch.sigmoid(getattr(model,name).raw_global_phase.detach()))[0].cpu().numpy()
+        phases[label]={name:getattr(model,name).phase(wrapped=True).detach()[0].cpu().numpy()
                        for name in ('frame_global','video_global')}
         for condition in conditions():
             metrics=evaluate_condition(model,payload,args.device,condition)

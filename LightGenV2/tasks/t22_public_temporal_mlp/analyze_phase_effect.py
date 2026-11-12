@@ -34,7 +34,7 @@ STAGES = ('frame_global','video_global')
 
 
 def phase_information(stage):
-    phase = 2*math.pi*torch.sigmoid(stage.raw_global_phase.detach())
+    phase = stage.phase(wrapped=True).detach()
     support = illumination_support(stage.frame_level).to(phase.device)
     active = phase[:,support]
     resultant = torch.complex(active.cos().mean(-1),active.sin().mean(-1))

@@ -42,11 +42,15 @@ def main():
         for name in ('frame_global','video_global'):
             stage = getattr(model,name)
             audit[name] = {'before':phase_statistics(stage)}
-            phase = 2*math.pi*torch.sigmoid(stage.raw_global_phase)
+            phase = getattr(parent,name).phase()
             initialization = config['phase_initialization'].get(name,config['phase_initialization'])
+            if initialization['kind'] == 'zero' and cfg.phase_parameterization != 'direct':
+                raise ValueError('Exact zero initialization requires direct phase parameters')
             if initialization['kind'] != 'keep':
-                initialized = initialize_phase(phase,initialization,cfg)
-                stage.raw_global_phase.copy_(phase_to_raw(initialized))
+                phase = initialize_phase(phase,initialization,cfg)
+            if (initialization['kind'] != 'keep'
+                    or cfg.phase_parameterization != parent.cfg.phase_parameterization):
+                stage.raw_global_phase.copy_(phase_to_raw(phase,cfg.phase_parameterization))
             audit[name]['after'] = phase_statistics(stage)
     parent_state = parent.state_dict()
     changed = [name for name,value in model.state_dict().items()

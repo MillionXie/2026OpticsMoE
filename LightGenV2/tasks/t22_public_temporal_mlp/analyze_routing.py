@@ -164,7 +164,7 @@ def plot_phase_support(model, out):
     fig,axes=plt.subplots(2,3,figsize=(7.2,4.6),layout='constrained')
     for row,name in enumerate(('frame_global','video_global')):
         stage=getattr(model,name)
-        phase=(2*math.pi*torch.sigmoid(stage.raw_global_phase.detach()))[0].cpu().numpy()
+        phase=stage.phase(wrapped=True).detach()[0].cpu().numpy()
         support=illumination_support(stage.frame_level).numpy()
         visible=np.where(support,phase,np.nan)
         phase_curvature=np.angle(np.exp(1j*(phase[:,2:]-2*phase[:,1:-1]+phase[:,:-2])))

@@ -22,12 +22,12 @@ from scipy.stats import spearmanr, kendalltau, pearsonr
 if __package__:
     from .model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
-    from .phase_regularization import model_phase_penalties, phase_statistics
+    from .phase_regularization import model_phase_penalties, phase_statistics, smooth_phase_gradients
     from .training_policy import freeze_parameters,restrict_training_to
 else:
     from model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from data import load_inputs, groups, batch, sha256, attach_train_soft_targets
-    from phase_regularization import model_phase_penalties, phase_statistics
+    from phase_regularization import model_phase_penalties, phase_statistics, smooth_phase_gradients
     from training_policy import freeze_parameters,restrict_training_to
 
 ROOT=Path(__file__).resolve().parent
@@ -231,16 +231,24 @@ def train(args):
         if not param.requires_grad:
             continue
         (phase if name.endswith('raw_global_phase') else electronic).append(param)
-    parameter_groups = [{'params':electronic,'lr':cfg['learning_rate']},
-                        {'params':phase,'lr':cfg['phase_learning_rate']}]
+    parameter_groups = [{'params':electronic,'lr':cfg['learning_rate'],'name':'electronic'},
+                        {'params':phase,'lr':cfg['phase_learning_rate'],'name':'phase',
+                         'weight_decay':cfg.get('phase_weight_decay',cfg['weight_decay'])}]
     if 'router_learning_rate' in cfg:
         router_parameters = [param for module in (model.frame_router,model.video_router)
                              for param in module.parameters() if param.requires_grad]
         router_ids = {id(param) for param in router_parameters}
         parameter_groups[0]['params'] = [param for param in electronic if id(param) not in router_ids]
-        parameter_groups.append({'params':router_parameters,'lr':cfg['router_learning_rate']})
+        parameter_groups.append({'params':router_parameters,'lr':cfg['router_learning_rate'],'name':'router'})
     optimizer=torch.optim.AdamW(parameter_groups,weight_decay=cfg['weight_decay'])
-    scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg['epochs'])
+    minimum = cfg.get('minimum_learning_rate_ratio',0.)
+    if not 0 <= minimum <= 1:
+        raise ValueError('Minimum learning-rate ratio must be in [0,1]')
+    if minimum:
+        scheduler=torch.optim.lr_scheduler.LambdaLR(optimizer,
+            lambda epoch: minimum+(1-minimum)*(1+math.cos(math.pi*epoch/cfg['epochs']))/2)
+    else:
+        scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg['epochs'])
     out.mkdir(parents=True)
     try:head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     except (OSError,subprocess.CalledProcessError):head='unavailable'
@@ -255,6 +263,8 @@ def train(args):
               'gpu_admission':admission,'command':sys.argv,'pid':os.getpid(),
               'model_parameters':sum(p.numel() for p in model.parameters()),'model_config':asdict(mc)}
     metadata['initialization']=initialization
+    metadata['initial_phase_statistics'] = {
+        name:phase_statistics(getattr(model,name)) for name in ('frame_global','video_global')}
     metadata['frozen_parameter_names']=frozen_parameters
     metadata['optimization_parameters']=sum(p.numel() for p in model.parameters() if p.requires_grad)
     metadata['initial_parameter_SHA256'] = {
@@ -267,6 +277,11 @@ def train(args):
             'boundaries': model.level_boundaries.cpu().tolist(),
             'quality_words': list(QUALITY_WORDS)}
     write(out/'metadata.json',metadata)
+    if cfg.get('initialization_snapshot'):
+        snapshot=Path(cfg['initialization_snapshot'])
+        if snapshot.exists():
+            raise FileExistsError('Initialization snapshot already exists: '+str(snapshot))
+        save_checkpoint(snapshot,model.checkpoint(**{**metadata,'role':'INITIALIZATION_BEFORE_OPTIMIZATION'}))
     history=[];best=-float('inf');best_score=-math.inf;started=time.time()
     write(out/'status.json',{'state':'running','epoch':0,'pid':os.getpid()})
     if args.initialize and not args.smoke_steps:
@@ -317,14 +332,18 @@ def train(args):
                 model.train()
             if not bool(torch.isfinite(loss)):raise FloatingPointError('Nonfinite training loss')
             loss.backward()
+            smooth_phase_gradients(model,cfg.get('phase_gradient_smoothing_sigma',0.))
             norm=torch.nn.utils.clip_grad_norm_(model.parameters(),5.)
             if not bool(torch.isfinite(norm)):raise FloatingPointError('Nonfinite gradient')
             optimizer.step();losses.append(float(loss.detach()))
         scheduler.step()
-        row={'epoch':epoch,'loss':float(np.mean(losses)),'elapsed_seconds':time.time()-started}
+        row={'epoch':epoch,'loss':float(np.mean(losses)),'elapsed_seconds':time.time()-started,
+             'learning_rates':{group['name']:group['lr'] for group in optimizer.param_groups}}
         if not args.smoke_steps and (epoch==1 or epoch%cfg['eval_interval']==0 or epoch==cfg['epochs']):
             metrics=evaluate(model,payload,args.device,cfg['eval_batch_fields'])
             row['test_development']=metrics
+            row['phase_statistics']={name:phase_statistics(getattr(model,name))
+                                     for name in ('frame_global','video_global')}
             score=selection_score(metrics,cfg)
             row['selection_score']=score if np.isfinite(score) else None
             if score>best_score:
@@ -334,9 +353,10 @@ def train(args):
                 save_checkpoint(out/'best_checkpoint.pt',ck)
                 evaluate(model,payload,args.device,cfg['eval_batch_fields'],out,epoch)
         history.append(row);write(out/'history.json',history)
-        last=model.checkpoint(**metadata,epoch=epoch)
-        last['optimizer']=optimizer.state_dict();last['scheduler']=scheduler.state_dict()
-        save_checkpoint(out/'last_checkpoint.pt',last)
+        if epoch%cfg.get('last_checkpoint_interval',1)==0 or epoch==cfg['epochs'] or args.smoke_steps:
+            last=model.checkpoint(**metadata,epoch=epoch)
+            last['optimizer']=optimizer.state_dict();last['scheduler']=scheduler.state_dict()
+            save_checkpoint(out/'last_checkpoint.pt',last)
         write(out/'status.json',{'state':'running','epoch':epoch,'pid':os.getpid(),
                                'best_srcc':best if np.isfinite(best) else None,'elapsed_seconds':time.time()-started})
         print(json.dumps(row),flush=True)

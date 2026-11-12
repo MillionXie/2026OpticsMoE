@@ -10,7 +10,8 @@ from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Rou
 from ..run import save_checkpoint, selection_score, router_regularization
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
-from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support, initialize_phase
+from ..phase_regularization import (phase_penalties, gaussian_phase, illumination_support,
+                                    initialize_phase, smooth_phase_gradients)
 from ..training_policy import freeze_parameters,restrict_training_to
 from ..prepare_joint_router import expand_router
 from ..phase_plotting import phase_display_norm
@@ -303,6 +304,48 @@ class Contracts(unittest.TestCase):
             self.assertIsInstance(expert, nn.Linear)
             self.assertIsNone(expert.bias)
             self.assertTrue(torch.allclose(expert(2*x + 3*y), 2*expert(x) + 3*expert(y), atol=2e-6))
+
+    def test_direct_phase_starts_at_physical_zero_and_has_finite_gradient(self):
+        cfg = ModelConfig(width=8, expert_mode='linear', orm_mode='amplitude',
+                          fusion_router_input='all_tokens', phase_parameterization='direct',
+                          input_shift=0, phase_shift=0, ccd_shift=0, phase_dropout=0)
+        stage = GlobalStage(cfg, True).eval()
+        self.assertTrue(torch.equal(stage.phase(), torch.zeros(16,111,111)))
+        self.assertTrue(torch.equal(stage.modulation(), torch.ones(16,111,111,dtype=torch.complex64)))
+        output, _ = stage(torch.randn(1,16,4,49,8))
+        output.square().mean().backward()
+        gradient = stage.raw_global_phase.grad
+        self.assertTrue(bool(torch.isfinite(gradient).all()))
+        self.assertGreater(float(gradient.abs().max()), 1e-10)
+
+    def test_direct_phase_checkpoint_roundtrip_and_phase_periodicity(self):
+        cfg = ModelConfig(width=8, expert_mode='linear', orm_mode='amplitude',
+                          fusion_router_input='all_tokens', phase_parameterization='direct',
+                          router_hidden=8, readout_hidden=16, phase_shift=0, phase_dropout=0)
+        model = LightGenTemporal(cfg).eval()
+        with torch.no_grad():
+            model.frame_global.raw_global_phase.fill_(-.7)
+        before = model.frame_global.modulation()
+        with torch.no_grad():
+            model.frame_global.raw_global_phase.add_(2*torch.pi)
+        self.assertTrue(torch.allclose(before, model.frame_global.modulation(), atol=1e-6))
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'direct.pt'
+            torch.save(model.checkpoint(),path)
+            restored,_=load_lightgen(path)
+            self.assertEqual(restored.cfg.phase_parameterization,'direct')
+            self.assertEqual(restored.checkpoint()['schema'],8)
+            self.assertTrue(torch.equal(model.frame_global.phase(),restored.frame_global.phase()))
+
+    def test_phase_gradient_preconditioning_retains_constant_gradients(self):
+        cfg = ModelConfig(width=8, expert_mode='linear', orm_mode='amplitude',
+                          fusion_router_input='all_tokens', phase_parameterization='direct')
+        model = LightGenTemporal(cfg)
+        model.frame_global.raw_global_phase.grad=torch.ones(16,111,111)
+        smooth_phase_gradients(model,1.5)
+        self.assertTrue(torch.allclose(model.frame_global.raw_global_phase.grad,
+                                       torch.ones(16,111,111),atol=1e-6))
+        self.assertIsNone(model.video_global.raw_global_phase.grad)
 
     def test_manuscript_amplitude_orm(self):
         cfg = ModelConfig(width=8, orm_mode='amplitude', alpha_eval=2/3,
