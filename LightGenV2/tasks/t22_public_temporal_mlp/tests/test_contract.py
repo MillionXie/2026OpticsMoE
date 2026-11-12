@@ -13,6 +13,7 @@ from ..infer import frames_from_video, iter_video_fields
 from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support, initialize_phase
 from ..training_policy import freeze_parameters,restrict_training_to
 from ..prepare_joint_router import expand_router
+from ..phase_plotting import phase_display_norm
 
 
 class Contracts(unittest.TestCase):
@@ -101,6 +102,14 @@ class Contracts(unittest.TestCase):
         for name,value in model.named_parameters():
             expected=name.startswith('readout.') or name=='video_global.raw_global_phase'
             self.assertEqual(value.requires_grad,expected,name)
+
+    def test_nonlinear_phase_color_mapping_is_monotone_and_invertible(self):
+        import numpy as np
+        values=np.linspace(0,2*np.pi,101)
+        norm=phase_display_norm()
+        mapped=norm(values)
+        self.assertTrue(np.all(np.diff(mapped)>0))
+        self.assertTrue(np.allclose(norm.inverse(mapped),values,atol=1e-9))
 
     def test_native_tail_padding_matches_global_input_order(self):
         def decode(index):
