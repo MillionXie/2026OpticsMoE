@@ -92,7 +92,7 @@ def plot_expert_operation(model, tokens, weights, out):
         for spine in axes[2,i].spines.values():
             spine.set_edgecolor(color)
             spine.set_linewidth(3 if weights[i]>0 else 1)
-    fig.suptitle('Frame experts in the electronic feature domain\nX: 49 × 192; expert k: X Wkᵀ; output: sum of Top2-weighted experts',fontsize=14)
+    fig.suptitle('Frame experts in the electronic feature domain\nX[49,192] -> X Wkᵀ -> Top2-weighted sum[49,192]',fontsize=14)
     fig.savefig(out,dpi=180)
     plt.close(fig)
 

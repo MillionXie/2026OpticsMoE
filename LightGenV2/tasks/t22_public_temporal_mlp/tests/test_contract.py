@@ -94,6 +94,8 @@ class Contracts(unittest.TestCase):
             restored,_=load_lightgen(path)
             self.assertEqual(restored.cfg.fusion_router_input,'all_tokens')
             self.assertEqual(restored.checkpoint()['schema'],7)
+            with torch.no_grad():
+                self.assertTrue(torch.equal(changed['prediction'],restored(value)['prediction']))
 
     def test_trainable_whitelist_freezes_all_other_parameters(self):
         model=LightGenTemporal(ModelConfig(width=8,readout_hidden=16))
