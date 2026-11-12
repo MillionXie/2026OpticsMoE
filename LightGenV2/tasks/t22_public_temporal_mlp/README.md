@@ -355,6 +355,14 @@ temporal_linear_reference/
 
 ## Router、expert与光学token的实际处理
 
+说明中的两个阶段与原工程具名模块对应。Vision阶段为原vision_global，对应本代码frame_global，分别处理每视频四帧。Vision-language阶段为原language_global，对应本代码video_global，处理四个视觉token与38个prompt token的拼接序列。两个global在同一次前向中串行出现。固定prompt在第一个global及Frame Merger之后进入。
+
+2026-11-12重新逐行核对提交版SI（SHA256为6a1f82a5de08e3da02ae6fb0bb2654d9a1c79a9109af50c9d8de112264ff9b5b）第55–56行。该处定义softmax得到路由权重，权重和为1；Top2截断后的归一化步骤未展开。当前替代代码明确采用四专家softmax、Top2、选中权重除以两者之和。实际专家门控的和为1，保留每帧两个非零值。原LG2来源modeling.py中的_sparse_top2在softmax和Top2之后采用L2归一化，选中幅度的平方和为1。上述实现差别应在说明中如实保留。
+
+例如四个softmax概率为0.1、0.2、0.3、0.4，当前Top2门控为0、0、3/7、4/7。只截断时保留下来的两个数之和为0.7。两个被选中后的再归一化属于当前已训练替代版的实际处理顺序。
+
+explain_model.py生成network_overview.png与frame_dimensions.png。前者画出两轮处理和prompt进入位置，后者将单帧49×192、专家汇合、49×27及27×27光场编码逐步展开。每视频的四帧在代码中保持4×49×192，分别产生路由决定。49表示7×7个空间token位置，192表示各位置的通道维数。
+
 当前前端输出电子特征token。帧级每个输入X为49×192，即7×7个空间位置、每个位置192维特征。
 
 ```text
