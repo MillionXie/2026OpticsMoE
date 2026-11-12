@@ -20,6 +20,7 @@ RELU_ARCHITECTURE = GELU_ARCHITECTURE + '_allrelu'
 FIVE_LEVEL_ARCHITECTURE = RELU_ARCHITECTURE + '_five_levels'
 AMPLITUDE_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v6'
 JOINT_ROUTER_ARCHITECTURE = 't22_serial_top2_global2_five_levels_amplitude_v7_joint_router'
+FUSED_READOUT_ARCHITECTURE = 't22_serial_top2_global2_fused_readout_v8'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -38,6 +39,8 @@ class ModelConfig:
     mlp_activation: str = 'relu'
     readout_mode: str = 'five_levels'
     visual_output_norm: bool = False
+    fused_readout: bool = False
+    detector_processing: str = 'legacy_log_clip'
     prompt_length: int = 38
     videos: int = 16
     frames: int = 4
@@ -61,6 +64,11 @@ class ModelConfig:
     active: int = 478
 
     def __post_init__(self):
+        if self.detector_processing not in ('legacy_log_clip', 'relative_intensity'):
+            raise ValueError('Unsupported detector processing')
+        if self.fused_readout and (self.orm_mode != 'amplitude' or self.readout_mode != 'five_levels'
+                                  or self.fusion_router_input != 'all_tokens'):
+            raise ValueError('Fused readout requires the joint-router amplitude model')
         if (self.videos,self.frames,self.tokens,self.canvas,self.active)!=(16,4,49,518,478):
             raise ValueError('This contract fixes 16 videos x 4 frames, 7x7 tokens, 518/478 optics')
         if not 0 < self.prompt_length <= 52:
@@ -211,7 +219,9 @@ class GlobalStage(nn.Module):
         self.raw_global_phase=nn.Parameter(torch.empty(16,111,111))
         nn.init.normal_(self.raw_global_phase,0,0.25)
         self.propagation=Propagation(cfg)
-        self.norm=nn.LayerNorm(96);self.output=nn.Linear(96,cfg.width)
+        self.norm = nn.LayerNorm(96)
+        self.output = (nn.Identity() if cfg.fused_readout and not frame_level
+                       else nn.Linear(96, cfg.width))
         support=torch.zeros(518,518,dtype=torch.bool)
         for y,x in self.origins:
             support[y:y+115,x:x+115]=True
@@ -234,6 +244,12 @@ class GlobalStage(nn.Module):
     def phase(self, *, wrapped=False):
         value = 2 * math.pi * torch.sigmoid(self.raw_global_phase)
         return value.remainder(2 * math.pi) if wrapped else value
+
+    def process_detector(self, patches):
+        relative = patches / patches.mean((-2, -1), keepdim=True).clamp_min(1e-6)
+        if self.cfg.detector_processing == 'legacy_log_clip':
+            return torch.log1p(relative.clamp_max(8))
+        return relative
 
     def modulation(self):
         phase=self.phase()
@@ -281,11 +297,11 @@ class GlobalStage(nn.Module):
                     for dy,dx in [(0,0),(0,59),(59,0),(59,59)]],1))
             else: patches.append(detector[:,y:y+115,x:x+115])
         patches=torch.stack(patches,1).clamp_min(0)
-        patches=torch.log1p((patches/patches.mean((-2,-1),keepdim=True).clamp_min(1e-6)).clamp_max(8))
+        patches = self.process_detector(patches)
         leading=patches.shape[:-2];count=self.cfg.tokens if self.frame_level else tokens.shape[-2]
         pooled=F.adaptive_avg_pool2d(patches.reshape(-1,1,*patches.shape[-2:]),(count,96))[:,0]
         output=self.output(F.relu(self.norm(pooled)))
-        return output.reshape(*leading,count,self.cfg.width),guard
+        return output.reshape(*leading, count, output.shape[-1]), guard
 
 
 class LightGenTemporal(nn.Module):
@@ -308,7 +324,8 @@ class LightGenTemporal(nn.Module):
         router_tokens = 4+cfg.prompt_length if cfg.fusion_router_input == 'all_tokens' else 4
         self.video_router=Router(cfg,router_tokens);self.video_experts=Experts(cfg)
         self.video_global=GlobalStage(cfg,False)
-        self.readout=nn.Sequential(nn.Flatten(-2),nn.Linear((4+cfg.prompt_length)*cfg.width,cfg.readout_hidden),
+        readout_width = 96 if cfg.fused_readout else cfg.width
+        self.readout=nn.Sequential(nn.Flatten(-2),nn.Linear((4+cfg.prompt_length)*readout_width,cfg.readout_hidden),
             mlp_activation(cfg),nn.Linear(cfg.readout_hidden,5 if cfg.readout_mode == 'five_levels' else 1))
         self.register_buffer('target_mean',torch.tensor(0.))
         self.register_buffer('target_std',torch.tensor(1.))
@@ -392,6 +409,10 @@ class LightGenTemporal(nn.Module):
             if self.cfg.fusion_router_input == 'all_tokens':
                 architecture = JOINT_ROUTER_ARCHITECTURE + '_' + self.cfg.expert_mode + suffix
                 schema = 7
+        if self.cfg.fused_readout:
+            architecture = (FUSED_READOUT_ARCHITECTURE + '_' + self.cfg.detector_processing
+                            + '_' + self.cfg.expert_mode + suffix)
+            schema = 8
         return {'schema':schema, 'architecture':architecture,
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
@@ -399,6 +420,15 @@ class LightGenTemporal(nn.Module):
 def load_lightgen(path,device='cpu'):
     payload=torch.load(path,map_location='cpu',weights_only=True)
     architecture = payload['architecture']
+    if architecture.startswith(FUSED_READOUT_ARCHITECTURE + '_'):
+        model = LightGenTemporal(ModelConfig(**payload['config']))
+        if payload['schema'] != 8 or model.checkpoint()['architecture'] != architecture:
+            raise ValueError('Fused architecture conflicts with its configuration')
+        model.load_state_dict(payload['model'], strict=True)
+        return model.to(device).eval(), payload['metadata']
+    if (payload['config'].get('fused_readout', False)
+            or payload['config'].get('detector_processing', 'legacy_log_clip') != 'legacy_log_clip'):
+        raise ValueError('Historical architecture conflicts with detector or readout settings')
     activations = {GELU_ARCHITECTURE: 'gelu', RELU_ARCHITECTURE: 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_ln192': 'relu',
                    FIVE_LEVEL_ARCHITECTURE + '_no_ln192': 'relu'}
