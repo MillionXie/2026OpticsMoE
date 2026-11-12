@@ -36,6 +36,7 @@ def main():
     parser.add_argument('--paths', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--device', default='cpu')
+    parser.add_argument('--allow-shared-gpu', action='store_true')
     args = parser.parse_args()
     if args.out.exists():
         raise FileExistsError(args.out)
@@ -43,7 +44,7 @@ def main():
     weights = ROOT/profile['checkpoint']
     if sha256(weights) != profile['checkpoint_sha256']:
         raise ValueError('Selected PT SHA differs')
-    if args.device.startswith('cuda'):
+    if args.device.startswith('cuda') and not args.allow_shared_gpu:
         ensure_idle_gpu()
     torch.set_num_threads(4)
     model, metadata = load_lightgen(weights, args.device)
@@ -134,7 +135,8 @@ def main():
               'source_commit': os.environ.get('LIGHTGEN_SOURCE_COMMIT', commit),
               'source_SHA256': {p.name: sha256(p) for p in (ROOT/'model.py', ROOT/'infer.py', Path(__file__))},
               'environment': {'python': platform.python_version(), 'torch': str(torch.__version__),
-                              'device': args.device}, 'data_identity': payload['identity']}
+                              'device': args.device,
+                              'allow_shared_gpu': args.allow_shared_gpu}, 'data_identity': payload['identity']}
     write(args.out/'audit.json', record)
     write(args.out/'status.json', record)
     print(json.dumps(record), flush=True)

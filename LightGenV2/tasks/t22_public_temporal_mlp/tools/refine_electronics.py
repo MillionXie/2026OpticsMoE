@@ -75,9 +75,13 @@ def main():
     parser.add_argument('--epochs', type=int, default=400)
     parser.add_argument('--learning-rate', type=float, default=0.0003)
     parser.add_argument('--teacher-weight', type=float, default=10)
+    parser.add_argument('--minimum-srcc', type=float, default=-1)
+    parser.add_argument('--maximum-srcc', type=float, default=1)
     parser.add_argument('--seed', type=int, default=713)
     parser.add_argument('--device', default='cuda')
     args = parser.parse_args()
+    if not -1 <= args.minimum_srcc <= args.maximum_srcc <= 1:
+        raise ValueError('Invalid development-SRCC selection interval')
     if args.out.exists():
         raise FileExistsError(args.out)
     args.out.mkdir(parents=True)
@@ -139,6 +143,7 @@ def main():
                 'GPU': torch.cuda.get_device_name() if args.device.startswith('cuda') else 'CPU',
                 'seed': args.seed, 'epochs': args.epochs, 'learning_rate': args.learning_rate,
                 'teacher_weight': args.teacher_weight, 'GPU_resource_mode': 'nonexclusive_local_desktop'}
+    metadata['selection_interval'] = [args.minimum_srcc, args.maximum_srcc]
     metadata['config'] = {key: metadata[key] for key in
                           ('seed', 'epochs', 'learning_rate', 'teacher_weight', 'frozen_except', 'training_groups')}
     metadata['config']['model'] = asdict(model.cfg)
@@ -179,18 +184,23 @@ def main():
             row = {'epoch': epoch, 'loss': float(np.mean(losses)) if losses else None,
                    'metrics': metrics, 'elapsed_seconds': time.time()-started}
             history.append(row)
-            if metrics['srcc'] > best:
+            eligible = args.minimum_srcc <= metrics['srcc'] <= args.maximum_srcc
+            row['eligible_for_selection'] = eligible
+            if eligible and metrics['srcc'] > best:
                 best = metrics['srcc']
                 checkpoint = model.checkpoint(**{**metadata, 'epoch': epoch, 'metrics': metrics})
                 save_checkpoint(args.out/'best_checkpoint.pt', checkpoint)
                 write_predictions(args.out/'test_predictions.csv', cache['test'], prediction, epoch)
                 write(args.out/'metrics.json', metrics)
             write(args.out/'history.json', history)
-            write(args.out/'status.json', {'state': 'running', 'epoch': epoch, 'best_srcc': best})
+            write(args.out/'status.json', {'state': 'running', 'epoch': epoch,
+                                          'best_srcc': best if np.isfinite(best) else None})
             print(json.dumps(row), flush=True)
     for name, expected in fixed.items():
         if not torch.equal(model.state_dict()[name].cpu(), expected):
             raise ValueError('A frozen tensor changed: '+name)
+    if not np.isfinite(best):
+        raise ValueError('No evaluated epoch meets the requested SRCC interval')
     save_checkpoint(args.out/'last_checkpoint.pt', model.checkpoint(**{**metadata, 'epoch': args.epochs}))
     write(args.out/'status.json', {'state': 'completed', 'best_srcc': best,
                                  'epochs': args.epochs, 'frozen_tensors_unchanged': True})
