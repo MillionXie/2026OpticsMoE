@@ -42,16 +42,19 @@ def collect_features(source, target, payload, split, device):
         for start in range(0, len(indices), 4):
             ii, vv = indices[start:start+4], valid[start:start+4]
             item = batch(payload, ii, vv, device)
-            teacher = source(item['vision'])
+            teacher = source(item['vision']) if split == 'train' else None
             target(item['vision'])
             features.append(captured['value'][item['valid']].cpu())
-            predictions.append(teacher['prediction'][item['valid']].cpu())
+            if teacher is not None:
+                predictions.append(teacher['prediction'][item['valid']].cpu())
             targets.append(item['target'][item['valid']].cpu())
             ids.extend(payload['ids'][index] for index in ii[vv].tolist())
     finally:
         handle.remove()
-    return {'features': torch.cat(features), 'teacher': torch.cat(predictions),
-            'target': torch.cat(targets), 'ids': ids}
+    result = {'features': torch.cat(features), 'target': torch.cat(targets), 'ids': ids}
+    if predictions:
+        result['teacher'] = torch.cat(predictions)
+    return result
 
 
 def write_predictions(path, data, prediction, epoch):
@@ -122,7 +125,8 @@ def main():
              if not name.startswith('readout.')}
     optimizer = torch.optim.AdamW(model.readout.parameters(), lr=args.learning_rate, weight_decay=0.0001)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs, eta_min=args.learning_rate*.1)
-    metadata = {**source_metadata, 'role': 'ELECTRONIC_SIMPLIFICATION_DEVELOPMENT',
+    metadata = {'role': 'ELECTRONIC_SIMPLIFICATION_DEVELOPMENT',
+                'parent_training_metadata': source_metadata,
                 'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=_paths.ROOT, text=True).strip(),
                 'source_SHA256': {str(path.relative_to(_paths.ROOT)): file_sha256(path)
                                   for path in [_paths.ROOT/'model.py', Path(__file__), Path(__file__).with_name('simplify_checkpoint.py')]},
@@ -135,6 +139,10 @@ def main():
                 'GPU': torch.cuda.get_device_name() if args.device.startswith('cuda') else 'CPU',
                 'seed': args.seed, 'epochs': args.epochs, 'learning_rate': args.learning_rate,
                 'teacher_weight': args.teacher_weight, 'GPU_resource_mode': 'nonexclusive_local_desktop'}
+    metadata['config'] = {key: metadata[key] for key in
+                          ('seed', 'epochs', 'learning_rate', 'teacher_weight', 'frozen_except', 'training_groups')}
+    metadata['config']['model'] = asdict(model.cfg)
+    metadata['optimization_parameters'] = sum(p.numel() for p in model.readout.parameters())
     write(args.out/'metadata.json', metadata)
     history, best = [], -float('inf')
     started = time.time()

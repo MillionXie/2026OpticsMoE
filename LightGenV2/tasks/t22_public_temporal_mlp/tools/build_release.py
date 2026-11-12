@@ -57,9 +57,15 @@ def copy_results(run,output):
     output.mkdir()
     summaries={}
     conditions={}
-    for directory in (run/'global_ablation',run/'global_ablation/initialization_control'):
+    directories = [run/'global_ablation']
+    if (run/'global_ablation/initialization_control').exists():
+        directories.append(run/'global_ablation/initialization_control')
+    for directory in directories:
         if json.loads((directory/'status.json').read_text('utf-8-sig'))['state']!='completed':
             raise ValueError('Global ablation is incomplete')
+        protocol = json.loads((directory/'protocol.json').read_text('utf-8-sig'))
+        if protocol['checkpoint_sha256'] != file_sha256(run/'LightGen.pt'):
+            raise ValueError('Global ablation belongs to another checkpoint')
         for row in read_csv(directory/'summary.csv'):
             summaries[row['kind'],row['stage']]=row
         for row in read_csv(directory/'all_conditions.csv'):

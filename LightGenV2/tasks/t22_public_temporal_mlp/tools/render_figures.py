@@ -83,7 +83,7 @@ def plot_phase_training(initial, trained, output, arrays_path, statistics_path,
         add_phase_colorbar(fig,image,axes[row,2],label='Update (rad)')
     for ax in axes.flat:
         ax.set(xticks=[], yticks=[])
-    fig.suptitle('Actual run initialization and selected weights, physical video slot 0')
+    fig.suptitle('Retained phase-training initialization and selected masks, physical video slot 0')
     save_figure(fig, output)
     plt.close(fig)
     np.savez_compressed(arrays_path, **arrays)
@@ -191,8 +191,8 @@ def main():
                         current / 'fields/phase_training_arrays.npz',
                         current / 'fields/phase_training_statistics.json',
                         ROOT / 'assets/initialization/initialization.pt', checkpoint)
-    explain_model.draw_network(output / 'network_overview.png')
-    explain_model.draw_frame(output / 'frame_dimensions.png')
+    explain_model.draw_network(output / 'network_overview.png', model.cfg)
+    explain_model.draw_frame(output / 'frame_dimensions.png', model.cfg)
     record = {
         'checkpoint_sha256': sha256(checkpoint),
         'font_family': FONT_FAMILY,

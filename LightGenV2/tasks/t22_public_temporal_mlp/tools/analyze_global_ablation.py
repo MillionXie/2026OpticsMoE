@@ -78,7 +78,7 @@ def main():
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--seeds',type=int,nargs='+',default=list(range(7100,7110)))
     parser.add_argument('--kinds',nargs='+',choices=['bypass','random_phase','random_raw_phase','random_global','random_global_default'],
-                        default=['bypass','random_phase','random_raw_phase','random_global','random_global_default'])
+                        default=None)
     parser.add_argument('--device',default='cpu')
     parser.add_argument('--allow-shared-gpu',action='store_true')
     args=parser.parse_args()
@@ -91,6 +91,11 @@ def main():
     torch.set_num_threads(4)
     weights_sha256=sha256(args.weights)
     model,metadata=load_lightgen(args.weights,args.device)
+    kinds = args.kinds or ['random_phase', 'random_raw_phase', 'random_global', 'random_global_default']
+    if args.kinds is None and not model.cfg.fused_readout:
+        kinds = ['bypass'] + kinds
+    if model.cfg.fused_readout and 'bypass' in kinds:
+        raise ValueError('Whole-block identity bypass requires matching input/output token widths')
     payload=load_inputs(json.loads(args.paths.read_text('utf-8')))
     if payload['identity']['manifest']['sha256']!=metadata['dataset']['manifest']['sha256']:
         raise ValueError('Dataset manifest differs')
@@ -101,7 +106,7 @@ def main():
     rows.append({'kind':'learned','stage':'both','seed':None,**learned})
     if abs(learned['srcc']-metadata['metrics']['srcc'])>1e-5:
         raise ValueError('Reference differs from the selected checkpoint')
-    for kind in args.kinds:
+    for kind in kinds:
         for stage_label,names in STAGES.items():
             for seed in ([None] if kind=='bypass' else args.seeds):
                 identities={}

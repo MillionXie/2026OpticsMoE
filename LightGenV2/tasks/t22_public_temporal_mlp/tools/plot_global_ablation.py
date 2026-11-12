@@ -23,10 +23,16 @@ def main():
         rows={(r['kind'],r['stage']):r for r in csv.DictReader(stream)}
     fig,ax=plt.subplots(figsize=(7.2,3.5),layout='constrained')
     x=np.arange(3)
-    for offset,kind,label,color in zip((-.28,-.14,0,.14,.28),
-            ('bypass','random_phase','random_raw_phase','random_global','random_global_default'),
-            ('Block bypass','Uniform phase','Default raw phase','Random block + uniform phase','Default random block'),
-            ('#86A2E1','#F5BA92','#E2E2E2','#FFEDB8','#8CB9A8')):
+    styles = [
+        ('bypass', 'Block bypass', '#86A2E1'),
+        ('random_phase', 'Uniform phase', '#F5BA92'),
+        ('random_raw_phase', 'Default raw phase', '#E2E2E2'),
+        ('random_global', 'Random block + uniform phase', '#FFEDB8'),
+        ('random_global_default', 'Default random block', '#8CB9A8'),
+    ]
+    styles = [style for style in styles if all((style[0], stage) in rows for stage in ('vision','joint','both'))]
+    offsets = (np.arange(len(styles)) - (len(styles)-1)/2)*.14
+    for offset, (kind, label, color) in zip(offsets, styles):
         values=[float(rows[kind,stage]['mean_srcc']) for stage in ('vision','joint','both')]
         errors=[float(rows[kind,stage]['std_srcc']) for stage in ('vision','joint','both')]
         ax.bar(x+offset,values,width=.13,yerr=errors,capsize=2,label=label,color=color,edgecolor='#777777',linewidth=.4)

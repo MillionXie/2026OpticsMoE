@@ -63,20 +63,23 @@ def input_canvas(stage, fields):
 
 def detector_regions(stage, intensity):
     patches = []
-    mosaic = np.full((518, 518), np.nan, dtype=np.float32)
     offsets = [(0, 0), (0, 59), (59, 0), (59, 59)] if stage.frame_level else [(0, 0)]
     side = 56 if stage.frame_level else 115
     for y, x in stage.origins:
         pieces = []
         for dy, dx in offsets:
             patch = intensity[y+dy:y+dy+side, x+dx:x+dx+side]
-            normalized = np.log1p(np.minimum(patch / max(float(patch.mean()), 1e-6), 8))
-            mosaic[y+dy:y+dy+side, x+dx:x+dx+side] = normalized
             pieces.append(patch)
         patches.append(pieces)
     patches = np.asarray(patches, dtype=np.float32)
     if not stage.frame_level:
         patches = patches[:, 0]
+    processed = stage.process_detector(torch.from_numpy(patches).clamp_min(0)).numpy()
+    mosaic = np.full((518, 518), np.nan, dtype=np.float32)
+    for slot, (y, x) in enumerate(stage.origins):
+        for frame, (dy, dx) in enumerate(offsets):
+            value = processed[slot, frame] if stage.frame_level else processed[slot]
+            mosaic[y+dy:y+dy+side, x+dx:x+dx+side] = value
     return patches, mosaic
 
 
@@ -156,8 +159,7 @@ def trace(model, vision):
         if field_error > 2e-5:
             raise ValueError('Reconstructed incident field differs from actual propagation input')
         patches, processed_mosaic = detector_regions(stage, values['intensity'])
-        tensor = torch.from_numpy(patches)
-        processed = torch.log1p((tensor / tensor.mean((-2, -1), keepdim=True).clamp_min(1e-6)).clamp_max(8))
+        processed = stage.process_detector(torch.from_numpy(patches).clamp_min(0))
         token_count = 49 if stage.frame_level else 4+stage.cfg.prompt_length
         pooled = F.adaptive_avg_pool2d(processed.reshape(-1, 1, *patches.shape[-2:]), (token_count, 96))[:, 0]
         pooling_error = float((pooled - values['pooled']).abs().max())
@@ -182,6 +184,10 @@ def plot_overview(stage, values, out):
     propagated = values['propagated_field']
     input_phase = np.where(values['incident_amplitude'] > 0, np.angle(modulated), np.nan)
     output_phase = np.where(intensity > intensity.max() * 1e-6, np.angle(propagated), np.nan)
+    legacy_processing = stage.cfg.detector_processing == 'legacy_log_clip'
+    processed_title = 'CCD mean / clip / log1p' if legacy_processing else 'CCD mean-normalized intensity'
+    processed_upper = (np.log(9) if legacy_processing else
+                       max(float(np.nanmax(values['processed_mosaic'])), 1e-8))
     panels = [
         ('Incident amplitude |U|', values['incident_amplitude'], 'magma', {}),
         ('Intended SLM phase', phase_display_values(values['intended_phase']), 'twilight', {'norm': phase_display_norm()}),
@@ -190,7 +196,7 @@ def plot_overview(stage, values, out):
         ('Detector intensity |O|², linear', intensity, 'inferno', {'vmin': 0, 'vmax': upper}),
         ('Detector intensity |O|², log', intensity, 'inferno', {'norm': LogNorm(lower, upper)}),
         ('Propagated phase arg(O)', output_phase, 'twilight', {'vmin': -np.pi, 'vmax': np.pi}),
-        ('CCD mean / clip / log1p', values['processed_mosaic'], 'viridis', {'vmin': 0, 'vmax': np.log(9)})]
+        (processed_title, values['processed_mosaic'], 'viridis', {'vmin': 0, 'vmax': processed_upper})]
     fig, axes = plt.subplots(2, 4, figsize=(8.4, 4.7), constrained_layout=True)
     for ax, (title, array, cmap, limits) in zip(axes.flat, panels):
         artist = ax.imshow(array, cmap=cmap, interpolation='nearest', **limits)
@@ -206,6 +212,8 @@ def plot_overview(stage, values, out):
     plt.close(fig)
     return {'intensity_display_upper_percentile': 99.8, 'intensity_display_upper': upper,
             'log_intensity_display_lower': lower, 'phase_visibility_threshold_fraction': 1e-6,
+            'detector_processing': stage.cfg.detector_processing,
+            'processed_intensity_display_upper': processed_upper,
             'SLM_phase_display':PHASE_DISPLAY}
 
 
@@ -216,9 +224,9 @@ def plot_inputs(pixels, ids, out):
         mosaic = np.concatenate((np.concatenate(images[slot, :2], axis=1),
                                  np.concatenate(images[slot, 2:], axis=1)), axis=0)
         ax.imshow(mosaic)
-        ax.set_title(f'Slot {slot:02d}  |  {ids[slot][:12]}', fontsize=9)
+        ax.set_title(f'Slot {slot:02d}  |  {ids[slot][:12]}', fontsize=8)
         ax.axis('off')
-    fig.suptitle('Actual cropped video frames; each slot shows t1 t2 / t3 t4', fontsize=15)
+    fig.suptitle('Actual cropped video frames; each slot shows t1 t2 / t3 t4', fontsize=8)
     save_figure(fig,out)
     plt.close(fig)
 
@@ -254,7 +262,7 @@ def plot_detail(pixels, values, result, slot, sample_id, out):
     axes[2, 3].set(title=f'MOS = {float(result["prediction"][0, slot]):.4f}',
                    xticks=range(5), xticklabels=['Bad', 'Poor', 'Fair', 'Good', 'Excellent'], ylim=(0, 1))
     axes[2, 3].tick_params(axis='x', rotation=30)
-    fig.suptitle(f'Slot {slot:02d} | {sample_id}\nSelected linear model, traced optical fields', fontsize=13)
+    fig.suptitle(f'Slot {slot:02d} | {sample_id}\nSelected linear model, traced optical fields', fontsize=8)
     save_figure(fig,out)
     plt.close(fig)
 
@@ -280,7 +288,7 @@ def main():
         raise ValueError('Selected checkpoint SHA differs')
     torch.set_num_threads(4)
     model, metadata = load_lightgen(weights, args.device)
-    if model.cfg.expert_mode != 'linear' or model.cfg.orm_mode != 'amplitude' or model.cfg.readout_hidden != 256:
+    if model.cfg.expert_mode != 'linear' or model.cfg.orm_mode != 'amplitude':
         raise ValueError('Selected linear architecture required')
     if args.group < 0 or not 0 <= args.detail_slot < 16:
         raise ValueError('Invalid evaluation group or detail slot')
