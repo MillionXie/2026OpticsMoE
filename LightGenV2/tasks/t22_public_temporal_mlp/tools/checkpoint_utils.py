@@ -37,6 +37,14 @@ def export_public_checkpoint(source,destination):
         'license':'Apache-2.0',
         'evaluation':{'scope':'original_TEST_development','videos':558,'cached_srcc':reference},
     }
+    front_source = metadata.get('front_source', metadata.get('parent_training_metadata', {}).get('front_source', {}))
+    if front_source:
+        public_metadata['upstream_revision'] = front_source.get('qwen_revision')
+        public_metadata['fixed_prompt'] = front_source.get('prompt')
+    components = {name: value for name, value in payload['model'].items()
+                  if name.startswith('front.') or name == 'prompt_embedding'}
+    if components:
+        public_metadata['frozen_component_state_sha256'] = tensor_fingerprint(components)
     if 'dataset' in metadata:
         public_metadata['dataset']={'manifest':{'sha256':metadata['dataset']['manifest']['sha256']}}
     public={key:payload[key] for key in ('schema','architecture','config','model')}
