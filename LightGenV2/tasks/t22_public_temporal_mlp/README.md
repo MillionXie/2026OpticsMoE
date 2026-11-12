@@ -488,7 +488,7 @@ Robust在本组mask/CCD位移试验中的最低SRCC为0.782075，Lens为0.775697
 
 E3选中次数增加，四专家平均权重更接近均分。被选次数中E3仍偏低，逐物理槽位的表和图一并保存。两组新候选的视觉router与视觉适配参数逐位相同，因此本轮后两组的视觉选择次数相同。图题沿用用户指定的Optical expert share (%)，并将两个阶段标为Vision与Vision-language。
 
-原Robust的照明区域圆标准差为视觉0.123120 rad、图文融合0.096987 rad，Textured为0.212746 rad和0.164438 rad。相位纹理有增强，phase_effect_cuda/phase_texture.png提供原始相位及相对圆均值的图，两个视图各自对全部候选使用相同色标。
+原Robust的照明区域圆标准差为视觉0.123120 rad、图文融合0.096987 rad，Textured为0.212679 rad和0.164433 rad。相位纹理有增强，phase_effect_cuda/phase_texture.png提供原始相位及相对圆均值的图，两个视图各自对全部候选使用相同色标。
 
 phase_effect_cuda包含固定电子权重的相位消融。每个tile用其照明区域圆均值替换全部空间纹理，同时保留衍射、探测和电子处理。Robust原相位SRCC为0.786231，两个global均替换为常相位时为0.785690。Textured对应0.784726和0.782913。Textured仅把图文融合相位改为常相位时为0.786359。因此，图文融合相位在此对照中的独立贡献尚未表现为正，纹理外观和性能收益需要分别报告。
 
