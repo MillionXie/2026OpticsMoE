@@ -20,9 +20,14 @@ import torch
 from torch.nn import functional as F
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .plot_style import save_figure
-    from .infer import frames_from_video, iter_video_fields
-    from .model import load_lightgen
+    from ..infer import frames_from_video, iter_video_fields
+    from ..model import load_lightgen
     from .phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 else:
     from plot_style import save_figure
@@ -30,7 +35,7 @@ else:
     from model import load_lightgen
     from phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
 
-ROOT = Path(__file__).resolve().parent
+ROOT = _paths.ROOT
 
 
 def sha256(path):
@@ -280,7 +285,7 @@ def main():
     if args.group < 0 or not 0 <= args.detail_slot < 16:
         raise ValueError('Invalid evaluation group or detail slot')
     if args.paths:
-        if __package__:
+        if __package__ and __package__ != 'tools':
             from .data import batch, groups, load_inputs
         else:
             from data import batch, groups, load_inputs

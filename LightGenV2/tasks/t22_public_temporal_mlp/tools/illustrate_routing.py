@@ -12,10 +12,15 @@ import numpy as np
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .plot_style import save_figure
     from .analyze_routing import COLORS
     from .data import batch,groups,load_inputs,sha256
-    from .model import load_lightgen
+    from ..model import load_lightgen
 else:
     from plot_style import save_figure
     from analyze_routing import COLORS

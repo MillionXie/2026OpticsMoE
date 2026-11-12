@@ -14,9 +14,14 @@ import numpy as np
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .data import groups, load_inputs, sha256
-    from .infer import iter_video_fields
-    from .model import load_lightgen
+    from ..infer import iter_video_fields
+    from ..model import load_lightgen
     from .run import ROOT, ensure_idle_gpu, regression_metrics, write
 else:
     from data import groups, load_inputs, sha256

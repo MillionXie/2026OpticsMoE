@@ -1,1 +1,1 @@
-"""Public-surrogate Temporal VQA: MLP routing/experts and two optical globals."""
+"""Temporal quality reference with linear experts and two optical globals."""

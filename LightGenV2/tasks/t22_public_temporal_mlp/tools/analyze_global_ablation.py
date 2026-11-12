@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 from contextlib import ExitStack
 import csv
-import hashlib
 import json
 import math
 from pathlib import Path
@@ -17,13 +16,20 @@ import numpy as np
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .data import batch, groups, load_inputs, sha256
-    from .model import GlobalStage, load_lightgen
+    from ..model import GlobalStage, load_lightgen
     from .run import ROOT, ensure_idle_gpu, regression_metrics, write
+    from .checkpoint_utils import tensor_fingerprint
 else:
     from data import batch, groups, load_inputs, sha256
     from model import GlobalStage, load_lightgen
     from run import ROOT, ensure_idle_gpu, regression_metrics, write
+    from checkpoint_utils import tensor_fingerprint
 
 
 STAGES={'vision':('frame_global',),'joint':('video_global',),
@@ -32,16 +38,6 @@ STAGES={'vision':('frame_global',),'joint':('video_global',),
 
 def identity_global(tokens):
     return tokens,tokens.new_zeros(())
-
-
-def tensor_fingerprint(state):
-    digest=hashlib.sha256()
-    for name,value in sorted(state.items()):
-        value=value.detach().cpu().contiguous()
-        digest.update(name.encode())
-        digest.update(str((value.dtype,tuple(value.shape))).encode())
-        digest.update(value.reshape(-1).view(torch.uint8).numpy().tobytes())
-    return digest.hexdigest()
 
 
 def ablation_metrics(prediction,target):
@@ -81,6 +77,8 @@ def main():
     parser.add_argument('--paths',type=Path,required=True)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--seeds',type=int,nargs='+',default=list(range(7100,7110)))
+    parser.add_argument('--kinds',nargs='+',choices=['bypass','random_phase','random_raw_phase','random_global','random_global_default'],
+                        default=['bypass','random_phase','random_raw_phase','random_global','random_global_default'])
     parser.add_argument('--device',default='cpu')
     parser.add_argument('--allow-shared-gpu',action='store_true')
     args=parser.parse_args()
@@ -103,7 +101,7 @@ def main():
     rows.append({'kind':'learned','stage':'both','seed':None,**learned})
     if abs(learned['srcc']-metadata['metrics']['srcc'])>1e-5:
         raise ValueError('Reference differs from the selected checkpoint')
-    for kind in ('bypass','random_phase','random_global'):
+    for kind in args.kinds:
         for stage_label,names in STAGES.items():
             for seed in ([None] if kind=='bypass' else args.seeds):
                 identities={}
@@ -115,17 +113,24 @@ def main():
                             continue
                         stage_index=('frame_global','video_global').index(name)
                         generator=torch.Generator().manual_seed(seed+1000*stage_index)
-                        phase=(2*math.pi*torch.rand(16,111,111,generator=generator)).to(args.device)
-                        identities[name]={'phase_sha256':tensor_fingerprint({'phase':phase})}
-                        if kind=='random_global':
+                        if kind=='random_raw_phase':
+                            phase=2*math.pi*torch.sigmoid(.25*torch.randn(16,111,111,generator=generator))
+                        else:
+                            phase=2*math.pi*torch.rand(16,111,111,generator=generator)
+                        phase=phase.to(args.device)
+                        identities[name]={}
+                        if kind in ('random_global','random_global_default'):
                             devices=[stage.raw_global_phase.device.index] if stage.raw_global_phase.is_cuda else []
                             with torch.random.fork_rng(devices=devices):
                                 torch.manual_seed(seed+10000+1000*stage_index)
                                 replacement=GlobalStage(model.cfg,stage.frame_level)
                             replacement=replacement.to(args.device).eval()
+                            if kind=='random_global_default':
+                                phase=replacement.phase().detach()
                             identities[name]['random_module_sha256']=tensor_fingerprint(replacement.state_dict())
                             stack.enter_context(patch.object(model,name,replacement))
                             stage=replacement
+                        identities[name]['phase_sha256']=tensor_fingerprint({'phase':phase})
                         stack.enter_context(patch.object(stage,'phase',lambda *,wrapped=False,value=phase:value))
                     case=f'{kind}_{stage_label}'+('' if seed is None else f'_{seed}')
                     metrics=evaluate_condition(model,payload,args.device,args.out/case)
@@ -155,7 +160,9 @@ def main():
         'trained_parameters_modified':False,'retraining':False,'seeds':args.seeds,
         'bypass':'identity on the entire GlobalStage input/output token tensor',
         'random_phase':'independent uniform physical phase in [0,2*pi), all learned mappings retained',
+        'random_raw_phase':'raw phase N(0,0.25^2), followed by the original 2*pi*sigmoid(raw)',
         'random_global':'default constructor initialization of GlobalStage mappings/readout plus uniform physical phase',
+        'random_global_default':'complete default GlobalStage initialization, including raw phase N(0,0.25^2)',
         'unchanged_components':'all modules outside the named GlobalStage replacements',
         'padding_excluded':True,'videos':558,'data_identity':payload['identity'],
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),

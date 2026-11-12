@@ -9,8 +9,13 @@ import subprocess
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .data import batch, groups, load_inputs, sha256
-    from .model import load_lightgen
+    from ..model import load_lightgen
     from .run import ROOT, regression_metrics, write
 else:
     from data import batch, groups, load_inputs, sha256

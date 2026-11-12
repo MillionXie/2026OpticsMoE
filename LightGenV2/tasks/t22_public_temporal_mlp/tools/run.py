@@ -20,7 +20,12 @@ from torch.nn import functional as F
 from scipy.stats import spearmanr, kendalltau, pearsonr
 
 if __package__:
-    from .model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
+    from ..model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
     from .phase_regularization import (model_phase_penalties, phase_statistics,
                                        smooth_phase_gradients, smooth_phase_parameters)
@@ -32,7 +37,7 @@ else:
                                       smooth_phase_gradients, smooth_phase_parameters)
     from training_policy import freeze_parameters,restrict_training_to
 
-ROOT=Path(__file__).resolve().parent
+ROOT=_paths.ROOT
 
 
 def write(path,value):
@@ -309,7 +314,8 @@ def train(args):
     metadata={'role':'PUBLIC_SURROGATE_DEVELOPMENT','test_used_for_selection':True,
               'test_used_for_gradient':False,'validation_used':False,'config':cfg,
               'source_commit':os.environ.get('LIGHTGEN_SOURCE_COMMIT',head),'checkout_HEAD':head,
-              'source_SHA256':{p.name:sha256(p) for p in ROOT.glob('*.py')},
+              'source_SHA256':{p.relative_to(ROOT).as_posix():sha256(p)
+                               for folder in (ROOT,_paths.TOOLS) for p in folder.glob('*.py')},
               'dataset':payload['identity'],'front_source':small_front['source'],
               'python':platform.python_version(),'torch':str(torch.__version__),'platform':platform.platform(),
               'cuda_visible_devices':os.environ.get('CUDA_VISIBLE_DEVICES'),

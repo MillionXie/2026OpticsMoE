@@ -7,17 +7,17 @@ from unittest.mock import Mock, patch
 import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, Experts, load_lightgen
-from ..run import (save_checkpoint, selection_score, router_regularization,
+from ..tools.run import (save_checkpoint, selection_score, router_regularization,
                    relative_frame_mixture_loss, update_router_bias)
-from ..data import attach_train_soft_targets
+from ..tools.data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
-from ..phase_regularization import (phase_penalties, gaussian_phase, illumination_support,
+from ..tools.phase_regularization import (phase_penalties, gaussian_phase, illumination_support,
                                     initialize_phase, smooth_phase_gradients, smooth_phase_parameters)
-from ..training_policy import freeze_parameters,restrict_training_to
-from ..prepare_joint_router import expand_router
-from ..phase_plotting import phase_display_norm, phase_display_values
-from ..analyze_phase_effect import constant_modulation
-from ..analyze_global_ablation import identity_global, ablation_metrics
+from ..tools.training_policy import freeze_parameters,restrict_training_to
+from ..tools.prepare_joint_router import expand_router
+from ..tools.phase_plotting import phase_display_norm, phase_display_values
+from ..tools.analyze_phase_effect import constant_modulation
+from ..tools.analyze_global_ablation import identity_global, ablation_metrics
 
 
 class Contracts(unittest.TestCase):

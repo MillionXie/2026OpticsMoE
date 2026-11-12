@@ -12,8 +12,13 @@ import subprocess
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .data import sha256
-    from .model import LightGenTemporal, load_lightgen
+    from ..model import LightGenTemporal, load_lightgen
     from .phase_regularization import initialize_phase, phase_to_raw, phase_statistics
     from .run import ROOT, save_checkpoint
 else:
@@ -64,7 +69,7 @@ def main():
               'initialization':config['phase_initialization'], 'measured_metrics_available':False}
     commit = subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     record['source_commit'] = os.environ.get('LIGHTGEN_SOURCE_COMMIT',commit)
-    record['source_SHA256'] = {name:sha256(ROOT/name)
+    record['source_SHA256'] = {name:sha256(_paths.source_path(name))
                               for name in ('model.py','phase_regularization.py','prepare_phase_masks.py')}
     save_checkpoint(args.out/'initialization.pt',model.checkpoint(**record))
     (args.out/'config.json').write_text(json.dumps(config,indent=2)+'\n','utf-8')

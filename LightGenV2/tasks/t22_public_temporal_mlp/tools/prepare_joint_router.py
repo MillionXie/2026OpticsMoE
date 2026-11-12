@@ -11,8 +11,13 @@ import torch
 from torch.nn import functional as F
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .data import sha256
-    from .model import LightGenTemporal,load_lightgen
+    from ..model import LightGenTemporal,load_lightgen
     from .run import save_checkpoint
 else:
     from data import sha256
@@ -62,14 +67,14 @@ def main():
     if changed!=['video_router.fc1.weight','video_router.fc1.bias']:
         raise ValueError('Unexpected changes during router expansion: '+str(changed))
     args.out.mkdir(parents=True)
-    root=Path(__file__).resolve().parent
+    root=_paths.ROOT
     record={'role':'JOINT_ROUTER_INITIALIZATION','dataset':metadata['dataset'],
             'parent_SHA256':sha256(args.source),'seed':args.seed,'changed_tensors':changed,
             'fusion_router_shape':[4+model.cfg.prompt_length,model.cfg.width],
             'text_weight_norm':float(model.video_router.fc1.weight[:,4*model.cfg.width:].detach().norm()),
             'fixed_prompt_bias_compensation':True,
             'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
-            'source_SHA256':{name:sha256(root/name) for name in ['model.py','prepare_joint_router.py']}}
+            'source_SHA256':{name:sha256(_paths.source_path(name)) for name in ['model.py','prepare_joint_router.py']}}
     save_checkpoint(args.out/'initialization.pt',model.checkpoint(**record))
     (args.out/'preparation.json').write_text(json.dumps(record,indent=2)+'\n','utf-8')
     (args.out/'model_config.json').write_text(json.dumps(asdict(model.cfg),indent=2)+'\n','utf-8')

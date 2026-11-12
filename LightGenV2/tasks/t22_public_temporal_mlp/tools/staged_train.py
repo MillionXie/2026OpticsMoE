@@ -12,12 +12,17 @@ import time
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .wait_for_gpu import idle_gpus
 else:
     from wait_for_gpu import idle_gpus
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = _paths.ROOT
 
 
 def write(path, record):
@@ -97,7 +102,7 @@ def main():
                 'completed_stages': completed, 'pid': os.getpid(),
             })
             time.sleep(10)
-        command = [sys.executable, str(ROOT / 'run.py'), '--config', str(config_path),
+        command = [sys.executable, str(_paths.TOOLS / 'run.py'), '--config', str(config_path),
                    '--paths', str(args.paths.resolve()), '--out', str(args.out / name),
                    '--device', 'cuda', '--train-soft-targets', str(args.train_soft_targets.resolve())]
         if parent is not None:

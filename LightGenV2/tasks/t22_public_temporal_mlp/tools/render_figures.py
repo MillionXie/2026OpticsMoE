@@ -15,11 +15,16 @@ import numpy as np
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from . import analyze_routing, explain_model, illustrate_routing, visualize_fields
     from .analyze_phase_effect import plot_phases
     from .data import batch, groups, load_inputs, sha256
     from .evaluate_phase_robustness import plot_curves, plot_masks
-    from .model import load_lightgen
+    from ..model import load_lightgen
     from .phase_plotting import PHASE_DISPLAY, add_phase_colorbar, phase_display_norm, phase_display_values
     from .phase_regularization import illumination_support
     from .plot_style import BODY_SIZE_PT, FONT_FAMILY, TITLE_SIZE_PT, save_figure
@@ -37,7 +42,7 @@ else:
     from plot_style import BODY_SIZE_PT, FONT_FAMILY, TITLE_SIZE_PT, save_figure
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = _paths.ROOT
 STAGES = ('frame_global', 'video_global')
 
 

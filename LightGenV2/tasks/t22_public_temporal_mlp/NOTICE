@@ -1,0 +1,15 @@
+LightGen-II temporal quality reference implementation
+Copyright 2026 LightGen-II contributors
+
+This project is distributed under the Apache License, Version 2.0.
+
+The standalone checkpoint contains frozen visual patch-projection tensors,
+interpolated position tensors, and fixed-prompt embeddings originating from
+Qwen3-VL-2B-Instruct, developed by the Qwen Team at Alibaba Cloud.
+The patch and position processing is adapted for the LightGen reference model.
+
+Upstream model and license information
+https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct
+https://github.com/QwenLM/Qwen3-VL
+
+The upstream Apache-2.0 license is included in licenses/QWEN_LICENSE.txt.

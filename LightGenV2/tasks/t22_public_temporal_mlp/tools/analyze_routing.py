@@ -17,10 +17,15 @@ import numpy as np
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .plot_style import save_figure
     from .phase_plotting import phase_display_norm, phase_display_values, add_phase_colorbar
     from .data import batch, groups, load_inputs, sha256
-    from .model import load_lightgen
+    from ..model import load_lightgen
     from .phase_regularization import phase_statistics, illumination_support
 else:
     from plot_style import save_figure
@@ -30,7 +35,7 @@ else:
     from phase_regularization import phase_statistics, illumination_support
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = _paths.ROOT
 # Approximate raster fill colors sampled from the submitted Fig.2d.
 COLORS = ['#86A2E1','#F5BA92','#E2E2E2','#FFEDB8']
 EXPERTS = ['E1','E2','E3','E4']
@@ -277,7 +282,7 @@ def main():
     stats['data_identity']=payload['identity']
     stats['example']={'sample_id':payload['ids'][int(indices[0,0])],'physical_slot':0,'frame':0}
     stats['source_commit']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-    stats['source_SHA256']={name:sha256(ROOT/name) for name in ('model.py','analyze_routing.py','phase_regularization.py')}
+    stats['source_SHA256']={name:sha256(_paths.source_path(name)) for name in ('model.py','analyze_routing.py','phase_regularization.py')}
     stats['output_SHA256']={p.name:sha256(p) for p in args.out.iterdir() if p.is_file()}
     (args.out/'routing_analysis.json').write_text(json.dumps(stats,indent=2)+'\n','utf-8')
     print(json.dumps({name:stats[name] for name in ('frame','video')}),flush=True)

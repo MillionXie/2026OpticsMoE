@@ -1,0 +1,3 @@
+-r ../requirements-visualization.txt
+scipy
+safetensors

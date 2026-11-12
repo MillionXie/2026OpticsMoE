@@ -18,9 +18,14 @@ import numpy as np
 import torch
 
 if __package__:
+    from . import _paths
+else:
+    import _paths
+
+if __package__ and __package__ != 'tools':
     from .plot_style import save_figure
     from .data import load_inputs, sha256
-    from .model import load_lightgen, translated, Propagation
+    from ..model import load_lightgen, translated, Propagation
     from .phase_regularization import phase_statistics
     from .run import evaluate
     from .phase_plotting import phase_display_norm,phase_display_values,add_phase_colorbar,PHASE_DISPLAY
@@ -166,7 +171,7 @@ def main():
         plot_masks(records,phases,args.out/'phase_comparison.png')
     np.savez_compressed(args.out/'slot0_phase_arrays.npz',
                         **{label+'_'+name:array for label,values in phases.items() for name,array in values.items()})
-    root=Path(__file__).resolve().parent
+    root=_paths.ROOT
     (args.out/'protocol.json').write_text(json.dumps({
         'data_identity':payload['identity'],'phase_shift_directions':['+y','-y','+x','-x'],
         'noise_trials':3,'noise_is_static_across_dataset':True,'same_noise_seeds_for_all_checkpoints':True,
@@ -175,7 +180,7 @@ def main():
         'phase_display':PHASE_DISPLAY,
         'scope':'phase-mask/CCD shifts, independent phase noise, 8-bit numerical phase quantization, distance +/-1%',
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
-        'source_SHA256':{name:sha256(root/name) for name in ('model.py','evaluate_phase_robustness.py','phase_regularization.py')},
+        'source_SHA256':{name:sha256(_paths.source_path(name)) for name in ('model.py','evaluate_phase_robustness.py','phase_regularization.py')},
         'environment':{'python':platform.python_version(),'torch':str(torch.__version__),'device':args.device}},indent=2)+'\n')
 
 

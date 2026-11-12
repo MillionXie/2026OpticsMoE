@@ -8,6 +8,13 @@ import sys
 import time
 
 
+if __package__:
+    from . import _paths
+else:
+    import _paths
+
+
+
 def idle_gpus():
     output=subprocess.check_output(['nvidia-smi','--query-gpu=uuid,name,memory.used,memory.total,utilization.gpu',
                                     '--format=csv,noheader,nounits'],text=True)
@@ -27,7 +34,7 @@ def main():
     p.add_argument('--paths',type=Path,required=True)
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--dispatch-dir',type=Path,required=True)
-    p.add_argument('--config',type=Path,default=Path(__file__).parent/'configs/train.json')
+    p.add_argument('--config',type=Path,default=_paths.ROOT/'configs/train.json')
     p.add_argument('--max-wait-seconds',type=int,default=1800)
     p.add_argument('--poll-seconds',type=int,default=30)
     p.add_argument('--initialize',type=Path)
