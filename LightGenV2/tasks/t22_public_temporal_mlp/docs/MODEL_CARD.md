@@ -55,7 +55,8 @@ samples are excluded from metrics.
 
 Full-model evaluation determines the reference metric. Head-only cached-feature
 evaluation during fine-tuning has a slightly different GPU matrix shape.
-Development selection uses the requested 0.790–0.799 SRCC range. Input-order and
+Development selection applies the requested 0.790–0.799 SRCC range to cached-feature
+full-model evaluation. Direct-video input is evaluated separately. Input-order and
 numerical-boundary sensitivity are evaluated on the selected full model.
 
 The direct-video/cache mean absolute MOS difference is 0.018583,
