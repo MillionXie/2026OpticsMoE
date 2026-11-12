@@ -194,7 +194,7 @@ def plot_overview(stage, values, out):
         else:
             fig.colorbar(artist, ax=ax, shrink=.75, pad=.02)
     label = 'Vision global, 16 videos × 4 frames' if stage.frame_level else 'Vision-language global, 16 video fields'
-    fig.suptitle(label + '\nSimulated fields from the selected linear PT; 518 canvas / 478 active', fontsize=15)
+    fig.suptitle(label + '\nSimulated fields from the selected linear PT\n518 canvas / 478 active', fontsize=15)
     fig.savefig(out, dpi=180)
     plt.close(fig)
     return {'intensity_display_upper_percentile': 99.8, 'intensity_display_upper': upper,
@@ -254,7 +254,7 @@ def plot_detail(pixels, values, result, slot, sample_id, out):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', type=Path, default=ROOT/'configs/selected_linear.json')
+    parser.add_argument('--profile', type=Path, default=ROOT/'configs/selected_joint.json')
     inputs = parser.add_mutually_exclusive_group(required=True)
     inputs.add_argument('--paths', type=Path, help='Internal cached-feature dataset configuration')
     inputs.add_argument('--videos', type=Path, nargs='+', help='Native video input, standalone inference')

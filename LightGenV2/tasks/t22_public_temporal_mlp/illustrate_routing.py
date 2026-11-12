@@ -80,7 +80,7 @@ def main():
             'Its two gates apply to all 42 sequence tokens.',
             ha='left',va='top',fontsize=11)
     fig.suptitle('One real input video, four frame decisions, one joint-stage decision\n'
-                 'Displayed bars are the all-four softmax probabilities; dark outlines indicate Top2',fontsize=15)
+                 'Displayed bars show all-four softmax probabilities with dark outlines for Top2',fontsize=15)
     args.out.mkdir(parents=True)
     fig.savefig(args.out/'routing_example.png',dpi=180)
     plt.close(fig)

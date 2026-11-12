@@ -6,6 +6,8 @@
 
 2026-11-12用户要求图文融合router读取全部文本与视觉token。本轮新增schema7，输入为4个视觉token与38个文本token拼接后的42×192，经LN192、Flatten8064、Linear8064→128、ReLU、Linear128→4产生路由概率。两个global、线性专家及两层电子读出的尺寸与上一版相同。融合router仍为单个MLP，固定prompt在视觉global和Frame Merger之后进入。
 
+本轮入口为configs/selected_joint.json，选定joint_router_phase_lens_s277_local_20261112的epoch35。模型含5,732,678个参数，独立LightGen.pt为27,880,416字节。visualize_fields.py默认使用该profile，原selected_linear.json作为schema6历史入口保留。
+
 prepare_joint_router.py迁移旧PT，将原视觉router的768列权重保留，新增7296列非零文本权重，并针对原固定prompt补偿首层偏置，保持初始化时原函数。换用不同prompt时，视觉阶段保持独立，融合router接收变化后的全部42个token。schema3–6按原有输入范围加载，原PT和历史评价保留各自身份。
 
 对照提交正文第90–94行、SI第55–56行及S6–S10。正文的动态加权求和形式可容纳L1与L2门控，SI另外要求幅度系数g的总和为1。原来源代码的L2门控满足平方和为1，与该条件存在差别。两个等权激活专家在L2下的幅度系数各为1/√2，总和为√2。本轮保留四专家softmax、Top2、所选两项L1归一化，以满足SI给出的系数约束。若把g改记为功率系数，S6–S9中的幅度乘法需要同步改为其平方根，属于另一套记号定义。
@@ -308,7 +310,7 @@ ReLU与Top2使当前路由函数呈分段形式。S9的动态线性加权可直�
 
 审查用统一输出目录为 `runs/simulation/linear_release_review_20261112/`。其中 `native558/` 保存最后一轮原始视频回归，`fields/` 保存从原始视频输入生成的可视化及底层数组。此前两套缓存/原生图保留在各自run，最终审查以该统一目录为入口。
 
-`visualize_fields.py` 支持 `--videos` 原始视频入口，也支持内部的 `--paths` 缓存核查入口。原始视频方式只依赖model.py、infer.py、PyTorch、NumPy、OpenCV和Matplotlib。独立运行核查从/tmp、空PYTHONPATH开始，并禁止导入训练入口、内部data模块、原工程兼容后端和完整Qwen运行库。
+`visualize_fields.py` 支持 `--videos` 原始视频入口，也支持内部的 `--paths` 缓存核查入口。原始视频方式依赖model.py、infer.py、phase_plotting.py、PyTorch、NumPy、OpenCV和Matplotlib。独立运行核查从/tmp、空PYTHONPATH开始，并禁止导入训练入口、内部data模块、原工程兼容后端和完整Qwen运行库。
 
 每个global图展示入射幅度、SLM相位、ORM后幅度/相位、传播后强度的线性/对数显示、输出相位以及CCD预处理区域。青色方框标示478有效区。强度单位为输入RMS规范化后的任意单位，相位单位为弧度。色标范围和显示截断阈值写入manifest，NPZ保留原始复数场和未经显示截断的强度。
 
@@ -325,7 +327,7 @@ ReLU与Top2使当前路由函数呈分段形式。S9的动态线性加权可直�
 
 ## 工程入口与后续公开整理规划
 
-当前源码入口为本目录。训练服务器对应 `/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t22_public_temporal_mlp/`。当前目录承载内部开发、历史消融和审查证据，选定结构由 `configs/selected_linear.json` 固定。
+当前源码入口为本目录。训练服务器对应 `/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t22_public_temporal_mlp/`。当前目录承载内部开发、历史消融和审查证据，当前全图文路由结构由 `configs/selected_joint.json` 固定，schema6历史入口为 `configs/selected_linear.json`。
 
 | 当前文件或目录 | 用途 |
 |---|---|
@@ -333,6 +335,7 @@ ReLU与Top2使当前路由函数呈分段形式。S9的动态线性加权可直�
 | infer.py | 原始视频抽帧、规范化、16视频组场、MOS输出 |
 | visualize_fields.py | 原始视频或缓存输入的可复算光场图 |
 | configs/selected_linear.json | 用户选定的线性PT、SHA、参数规模及评价条件 |
+| configs/selected_joint.json | 本轮全42-token融合路由PT、SHA、参数规模及评价条件 |
 | runs/simulation/compact256_linear_refine_s197_20261112/ | 所选独立PT、训练日志、558条预测及原有审计 |
 | runs/simulation/linear_release_review_20261112/ | 本轮完整原生复算及光场审查输出 |
 | run.py / prepare_compact_ablation.py / configs/trial_* | 内部训练与消融复现 |
@@ -503,3 +506,33 @@ E3选中次数增加，四专家平均权重更接近均分。被选次数中E3�
 phase_effect_cuda包含固定电子权重的相位消融。每个tile用其照明区域圆均值替换全部空间纹理，同时保留衍射、探测和电子处理。Robust原相位SRCC为0.786231，两个global均替换为常相位时为0.785690。Textured对应0.784726和0.782913。Textured仅把图文融合相位改为常相位时为0.786359。因此，图文融合相位在此对照中的独立贡献尚未表现为正，纹理外观和性能收益需要分别报告。
 
 22项合同测试覆盖四专家softmax与Top2再L1归一的数值例子、冻结前后前向一致性、周期相位初始化及既有模型入口。verification_audit.json从每个run的源码提交逐文件校验原始SHA，独立复算558行CSV，校验固定参数逐位一致和2790条路由记录。
+
+## 全图文router与相位作用的修订结果
+
+本轮目录为runs/simulation/joint_router_phase_review_20261112。三组训练均完成，原始best/last、独立PT、逐视频预测、平台与源提交保留在各自run内。
+
+| run | 预算 | 选中epoch | 开发SRCC | 取舍 |
+|---|---|---|---|---|
+| joint_router_phase_lens_s277_local_20261112 | 150轮 | 35 | 0.7933148397 | 选定 |
+| joint_router_phase_balanced_s281_local_20261112 | 150轮 | 10 | 0.7808845747 | 低于既定精度范围 |
+| joint_router_balance_refine_s289_local_20261112 | 120轮 | 0 | 0.7933148397 | 沿用父模型，后续均衡微调未提高联合选模分数 |
+
+选定权重的16次循环换位平均SRCC为0.7891963522，最低0.7864636515。视觉router和专家参数在选定相位训练中冻结，视觉专家分配继续偏向E1/E4。均衡候选保留各自结果，当前选择优先满足精度、全图文输入与正向相位贡献。
+
+固定同一选定PT、全部电子权重及558条开发输入，仅替换指定相位，结果如下。flat将各tile替换为其潜在照明区域的圆均值，zero将对应相位统一置零。两种条件都保留传播、强度探测与电子处理。
+
+| 条件 | 开发SRCC |
+|---|---|
+| 选定完整模型 | 0.7933148397 |
+| flat视觉相位 | 0.7867468686 |
+| flat融合相位 | 0.7880842156 |
+| flat两级相位 | 0.7776369885 |
+| zero视觉相位 | 0.7867494932 |
+| zero融合相位 | 0.7881100437 |
+| zero两级相位 | 0.7776207227 |
+
+这组权重的两级相位在上述固定模型消融中均表现为正向贡献。环状结构包含平滑透镜初始化先验，其后参与真实任务优化。显示使用共同asinh色标，phase_arrays.npz保留未经颜色映射的实际相位，phase_effect.json及每条件test_predictions.csv保存复算依据。对照均衡候选与前轮模型的失败消融同样保留。
+
+完整558条迁移核验显示，全token路由的固定prompt初始化与原函数的MOS最大差1.53e-5。选定训练后模型的融合router实际输入为1×16×42×192。改变prompt通道排列后，融合概率最大变化0.16402，视觉路由逐位相同。此项为固定任务下的输入依赖核验，记录在expansion_function_check/audit.json。
+
+新版routing_example.png只画四专家softmax概率，深色边框标示Top2。25项合同测试覆盖全token迁移、文本依赖、旧PT重载、L1数值例子和非线性色标的单调性与逆映射。

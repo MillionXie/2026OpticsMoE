@@ -32,7 +32,7 @@ def draw_network(path):
     box(ax,9.2,4.8,3.2,.8,'Fixed prompt\n38 x 192 text tokens','#fff0d6')
     box(ax,.4,3.55,12,.7,'Concatenate four visual tokens and 38 text tokens -> 42 x 192','#f2e5f4')
     arrow(ax,(4.5,4.8),(4.5,4.3));arrow(ax,(10.8,4.8),(10.8,4.3))
-    box(ax,.4,1.9,12,1.1,'VISION-LANGUAGE STAGE   (schema 7, code: video_*)\nRouter and linear experts read all 42 image/text tokens\nRouter: LN -> Flatten 8064 -> FC128 -> ReLU -> FC4; optical global -> 42 x 192','#f2e5f4')
+    box(ax,.4,1.9,12,1.1,'VISION-LANGUAGE STAGE   (schema 7, code: video_*)\nRouter and linear experts read all 42 image/text tokens\nLN -> Flatten 8064 -> FC128 -> ReLU -> FC4\nOptical global -> 42 x 192','#f2e5f4')
     arrow(ax,(6.4,3.55),(6.4,3.05))
     box(ax,.4,.5,12,.8,'Flatten 8064 -> Linear 256 -> ReLU -> Linear 5 -> softmax -> expected MOS','#e5f1e7')
     arrow(ax,(6.4,1.9),(6.4,1.35))

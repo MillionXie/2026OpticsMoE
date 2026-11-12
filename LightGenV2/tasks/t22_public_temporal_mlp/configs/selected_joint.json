@@ -1,0 +1,23 @@
+{
+  "schema": 2,
+  "selection": "joint_image_text_router_with_phase_contribution_verified",
+  "run_id": "joint_router_phase_lens_s277_local_20261112",
+  "checkpoint": "runs/simulation/joint_router_phase_lens_s277_local_20261112/LightGen.pt",
+  "checkpoint_sha256": "c8513edee1a3a13c9592ffde80c86243d88acda56332192948a7829494700a1e",
+  "architecture": "t22_serial_top2_global2_five_levels_amplitude_v7_joint_router_linear_no_ln192",
+  "trainable_parameters": 5732678,
+  "fusion_router_tokens": 42,
+  "fusion_router_input_width": 8064,
+  "gate_normalization": "softmax_all4_top2_L1",
+  "readout_hidden": 256,
+  "evaluation": {
+    "role": "original_TEST_development",
+    "videos": 558,
+    "frames_per_video": 4,
+    "videos_per_field": 16,
+    "grouping": "original_manifest_order_with_cyclic_tail_padding",
+    "srcc": 0.7933148396834088,
+    "slot_cycle_mean_srcc": 0.7891963521669003,
+    "slot_cycle_minimum_srcc": 0.7864636514750603
+  }
+}
