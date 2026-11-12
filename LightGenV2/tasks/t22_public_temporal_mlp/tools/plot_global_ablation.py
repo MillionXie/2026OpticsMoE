@@ -34,7 +34,7 @@ def main():
     ax.axhline(reference,color='#ad2727',linestyle='--',label='Learned model')
     ax.axhline(0,color='#777777',linewidth=.5)
     ax.set(xticks=x,xticklabels=['Vision global','Joint global','Both globals'],ylabel='Development SRCC',ylim=(-1,1))
-    ax.legend(frameon=False,loc='lower left',ncol=3)
+    ax.legend(frameon=False,loc='upper center',bbox_to_anchor=(.5,-.12),ncol=3)
     ax.set_title('Global-stage forward ablations')
     args.output.parent.mkdir(parents=True,exist_ok=True)
     save_figure(fig,args.output)

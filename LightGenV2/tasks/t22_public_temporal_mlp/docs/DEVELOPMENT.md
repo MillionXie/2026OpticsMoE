@@ -124,7 +124,7 @@ python infer.py --weights runs/simulation/current/LightGen.pt --videos assets/ex
 ### 重绘
 
 ```powershell
-pip install -r requirements-visualization.txt
+pip install -r tools/requirements.txt
 python tools/render_figures.py --paths paths.local.json --device cpu
 ```
 
@@ -181,6 +181,11 @@ python tools/run.py --config configs/train.json --paths paths.local.json --initi
 随机相位使用每像素独立的 U[0,2π) 相位，保留该模块其他已训练参数。
 整块随机化还重新初始化其中的电子映射和读出。随机条件各使用 10 个固定种子，
 原模型参数、558 条评价视频和物理分组按记录核验。
+
+`initialization_control/` 还核对了原构造函数的随机初始化。
+其原始相位参数来自 N(0,0.25²)，再经过原 sigmoid 映射。
+单独采用该随机相位时，两级同时替换的 SRCC 为 0.76441 ± 0.00548。
+整块 global 按默认构造函数重新初始化时为 0.00677 ± 0.03910。
 
 ```powershell
 python tools/analyze_global_ablation.py --weights runs/simulation/current/LightGen.pt --paths paths.local.json --out runs/simulation/current/global_ablation_replay --device cpu
