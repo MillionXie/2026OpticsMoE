@@ -83,13 +83,20 @@ def router_regularization(routes,valid,frame_scale=1.0):
 
 
 def selection_score(metrics,config):
+    if metrics['srcc'] < config.get('selection_minimum_srcc',-math.inf):
+        return -math.inf
     weight = config.get('selection_frame_share_weight',0.0)
-    if not weight:
+    slot_weight = config.get('selection_slot_share_weight',0.0)
+    if not weight and not slot_weight:
         return metrics['srcc']
     if abs(metrics['srcc']-config['reference_srcc']) > config['allowed_absolute_srcc_difference']:
         return -math.inf
     shares = np.asarray(metrics['frame_routing']['selection_share'],dtype=np.float64)
-    return metrics['srcc']-weight*float(np.mean((4*shares-1)**2))
+    score = metrics['srcc']-weight*float(np.mean((4*shares-1)**2))
+    if slot_weight:
+        slot_shares = np.asarray(metrics['frame_routing']['selection_share_by_slot'],dtype=np.float64)
+        score -= slot_weight*float(np.mean((4*slot_shares-1)**2))
+    return score
 
 
 def regression_metrics(prediction,target):
@@ -107,6 +114,7 @@ def evaluate(model,payload,device,batch_fields,out=None,epoch=None,slot_shift=0)
     probabilities = []
     logits = []
     route_samples={'frame':[],'video':[]}
+    slot_counts={name:torch.zeros(16,4,dtype=torch.int64) for name in route_samples}
     for start in range(0,len(idx),batch_fields):
         ii=idx[start:start+batch_fields];vv=valid[start:start+batch_fields]
         if slot_shift:ii=ii.roll(slot_shift,1);vv=vv.roll(slot_shift,1)
@@ -118,6 +126,11 @@ def evaluate(model,payload,device,batch_fields,out=None,epoch=None,slot_shift=0)
             probabilities.extend(result['quality_probabilities'][keep].cpu().tolist())
             logits.extend(result['quality_logits'][keep].cpu().tolist())
         for name,r in result['routing'].items():
+            if name == 'frame':
+                per_slot = (r['selected'] & keep[:,:,None,None]).sum((0,2))
+            else:
+                per_slot = (r['selected'] & keep[:,:,None]).sum(0)
+            slot_counts[name] += per_slot.cpu()
             selected=r['selected'][keep].cpu()
             route_samples[name].append(selected)
     if len(set(all_indices))!=558 or len(all_indices)!=558:raise ValueError('Evaluation IDs/padding mismatch')
@@ -126,7 +139,10 @@ def evaluate(model,payload,device,batch_fields,out=None,epoch=None,slot_shift=0)
         selected=torch.cat(pieces,0).reshape(-1,4)
         codes=(selected.long()*torch.tensor([1,2,4,8])).sum(-1)
         counts=torch.bincount(codes,minlength=16)
+        slot_shares=slot_counts[name].double()/slot_counts[name].sum(-1,keepdim=True)
         metrics[name+'_routing']={'selection_share':(selected.float().mean(0)/2).tolist(),
+            'selection_share_by_slot':slot_shares.tolist(),
+            'maximum_slot_share_deviation':float((slot_shares-.25).abs().max()),
             'selection_variation':float(1-counts.max()/len(codes)),
             'unique_top2_pairs':int((counts>0).sum())}
     if out:
@@ -377,16 +393,18 @@ def train(args):
     if args.smoke_steps:
         write(out/'status.json',{'state':'smoke_passed','steps':args.smoke_steps,'formal_metrics':False})
         return
-    selected,_=load_lightgen(out/'best_checkpoint.pt',args.device)
-    final=evaluate(selected,payload,args.device,cfg['eval_batch_fields'],out)
+    selected,selected_metadata=load_lightgen(out/'best_checkpoint.pt',args.device)
+    selected_epoch=selected_metadata.get('epoch')
+    final=evaluate(selected,payload,args.device,cfg['eval_batch_fields'],out,selected_epoch)
     final['reference_srcc']=cfg['reference_srcc'];final['absolute_srcc_difference']=abs(final['srcc']-cfg['reference_srcc'])
     write(out/'phase_statistics.json', {name:phase_statistics(getattr(selected,name))
                                        for name in ('frame_global','video_global')})
     final['within_target']=final['absolute_srcc_difference']<=cfg['allowed_absolute_srcc_difference']
+    final['selection_constraints_satisfied']=np.isfinite(selection_score(final,cfg))
     cycles=[evaluate(selected,payload,args.device,cfg['eval_batch_fields'],slot_shift=k)['srcc'] for k in range(16)]
     write(out/'slot_cycle_audit.json',{'srcc_by_shift':cycles,'mean_srcc':float(np.mean(cycles)),
                                     'minimum_srcc':float(np.min(cycles))})
-    release=selected.checkpoint(**metadata,metrics=final,
+    release=selected.checkpoint(**metadata,epoch=selected_epoch,metrics=final,
                                selection=cfg.get('selection','best_original_TEST_development_SRCC'))
     save_checkpoint(out/'LightGen.pt',release)
     write(out/'metrics.json',final)

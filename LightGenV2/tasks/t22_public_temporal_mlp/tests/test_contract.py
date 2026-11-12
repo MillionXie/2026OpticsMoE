@@ -48,6 +48,17 @@ class Contracts(unittest.TestCase):
         self.assertGreater(selection_score(balanced,config),selection_score(metrics,config))
         self.assertEqual(selection_score({**balanced,'srcc':.77},config),-float('inf'))
 
+    def test_selection_checks_requested_srcc_and_physical_slots(self):
+        config={'selection_minimum_srcc':.79,'selection_frame_share_weight':.1,
+                'selection_slot_share_weight':.1,'reference_srcc':.8043868643,
+                'allowed_absolute_srcc_difference':.02}
+        uniform={'srcc':.792,'frame_routing':{'selection_share':[.25]*4,
+                                           'selection_share_by_slot':[[.25]*4]*16}}
+        skewed={'srcc':.792,'frame_routing':{'selection_share':[.25]*4,
+                                         'selection_share_by_slot':[[.4,.1,.1,.4]]*8+[[.1,.4,.4,.1]]*8}}
+        self.assertGreater(selection_score(uniform,config),selection_score(skewed,config))
+        self.assertEqual(selection_score({**uniform,'srcc':.78999},config),-float('inf'))
+
     def test_frame_regularization_scale_does_not_change_video_term(self):
         cfg=ModelConfig(width=8,router_hidden=8,router_noise=0)
         routes={'frame':Router(cfg,49).eval()(torch.randn(3,16,4,49,8)),
