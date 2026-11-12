@@ -91,20 +91,24 @@ def main():
     source, source_metadata = load_lightgen(args.weights)
     fused = fold_final_projection(source)
     source_hash = file_sha256(args.weights)
-    converted_metadata = {**source_metadata, 'role': 'FUSED_INITIALIZATION',
-                          'parent_checkpoint_sha256': source_hash}
+    converted_metadata = {'role': 'FUSED_INITIALIZATION',
+                          'parent_training_metadata': source_metadata,
+                          'parent_checkpoint_sha256': source_hash,
+                          'dataset': source_metadata['dataset'],
+                          'model_config': asdict(fused.cfg),
+                          'model_parameters': sum(p.numel() for p in fused.parameters())}
     save_checkpoint(args.out/'folded_initialization.pt', fused.checkpoint(**converted_metadata))
     relative = fold_final_projection(source, 'relative_intensity')
     source = source.to(args.device).eval()
     relative = relative.to(args.device).eval()
     relative.requires_grad_(False)
     cache_path = args.cache or args.out/'features.pt'
+    payload = load_inputs(json.loads(args.paths.read_text('utf-8')))
     if cache_path.exists():
         cache = torch.load(cache_path, weights_only=True, map_location='cpu')
         if cache['source_checkpoint_sha256'] != source_hash:
             raise ValueError('Feature-cache checkpoint differs')
     else:
-        payload = load_inputs(json.loads(args.paths.read_text('utf-8')))
         cache = {'source_checkpoint_sha256': source_hash,
                  'dataset': payload['identity'],
                  'config': asdict(relative.cfg),
@@ -113,6 +117,14 @@ def main():
         save_checkpoint(cache_path, cache)
     if cache['config'] != asdict(relative.cfg):
         raise ValueError('Feature-cache model configuration differs')
+    if cache['dataset']['manifest']['sha256'] != payload['identity']['manifest']['sha256']:
+        raise ValueError('Feature-cache manifest differs')
+    for split in ('train', 'test'):
+        indices = [i for i, value in enumerate(payload['splits']) if value == split]
+        if (cache[split]['ids'] != [payload['ids'][i] for i in indices]
+                or not torch.equal(cache[split]['target'], payload['target'][indices])
+                or tuple(cache[split]['features'].shape) != (len(indices), 42, 96)):
+            raise ValueError('Feature-cache sample identities, targets, or geometry differ')
     data = {split: {name: value.to(args.device) if isinstance(value, torch.Tensor) else value
                     for name, value in cache[split].items()} for split in ('train', 'test')}
     if args.hidden < relative.cfg.readout_hidden:
@@ -143,6 +155,8 @@ def main():
                 'GPU': torch.cuda.get_device_name() if args.device.startswith('cuda') else 'CPU',
                 'seed': args.seed, 'epochs': args.epochs, 'learning_rate': args.learning_rate,
                 'teacher_weight': args.teacher_weight, 'GPU_resource_mode': 'nonexclusive_local_desktop'}
+    metadata['feature_cache'] = {'path': str(cache_path), 'sha256': file_sha256(cache_path),
+                                 'teacher_predictions_used_for_gradient': 'TRAIN only'}
     metadata['selection_interval'] = [args.minimum_srcc, args.maximum_srcc]
     metadata['config'] = {key: metadata[key] for key in
                           ('seed', 'epochs', 'learning_rate', 'teacher_weight', 'frozen_except', 'training_groups')}

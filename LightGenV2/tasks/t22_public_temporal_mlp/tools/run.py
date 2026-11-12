@@ -207,6 +207,14 @@ def ensure_idle_gpu():
 
 def train(args):
     cfg=json.loads(args.config.read_text('utf-8'));paths=json.loads(args.paths.read_text('utf-8'))
+    if cfg.get('entrypoint') == 'tools/refine_electronics.py':
+        command = [sys.executable, str(_paths.TOOLS/'refine_electronics.py'),
+                   '--weights', str(args.initialize or ROOT/cfg['initialization']['checkpoint']),
+                   '--paths', str(args.paths), '--out', str(args.out), '--device', args.device]
+        for name, value in cfg['refinement'].items():
+            command.extend(['--'+name.replace('_', '-'), str(value)])
+        subprocess.run(command, check=True)
+        return
     out=args.out.resolve()
     if out.exists():raise FileExistsError('Refusing to overwrite run: '+str(out))
     if args.device.startswith('cuda') and not args.allow_shared_gpu:admission=ensure_idle_gpu()

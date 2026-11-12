@@ -77,15 +77,18 @@ def copy_results(run,output):
         'role':'post_training_forward_interventions_on_original_TEST_development',
         'videos':558,'retraining':False,'random_seeds':original['seeds'],
         'grouping':'original_order_with_cyclic_tail_padding_and_valid_sample_mask',
-        'bypass':'identity bypass of the complete GlobalStage',
+        'bypass_applied': any(row['kind'] == 'bypass' for row in conditions.values()),
         'random_phase':'uniform physical phase in [0,2*pi), with trained mappings',
         'random_raw_phase':'raw N(0,0.25^2) through the original sigmoid, with trained mappings',
-        'random_global':'randomly initialized mappings/readout and uniform physical phase',
-        'random_global_default':'complete default GlobalStage initialization',
+        'random_global':'reinitialize the current GlobalStage parameters and use uniform physical phase; retain the final task readout',
+        'random_global_default':'complete default GlobalStage initialization; retain the final task readout',
         'standard_deviation':'sample SD over ten seeds',
     })
     for name in ('phase_masks.png','phase_training_update.png','optical_expert_share.png'):
         shutil.copyfile(run/'figures'/name,output/name)
+    shutil.copyfile(run/'phase_effect/phase_effect.json', output/'phase_controls.json')
+    if (run/'propagation_controls.json').exists():
+        shutil.copyfile(run/'propagation_controls.json', output/'propagation_controls.json')
 
 
 def verify_manifest(directory):

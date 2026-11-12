@@ -100,12 +100,13 @@ def plot_phase_training(initial, trained, output, arrays_path, statistics_path,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--profile', type=Path, default=ROOT/'configs/selected.json')
     parser.add_argument('--paths', type=Path, default=ROOT / 'paths.local.json')
     parser.add_argument('--device', default='cpu')
     args = parser.parse_args()
     font_path = font_manager.findfont(font_manager.FontProperties(family=FONT_FAMILY),
                                      fallback_to_default=False)
-    profile = read_json(ROOT / 'configs/selected.json')
+    profile = read_json(args.profile)
     checkpoint = ROOT / profile['checkpoint']
     if sha256(checkpoint) != profile['checkpoint_sha256']:
         raise ValueError('Selected checkpoint identity mismatch')

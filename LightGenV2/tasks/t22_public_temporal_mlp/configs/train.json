@@ -1,35 +1,24 @@
 {
-  "raw_phase_initialization": "continue_selected",
-  "seed": 463,
-  "epochs": 260,
-  "batch_fields": 8,
-  "eval_batch_fields": 4,
-  "learning_rate": 0,
-  "router_learning_rate": 0,
-  "phase_learning_rate": 0.01,
-  "weight_decay": 0.0001,
-  "eval_interval": 2,
-  "ranking_weight": 0.45,
-  "correlation_weight": 1.3,
-  "router_balance_weight": 0.12,
-  "router_importance_weight": 0.06,
-  "router_diversity_weight": 0.2,
-  "guard_weight": 0.01,
-  "slot_consistency_weight": 0.1,
-  "slot_consistency_interval": 4,
-  "reference_srcc": 0.8043868643,
-  "allowed_absolute_srcc_difference": 0.02,
-  "selection": "minimum_0_79_original_TEST_development_SRCC_with_fixed_balanced_router",
-  "soft_target_weight": 10,
-  "quality_ce_weight": 0.15,
-  "phase_slope_weight": 0.002,
-  "phase_curvature_weight": 0.05,
+  "entrypoint": "tools/refine_electronics.py",
+  "initialization": {
+    "checkpoint": "assets/initialization/simplification_parent.pt",
+    "sha256": "8c34a360227e258f86acb738fbb0da02af59ab38430a52986df0a09e9beec359"
+  },
+  "refinement": {
+    "hidden": 128,
+    "epochs": 400,
+    "learning_rate": 0.0003,
+    "teacher_weight": 10,
+    "minimum_srcc": 0.79,
+    "maximum_srcc": 0.799,
+    "seed": 713
+  },
   "model": {
     "width": 192,
     "expert_hidden": 384,
     "router_hidden": 128,
     "fusion_router_input": "all_tokens",
-    "readout_hidden": 256,
+    "readout_hidden": 128,
     "expert_mode": "linear",
     "orm_mode": "amplitude",
     "alpha_min": 0.6666666666666666,
@@ -38,6 +27,8 @@
     "mlp_activation": "relu",
     "readout_mode": "five_levels",
     "visual_output_norm": false,
+    "fused_readout": true,
+    "detector_processing": "relative_intensity",
     "prompt_length": 38,
     "videos": 16,
     "frames": 4,
@@ -60,17 +51,5 @@
     "canvas": 518,
     "active": 478
   },
-  "minimum_learning_rate_ratio": 0.15,
-  "phase_weight_decay": 0.0,
-  "last_checkpoint_interval": 5,
-  "phase_gradient_smoothing_sigma": 2.5,
-  "frame_router_regularization_scale": 1.5,
-  "trainable_parameter_prefixes": [
-    "frame_global.raw_global_phase",
-    "video_global.raw_global_phase"
-  ],
-  "phase_adam_epsilon": 1e-06,
-  "phase_slot_gradient_average_weight": 0.5,
-  "phase_parameter_smoothing_sigma": 0.15,
-  "selection_minimum_srcc": 0.79
+  "training_protocol": "fixed original TRAIN order with cyclic padding excluded"
 }

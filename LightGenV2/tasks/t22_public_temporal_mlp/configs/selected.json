@@ -1,32 +1,23 @@
 {
-  "schema": 2,
-  "selection": "balanced_visual_router_and_finer_learned_masks",
-  "run_id": "current",
-  "training_run_id": "router_balance_20261112/08_finer_masks",
+  "schema": 3,
+  "selection": "relative_intensity_fused_readout128_requested_range",
   "checkpoint": "runs/simulation/current/LightGen.pt",
-  "checkpoint_sha256": "8c34a360227e258f86acb738fbb0da02af59ab38430a52986df0a09e9beec359",
-  "architecture": "t22_serial_top2_global2_five_levels_amplitude_v7_joint_router_linear_no_ln192",
-  "model_parameters": 5732678,
-  "optimized_parameters_in_selected_run": 394272,
-  "selected_epoch": 86,
-  "completed_epochs": 260,
-  "fusion_router_tokens": 42,
-  "fusion_router_input_width": 8064,
-  "gate_normalization": "softmax_all4_top2_L1",
-  "readout_hidden": 256,
-  "initialization": {
-    "checkpoint_sha256": "752cf0b555aaab494d4be9787b7e05a49847f1142d807dedb20722e7f26b539b",
-    "kind": "continued trained masks after visual-router and expert balancing"
-  },
+  "checkpoint_sha256": "e4766ee9c2cecc49351ce4a20b4b41e85e047d023822afa38189c52d043b82a7",
+  "architecture": "t22_serial_top2_global2_fused_readout_v8_relative_intensity_linear_no_ln192",
+  "model_parameters": 4164998,
+  "selected_epoch": 225,
+  "completed_epochs": 400,
   "evaluation": {
     "role": "original_TEST_development",
     "videos": 558,
-    "frames_per_video": 4,
-    "videos_per_field": 16,
-    "grouping": "original_manifest_order_with_cyclic_tail_padding",
-    "minimum_requested_srcc": 0.79,
-    "srcc": 0.7991007778931448,
-    "slot_cycle_mean_srcc": 0.7901063063148197,
-    "slot_cycle_minimum_srcc": 0.7857706829711324
-  }
+    "srcc": 0.7989651230570776,
+    "selection_interval": [
+      0.79,
+      0.799
+    ],
+    "slot_cycle_mean_srcc": 0.7960946656784769,
+    "slot_cycle_minimum_srcc": 0.790152588115201
+  },
+  "run_id": "current",
+  "training_run_id": "electronic_simplification_20261113/head128_requested_range"
 }

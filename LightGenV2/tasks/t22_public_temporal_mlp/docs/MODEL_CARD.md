@@ -6,12 +6,38 @@ This temporal quality reference model uses a frozen Qwen-derived visual front,
 two Top2 routers, four independent linear experts at each stage, two simulated
 optical global stages, and a two-layer five-grade readout. The fixed prompt
 embedding and frozen visual tensors are embedded in the standalone checkpoint.
-Five TRAIN-derived grade scores are combined using predicted probabilities to
-produce one mean opinion score (MOS) per video.
+The text adapter projects the prompt at runtime. Five TRAIN-derived grade
+scores are combined using predicted probabilities to produce one mean opinion
+score (MOS) per video.
 
-The parameter count is 5,732,678. Each input contributes four 448×448 RGB
+The parameter count is 4,164,998. Each input contributes four 448×448 RGB
 frames. Ordered groups of sixteen videos share a coherent optical simulation.
 The order and cyclic tail-padding convention affect the physical field.
+
+The frozen visual components provide patch projection and interpolated position
+tensors. The two spatial mean-pooling operations, input adapters, mean/max
+frame merger, and detector processing are task-specific components. The frame
+merger applies mean/max pooling over 49 tokens, LayerNorm over 384 channels,
+a 384-to-192 linear map, and ReLU.
+
+## Detector processing and readout
+
+Each detector region uses relative intensity
+
+\[
+I_{\mathrm{relative}}=I/\max(\operatorname{mean}(I),10^{-6}).
+\]
+
+Adaptive average pooling supplies 49×96 values per vision frame and 42×96
+values per joint-stage video. Each pooled token passes through LayerNorm96 and
+ReLU. The vision stage then applies a 96-to-192 projection. The joint-stage
+projection and the first readout matrix are merged into a single linear map.
+The resulting readout is Flatten4032, Linear4032→128, ReLU, and Linear128→5,
+followed by softmax and the grade expectation.
+
+The optical input encoders, coherent propagation, phase parameters, routers,
+experts, text adapter, and frame merger retain the selected parent model's
+values. The current refinement optimizes the readout parameters.
 
 ## Evaluation scope
 
@@ -21,57 +47,59 @@ samples are excluded from metrics.
 
 | Evaluation | SRCC |
 |---|---:|
-| Original ordered groups, cached features | 0.7991007779 |
-| Direct video input, full 558 videos | 0.7992393302 |
-| Mean over sixteen cyclic slot shifts | 0.7901063063 |
-| Minimum over sixteen cyclic slot shifts | 0.7857706830 |
-| Numerical 8-bit phase quantization | 0.7989927886 |
+| Original ordered groups, cached features, full-model forward | 0.7989651231 |
+| Direct video input, full 558 videos | 0.7992074548 |
+| Mean over sixteen cyclic slot shifts | 0.7960946657 |
+| Minimum over sixteen cyclic slot shifts | 0.7901525881 |
+| Numerical 8-bit phase quantization | 0.7993673839 |
 
-The direct-video and cached-feature predictions have a mean absolute MOS
-difference of 0.017690 and a maximum of 2.016068. Eight videos exceed a 0.1 MOS
-difference. The largest case has a Top2 boundary change in its first frame.
-This field-based model exhibits input-order and numerical-boundary sensitivity.
-The lowest SRCC among the tested two-pixel detector shifts is 0.7823957337.
+Full-model evaluation determines the reference metric. Head-only cached-feature
+evaluation during fine-tuning has a slightly different GPU matrix shape.
+Development selection uses the requested 0.790–0.799 SRCC range. Input-order and
+numerical-boundary sensitivity are evaluated on the selected full model.
 
-## Global ablations
+The direct-video/cache mean absolute MOS difference is 0.018583,
+with maximum 1.472984. The lowest SRCC among the tested
+two-pixel detector shifts is 0.7780928779.
+
+## Phase and propagation controls
 
 These are post-training forward interventions with the remaining modules fixed.
-Each random condition uses ten fixed seeds, with the same selected model and
-558-video grouping. The standard deviation is the sample standard deviation
-over seeds.
+Phase-only and propagation-only controls retain the trained input and output
+mappings. Constant or random phase masks replace the stated phase parameters.
+Whole-stage randomization reinitializes the current GlobalStage parameters
+and retains the final task readout.
+Propagation controls replace the angular-spectrum operator with the identity
+on the optical field while preserving intensity detection and electronic
+processing.
 
-| Intervention | Vision only | Joint only | Both stages |
-|---|---:|---:|---:|
-| Entire GlobalStage identity bypass | −0.31554 | −0.79331 | 0.39344 |
-| Uniform random phase mask, mean ± SD | 0.73820 ± 0.00650 | 0.77988 ± 0.00394 | 0.65240 ± 0.01611 |
-| Default random raw phase, mean ± SD | 0.78086 ± 0.00219 | 0.78990 ± 0.00377 | 0.76441 ± 0.00548 |
-| Random mappings and uniform phase, mean ± SD | −0.00443 ± 0.07594 | 0.01936 ± 0.28158 | 0.00132 ± 0.02413 |
-| Complete default random GlobalStage, mean ± SD | −0.02306 ± 0.18993 | 0.05852 ± 0.37629 | 0.00677 ± 0.03910 |
+| Both-stage intervention | Development SRCC |
+|---|---:|
+| Learned phases | 0.7989651231 |
+| Constant phase pi | 0.7944393854 |
+| Identity propagation | 0.6455167380 |
+| Uniform random phase, ten seeds | 0.3831020843 ± 0.0669603449 |
+| Default random raw phase, ten seeds | 0.7042872013 ± 0.0258067855 |
 
-An entire GlobalStage includes token-to-field mapping, phase modulation,
-coherent propagation, detection, intensity processing, and electronic projection
-back to tokens. Its identity bypass therefore measures the contribution of
-that complete trained block. Random-phase interventions retain its trained
-electronic mappings and optical geometry.
-
-The default raw-phase initialization is N(0,0.25²), mapped through
-`2π·sigmoid(raw)`. Uniform-phase controls sample physical phase independently
-over [0,2π). SRCC retains its sign throughout the reported comparisons.
-
-Per-seed aggregate metrics and condition definitions are provided in `results/`.
+Random-condition SD is the sample SD across ten fixed seeds. The constant-phase
+and identity-propagation conditions fix the remaining trained modules.
+Per-condition definitions, seeds, and metrics are supplied in `results/`.
 
 ## Training and release
 
-Visual-router and linear-expert tuning used TRAIN-only mixture/output
-distillation and Top2 frequency feedback. The final phase stage selected epoch
-86 from 260 epochs. Original raw phase parameters were initialized at zero,
-which maps to physical phase π through the sigmoid parameterization. The final
-stage continued from previously learned phase masks.
+The selected parent was prepared through visual-router and linear-expert tuning,
+followed by phase optimization. The current model merges the final detector
+projection into the readout, selects 128 ReLU hidden units using TRAIN activation
+contributions, and fine-tunes that readout for 400 epochs. Development selection
+chooses epoch 225 within the requested SRCC range. Optimization and
+teacher-prediction distillation use the 2250 TRAIN videos. The distillation loss
+consumes TRAIN teacher predictions.
 
-The public checkpoint has the same model tensors as the selected research
-checkpoint. Its metadata describes the public model, upstream components,
-evaluation scope, and tensor fingerprint. Source checkpoint and public-export
-identities are recorded in `MANIFEST.json`.
+The selected phase masks and retained parameters outside the readout are verified
+against the parent. The public checkpoint has the same model tensors as the
+selected research checkpoint. Its metadata describes the public model, upstream
+components, evaluation scope, and tensor fingerprint. Source checkpoint and
+public-export identities are recorded in `MANIFEST.json`.
 
 ## License and upstream components
 

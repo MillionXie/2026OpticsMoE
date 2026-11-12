@@ -2,7 +2,7 @@
 
 A compact reference model for temporal video-quality assessment, with Top2
 routing, four linear experts per stage, two simulated optical global stages,
-and a five-level electronic readout. The model has 5,732,678 parameters.
+and a five-level electronic readout. The model has 4,164,998 parameters.
 
 ## Quick start
 
@@ -35,23 +35,32 @@ The final group is cyclically padded from the beginning of the input list.
 | Visual Top2 router and linear experts | 4 × 49 × 192 |
 | Vision global and frame merger | 4 × 192 |
 | Fixed prompt concatenation | 42 × 192 |
-| Joint Top2 router, linear experts, and global | 42 × 192 |
-| Two-layer readout and grade expectation | one MOS |
+| Joint Top2 router and linear experts | 42 × 192 |
+| Joint global and detector processing | 42 × 96 |
+| Two-layer readout, 4032 → 128 → 5, and grade expectation | one MOS |
 
 The global simulations use a 518×518 canvas with a central 478×478 active area.
 The vision field contains an 8×8 arrangement of frame patches. The joint field
 contains a 4×4 arrangement of video patches.
 
+Each detector region is divided by its mean intensity with a protected
+denominator, pooled, and passed through LayerNorm and ReLU. The vision stage
+then projects 96 channels to 192. The joint stage supplies its 96-channel tokens
+directly to the readout through a merged linear map. The text adapter and the
+custom mean/max frame merger are retained.
+
 ## Reference results
 
 The original 558-video TEST split was used for development selection. The
-fixed-group cached-feature SRCC is 0.79910, and direct video-input SRCC is
-0.79924. The visual expert selection shares are 26.79%, 25.09%, 23.34%, and
-24.78%. Full evaluation conditions are described in `MODEL_CARD.md`.
+fixed-group cached-feature SRCC, evaluated through the full model, is 0.79897.
+The 128-unit readout is selected at epoch 225 of 400 TRAIN-only fine-tuning
+epochs using the requested 0.790–0.799 development-SRCC range.
+Full evaluation conditions and selected-weight checks are described in
+`MODEL_CARD.md`.
 
-Post-training global interventions and their random-seed results are supplied
-in `results/`. These evaluations fix the remaining model components and apply
-the stated intervention directly.
+Post-training phase and propagation controls retain each stage's input/output
+interface. Their condition definitions and selected-weight results are supplied
+in `results/`.
 
 ## Visualization
 
