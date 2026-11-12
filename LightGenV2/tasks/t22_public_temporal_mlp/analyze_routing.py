@@ -48,7 +48,7 @@ def plot_shares(shares, out, ylabel='Optical expert share (%)'):
         for x,y,h in zip([0,1],bottom,height):
             ax.text(x,y+h/2,f'{h:.2f}',ha='center',va='center',fontsize=11)
         bottom += height
-    ax.set(ylim=(0,100),xticks=[0,1],xticklabels=['Frame\nrouter','Video\nrouter'],
+    ax.set(ylim=(0,100),xticks=[0,1],xticklabels=['Vision\nstage','Vision-language\nstage'],
            ylabel=ylabel)
     ax.legend(frameon=False,bbox_to_anchor=(1.02,1),loc='upper left')
     ax.spines[['top','right']].set_visible(False)

@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import torch
 from torch import nn
 from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Router, Experts, load_lightgen
-from ..run import save_checkpoint
+from ..run import save_checkpoint, selection_score, router_regularization
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
 from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support
@@ -22,6 +22,26 @@ class Contracts(unittest.TestCase):
         r=Router(cfg,49).eval()(torch.randn(2,16,4,49,8))
         self.assertTrue(torch.all((r['weights']>0).sum(-1)==2))
         self.assertTrue(torch.allclose(r['weights'].sum(-1),torch.ones(2,16,4)))
+
+    def test_balance_selection_preserves_accuracy_floor_and_default(self):
+        metrics={'srcc':.79,'frame_routing':{'selection_share':[.4,.1,.1,.4]}}
+        self.assertEqual(selection_score(metrics,{}),.79)
+        config={'selection_frame_share_weight':.05,'reference_srcc':.8,
+                'allowed_absolute_srcc_difference':.02}
+        balanced={'srcc':.789,'frame_routing':{'selection_share':[.25]*4}}
+        self.assertGreater(selection_score(balanced,config),selection_score(metrics,config))
+        self.assertEqual(selection_score({**balanced,'srcc':.77},config),-float('inf'))
+
+    def test_frame_regularization_scale_does_not_change_video_term(self):
+        cfg=ModelConfig(width=8,router_hidden=8,router_noise=0)
+        routes={'frame':Router(cfg,49).eval()(torch.randn(3,16,4,49,8)),
+                'video':Router(cfg,4).eval()(torch.randn(3,16,4,8))}
+        valid=torch.ones(3,16,dtype=torch.bool)
+        combined,_=router_regularization(routes,valid)
+        scaled,_=router_regularization(routes,valid,frame_scale=3)
+        visual,_=router_regularization({'frame':routes['frame']},valid)
+        for name in combined:
+            self.assertTrue(torch.allclose(scaled[name]-combined[name],visual[name],atol=1e-6))
 
     def test_native_tail_padding_matches_global_input_order(self):
         def decode(index):

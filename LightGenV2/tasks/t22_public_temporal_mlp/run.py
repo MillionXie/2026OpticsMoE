@@ -57,7 +57,7 @@ def correlation(x,y):
     return (x*y).sum()/(x.square().sum()*y.square().sum()).clamp_min(1e-12).sqrt()
 
 
-def router_regularization(routes,valid):
+def router_regularization(routes,valid,frame_scale=1.0):
     values={k:[] for k in ['balance','importance','diversity']}
     stats={}
     for name,route in routes.items():
@@ -69,12 +69,23 @@ def router_regularization(routes,valid):
         load=(s*v[...,None]).sum(0)/count/2
         conditional=(-(p.clamp_min(1e-8).log()*p).sum(-1)*v).sum()/v.sum().clamp_min(1)/math.log(4)
         marginal=-(importance.clamp_min(1e-8).log()*importance).sum(-1).mean()/math.log(4)
-        values['balance'].append((4*(importance*load).sum(-1)).mean())
-        values['importance'].append((4*importance.square().sum(-1)-1).mean())
-        values['diversity'].append(conditional-marginal)
+        scale = frame_scale if name == 'frame' else 1.0
+        values['balance'].append(scale*(4*(importance*load).sum(-1)).mean())
+        values['importance'].append(scale*(4*importance.square().sum(-1)-1).mean())
+        values['diversity'].append(scale*(conditional-marginal))
         stats[name]={'mean_probability':importance.mean(tuple(range(importance.ndim-1))).detach().cpu().tolist(),
                      'selection_share':load.mean(tuple(range(load.ndim-1))).detach().cpu().tolist()}
     return {k:torch.stack(v).mean() for k,v in values.items()},stats
+
+
+def selection_score(metrics,config):
+    weight = config.get('selection_frame_share_weight',0.0)
+    if not weight:
+        return metrics['srcc']
+    if abs(metrics['srcc']-config['reference_srcc']) > config['allowed_absolute_srcc_difference']:
+        return -math.inf
+    shares = np.asarray(metrics['frame_routing']['selection_share'],dtype=np.float64)
+    return metrics['srcc']-weight*float(np.mean((4*shares-1)**2))
 
 
 def regression_metrics(prediction,target):
@@ -210,8 +221,14 @@ def train(args):
     phase=[];electronic=[]
     for name,param in model.named_parameters():
         (phase if name.endswith('raw_global_phase') else electronic).append(param)
-    optimizer=torch.optim.AdamW([{'params':electronic,'lr':cfg['learning_rate']},
-                                 {'params':phase,'lr':cfg['phase_learning_rate']}],weight_decay=cfg['weight_decay'])
+    parameter_groups = [{'params':electronic,'lr':cfg['learning_rate']},
+                        {'params':phase,'lr':cfg['phase_learning_rate']}]
+    if 'router_learning_rate' in cfg:
+        router_parameters = list(model.frame_router.parameters())+list(model.video_router.parameters())
+        router_ids = {id(param) for param in router_parameters}
+        parameter_groups[0]['params'] = [param for param in electronic if id(param) not in router_ids]
+        parameter_groups.append({'params':router_parameters,'lr':cfg['router_learning_rate']})
+    optimizer=torch.optim.AdamW(parameter_groups,weight_decay=cfg['weight_decay'])
     scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg['epochs'])
     out.mkdir(parents=True)
     try:head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
@@ -237,12 +254,14 @@ def train(args):
             'boundaries': model.level_boundaries.cpu().tolist(),
             'quality_words': list(QUALITY_WORDS)}
     write(out/'metadata.json',metadata)
-    history=[];best=-float('inf');started=time.time()
+    history=[];best=-float('inf');best_score=-math.inf;started=time.time()
     write(out/'status.json',{'state':'running','epoch':0,'pid':os.getpid()})
     if args.initialize and not args.smoke_steps:
         initial_metrics=evaluate(model,payload,args.device,cfg['eval_batch_fields'])
         best=initial_metrics['srcc']
-        history.append({'epoch':0,'test_development':initial_metrics,'source':'weights-only parent'})
+        best_score=selection_score(initial_metrics,cfg)
+        history.append({'epoch':0,'test_development':initial_metrics,'source':'weights-only parent',
+                        'selection_score':best_score if np.isfinite(best_score) else None})
         save_checkpoint(out/'best_checkpoint.pt',model.checkpoint(**metadata,epoch=0,metrics=initial_metrics))
         evaluate(model,payload,args.device,cfg['eval_batch_fields'],out,0)
     for epoch in range(1,cfg['epochs']+1):
@@ -268,7 +287,7 @@ def train(args):
                 loss=loss+cfg['soft_target_weight']*F.smooth_l1_loss(pred,teacher[keep])
             pair=torch.sign(y[:,None]-y[None,:]);mask=pair!=0
             if bool(mask.any()):loss=loss+cfg['ranking_weight']*F.relu(.1-pair*(pred[:,None]-pred[None,:]))[mask].mean()
-            reg,_=router_regularization(result['routing'],keep)
+            reg,_=router_regularization(result['routing'],keep,cfg.get('frame_router_regularization_scale',1.0))
             loss=loss+cfg['router_balance_weight']*reg['balance']+cfg['router_importance_weight']*reg['importance']
             loss=loss+cfg['router_diversity_weight']*reg['diversity']+cfg['guard_weight']*result['guard_energy']
             if cfg.get('phase_slope_weight',0) or cfg.get('phase_curvature_weight',0):
@@ -293,7 +312,10 @@ def train(args):
         if not args.smoke_steps and (epoch==1 or epoch%cfg['eval_interval']==0 or epoch==cfg['epochs']):
             metrics=evaluate(model,payload,args.device,cfg['eval_batch_fields'])
             row['test_development']=metrics
-            if metrics['srcc']>best:
+            score=selection_score(metrics,cfg)
+            row['selection_score']=score if np.isfinite(score) else None
+            if score>best_score:
+                best_score=score
                 best=metrics['srcc']
                 ck=model.checkpoint(**metadata,epoch=epoch,metrics=metrics)
                 save_checkpoint(out/'best_checkpoint.pt',ck)
@@ -318,7 +340,8 @@ def train(args):
     cycles=[evaluate(selected,payload,args.device,cfg['eval_batch_fields'],slot_shift=k)['srcc'] for k in range(16)]
     write(out/'slot_cycle_audit.json',{'srcc_by_shift':cycles,'mean_srcc':float(np.mean(cycles)),
                                     'minimum_srcc':float(np.min(cycles))})
-    release=selected.checkpoint(**metadata,metrics=final,selection='best_original_TEST_development_SRCC')
+    release=selected.checkpoint(**metadata,metrics=final,
+                               selection=cfg.get('selection','best_original_TEST_development_SRCC'))
     save_checkpoint(out/'LightGen.pt',release)
     write(out/'metrics.json',final)
     write(out/'status.json',{'state':'completed','epochs':cfg['epochs'],'elapsed_seconds':time.time()-started,**final})
