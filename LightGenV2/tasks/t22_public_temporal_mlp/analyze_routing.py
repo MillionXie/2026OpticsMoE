@@ -144,7 +144,7 @@ def plot_layout(out):
             if frame_level:
                 for frame,(dy,dx) in enumerate([(0,0),(0,59),(59,0),(59,59)]):
                     ax.add_patch(Rectangle((x+dx+14,y+dy+14),27,27,facecolor='#75b2ce',edgecolor='none'))
-                    ax.text(x+dx+27.5,y+dy+27.5,str(frame+1),ha='center',va='center',fontsize=8)
+                    ax.text(x+dx+27.5,y+dy+27.5,f'F{frame+1}',ha='center',va='center',fontsize=8)
             else:
                 ax.add_patch(Rectangle((x+29,y+29),56,56,facecolor='#e2e2e2',edgecolor='none'))
                 ax.add_patch(Rectangle((x+29,y+29),56,42,facecolor='#75b2ce',edgecolor='none'))

@@ -7,7 +7,6 @@
   "architecture": "t22_serial_top2_global2_five_levels_amplitude_v6_linear_no_ln192",
   "trainable_parameters": 4798790,
   "readout_hidden": 256,
-  "alpha": 0.6666666666666666,
   "evaluation": {
     "role": "original_TEST_development",
     "videos": 558,
