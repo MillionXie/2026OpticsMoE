@@ -131,6 +131,7 @@ def main():
     parser.add_argument('--paths',type=Path,required=True)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--device',default='cpu')
+    parser.add_argument('--skip-plots',action='store_true')
     args=parser.parse_args()
     if args.out.exists():
         raise FileExistsError(args.out)
@@ -160,8 +161,9 @@ def main():
         (args.out/'comparison.json').write_text(json.dumps(records,indent=2)+'\n','utf-8')
         print(json.dumps({'completed':label,'clean_srcc':record['conditions'][0]['metrics']['srcc']}),flush=True)
         del model
-    plot_curves(records,args.out/'robustness_curves.png')
-    plot_masks(records,phases,args.out/'phase_comparison.png')
+    if not args.skip_plots:
+        plot_curves(records,args.out/'robustness_curves.png')
+        plot_masks(records,phases,args.out/'phase_comparison.png')
     np.savez_compressed(args.out/'slot0_phase_arrays.npz',
                         **{label+'_'+name:array for label,values in phases.items() for name,array in values.items()})
     root=Path(__file__).resolve().parent
@@ -169,6 +171,7 @@ def main():
         'data_identity':payload['identity'],'phase_shift_directions':['+y','-y','+x','-x'],
         'noise_trials':3,'noise_is_static_across_dataset':True,'same_noise_seeds_for_all_checkpoints':True,
         'conditions_are_numerical_assumptions':True,'hardware_measurement':False,
+        'plots_exported':not args.skip_plots,
         'phase_display':PHASE_DISPLAY,
         'scope':'phase-mask/CCD shifts, independent phase noise, 8-bit numerical phase quantization, distance +/-1%',
         'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),

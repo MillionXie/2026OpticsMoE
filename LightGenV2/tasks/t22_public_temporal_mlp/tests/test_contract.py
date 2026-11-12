@@ -15,6 +15,7 @@ from ..phase_regularization import (phase_penalties, gaussian_phase, illuminatio
 from ..training_policy import freeze_parameters,restrict_training_to
 from ..prepare_joint_router import expand_router
 from ..phase_plotting import phase_display_norm
+from ..analyze_phase_effect import constant_modulation
 
 
 class Contracts(unittest.TestCase):
@@ -345,6 +346,17 @@ class Contracts(unittest.TestCase):
         self.assertTrue(torch.allclose(model.frame_global.raw_global_phase.grad,
                                        torch.ones(16,111,111),atol=1e-6))
         self.assertIsNone(model.video_global.raw_global_phase.grad)
+
+    def test_pi_control_matches_raw_zero_modulation(self):
+        cfg = ModelConfig(width=8, expert_mode='linear', orm_mode='amplitude',
+                          fusion_router_input='all_tokens', phase_shift=0, phase_dropout=0)
+        stage = GlobalStage(cfg, False).eval()
+        with torch.no_grad():
+            stage.raw_global_phase.zero_()
+        centers=torch.full((16,),torch.pi)
+        self.assertTrue(torch.equal(stage.modulation(),constant_modulation(stage,centers)))
+        self.assertTrue(torch.equal(constant_modulation(stage,centers,zero=True),
+                                    torch.ones(16,111,111,dtype=torch.complex64)))
 
     def test_manuscript_amplitude_orm(self):
         cfg = ModelConfig(width=8, orm_mode='amplitude', alpha_eval=2/3,

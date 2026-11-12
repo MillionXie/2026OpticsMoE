@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+import torch
 
 if __package__:
     from .wait_for_gpu import idle_gpus
@@ -32,10 +33,19 @@ def main():
     parser.add_argument('--train-soft-targets', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--max-wait-seconds', type=int, default=3600)
+    parser.add_argument('--initialize', type=Path,
+                        help='Prepared electronic weights with both raw phase tensors reset to zero')
     args = parser.parse_args()
     profile = json.loads(args.config.read_text('utf-8'))
+    if args.initialize is None and profile.get('initialization_checkpoint'):
+        args.initialize = ROOT / profile['initialization_checkpoint']
     if profile['base'].get('raw_phase_initialization') != 'zeros':
         raise ValueError('This workflow requires zero initialization of raw phase parameters')
+    if args.initialize:
+        initial=torch.load(args.initialize,map_location='cpu',weights_only=True)
+        for name in ('frame_global','video_global'):
+            if bool(initial['model'][name+'.raw_global_phase'].count_nonzero()):
+                raise ValueError('Initial raw phase parameters must be zero in both global stages')
     args.out = args.out.resolve()
     args.out.mkdir(parents=True, exist_ok=False)
     (args.out / 'configs').mkdir()
@@ -47,7 +57,7 @@ def main():
         'command': sys.argv,
         'pid': os.getpid(),
         'source_commit': os.environ.get('LIGHTGEN_SOURCE_COMMIT', commit),
-        'electronic_initialization': 'random',
+        'electronic_initialization': str(args.initialize) if args.initialize else 'random',
         'phase_initialization': 'raw parameters zero, physical phase pi in both global stages',
         'fixed_front': 'extracted Qwen patch, position and prompt buffers',
     })
@@ -59,11 +69,14 @@ def main():
             'nvidia-smi', '-i', visible, '--query-gpu=uuid', '--format=csv,noheader',
         ], text=True).strip()
     completed = []
-    parent = None
+    parent = args.initialize.resolve() if args.initialize else None
     for number, stage in enumerate(profile['stages']):
         config = copy.deepcopy(profile['base'])
         config.update(stage)
         name = config.pop('name')
+        handoff = config.pop('handoff_checkpoint','LightGen.pt')
+        if handoff not in ('LightGen.pt','best_checkpoint.pt','last_checkpoint.pt'):
+            raise ValueError('Unsupported stage handoff checkpoint')
         if Path(name).name != name or name in ('.', '..'):
             raise ValueError('Invalid stage name')
         if number == 0:
@@ -105,10 +118,12 @@ def main():
                 'completed_stages': completed,
             })
             raise RuntimeError('Training failed in stage ' + name)
-        parent = args.out / name / 'LightGen.pt'
+        selected_checkpoint = args.out / name / 'LightGen.pt'
+        parent = args.out / name / handoff
         completed.append({
-            'stage': name, 'checkpoint': str(parent),
-            'metrics': json.loads((parent.parent / 'metrics.json').read_text('utf-8')),
+            'stage': name, 'checkpoint': str(selected_checkpoint),
+            'handoff_checkpoint': str(parent),
+            'metrics': json.loads((selected_checkpoint.parent / 'metrics.json').read_text('utf-8')),
         })
         write(args.out / 'stages.json', completed)
     write(args.out / 'status.json', {

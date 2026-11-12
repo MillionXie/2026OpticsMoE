@@ -49,7 +49,7 @@ def phase_information(stage):
 
 def constant_modulation(stage,centers,zero=False):
     phase = torch.zeros_like(centers) if zero else centers
-    coefficient = stage.cfg.alpha_eval
+    coefficient = centers.new_tensor(stage.cfg.alpha_eval)
     values = coefficient*torch.exp(1j*phase)+(1-coefficient)
     return values[:,None,None].expand_as(stage.raw_global_phase)
 
@@ -89,6 +89,7 @@ def main():
     parser.add_argument('--paths',type=Path,required=True)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--device',default='cpu')
+    parser.add_argument('--skip-plots',action='store_true')
     args=parser.parse_args()
     if args.out.exists():
         raise FileExistsError(args.out)
@@ -113,11 +114,14 @@ def main():
         record={'checkpoint_SHA256':sha256(checkpoint),'phase_statistics':statistics,'conditions':{}}
         cases={'learned':(), 'flat_vision':('frame_global',),
                'flat_joint':('video_global',),'flat_both':STAGES,
-               'zero_vision':('frame_global',),'zero_joint':('video_global',),'zero_both':STAGES}
+               'zero_vision':('frame_global',),'zero_joint':('video_global',),'zero_both':STAGES,
+               'pi_vision':('frame_global',),'pi_joint':('video_global',),'pi_both':STAGES}
         for case,names in cases.items():
             with ExitStack() as stack:
                 for name in names:
-                    value=constant_modulation(getattr(model,name),centers[name],zero=case.startswith('zero_'))
+                    center=(torch.full_like(centers[name],math.pi)
+                            if case.startswith('pi_') else centers[name])
+                    value=constant_modulation(getattr(model,name),center,zero=case.startswith('zero_'))
                     stack.enter_context(patch.object(getattr(model,name),'modulation',lambda value=value:value))
                 dest=args.out/label/case
                 dest.mkdir(parents=True)
@@ -125,13 +129,16 @@ def main():
         records[label]=record
         write(args.out/'phase_effect.json',records)
         print(json.dumps({'completed':label,'srcc':{case:metric['srcc'] for case,metric in record['conditions'].items()}}),flush=True)
-    plot_phases(records,arrays,args.out/'phase_texture.png')
+    if not args.skip_plots:
+        plot_phases(records,arrays,args.out/'phase_texture.png')
     np.savez_compressed(args.out/'phase_arrays.npz',
                         **{label+'_'+name:value for label,items in arrays.items() for name,value in items.items()})
     write(args.out/'protocol.json',{'data_identity':payload['identity'],
           'role':'post_training_phase_pattern_ablation_on_development_data',
           'electronic_weights_fixed':True,'constant_phase':'circular mean within each geometrically illuminated tile',
           'zero_phase':'phase zero in both stages, modulation recomputed by the existing model rule',
+          'pi_phase':'physical phase pi, equivalent to zero raw parameters in the original sigmoid mapping',
+          'plots_exported':not args.skip_plots,
           'phase_display':PHASE_DISPLAY,
           'hardware_measurement':False,'script_SHA256':sha256(Path(__file__)),
           'files':{p.name:sha256(p) for p in args.out.iterdir() if p.is_file()}})

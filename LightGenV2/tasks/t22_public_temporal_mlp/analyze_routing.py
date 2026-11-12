@@ -190,6 +190,7 @@ def main():
     parser.add_argument('--paths',type=Path,required=True)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--device',default='cpu')
+    parser.add_argument('--skip-plots',action='store_true')
     args=parser.parse_args()
     if args.out.exists():
         raise FileExistsError(args.out)
@@ -258,16 +259,18 @@ def main():
         raise ValueError('Incorrect decision population')
     write_csv(args.out/'expert_share.csv',summary)
     write_csv(args.out/'expert_share_by_slot.csv',slot_rows)
-    plot_shares(shares,args.out/'optical_expert_share.png')
-    plot_shares({name:weight_mass[name]/(counts[name].sum()/2) for name in counts},
-                args.out/'mean_routing_weight.png','Mean routing weight (%)')
-    plot_slot_shares(slot_shares,args.out/'expert_share_by_slot.png')
-    plot_expert_operation(model,sample['tokens'],sample['weights'],args.out/'expert_matrix_and_tokens.png')
-    plot_virtual_activation(sample['tokens'],sample['weights'],args.out/'virtual_expert_activation.png')
-    plot_router_sensitivity(model,sample['tokens'].to(args.device),args.out/'router_sensitivity.png')
-    plot_layout(args.out/'layout_4x4_and_8x8.png')
-    plot_phase_support(model,args.out/'phase_illumination_support.png')
+    if not args.skip_plots:
+        plot_shares(shares,args.out/'optical_expert_share.png')
+        plot_shares({name:weight_mass[name]/(counts[name].sum()/2) for name in counts},
+                    args.out/'mean_routing_weight.png','Mean routing weight (%)')
+        plot_slot_shares(slot_shares,args.out/'expert_share_by_slot.png')
+        plot_expert_operation(model,sample['tokens'],sample['weights'],args.out/'expert_matrix_and_tokens.png')
+        plot_virtual_activation(sample['tokens'],sample['weights'],args.out/'virtual_expert_activation.png')
+        plot_router_sensitivity(model,sample['tokens'].to(args.device),args.out/'router_sensitivity.png')
+        plot_layout(args.out/'layout_4x4_and_8x8.png')
+        plot_phase_support(model,args.out/'phase_illumination_support.png')
     stats['definition']='share = selected count / all Top2 selection counts; each decision contributes two selections'
+    stats['plots_exported']=not args.skip_plots
     stats['weights_sha256']=sha256(args.weights)
     stats['phase_statistics']={name:phase_statistics(getattr(model,name)) for name in ('frame_global','video_global')}
     stats['figure2d_palette']=dict(zip(EXPERTS,COLORS))

@@ -14,6 +14,10 @@ python staged_train.py --config configs/raw_zero_staged.json --paths paths.local
 
 调度器选择空闲 GPU，阶段间使用上一阶段选定权重继续训练。原始初始化保存为该试验根目录的 `initialization.pt`。评价沿用 2250 TRAIN、558 条原 TEST 开发选模及原视频分组规则。
 
+电子权重续训对照位于同一试验目录的 `electronic_transfer/`，配置为 `configs/transfer_raw_zero_staged.json`。初始化仅将两级 `raw_global_phase` 归零，电子参数来自已有 T22 权重。完成读出适配与相位重点训练后，联合阶段接续相位阶段的 `last_checkpoint.pt`。各阶段独立保存最佳评价结果与实际传给下一阶段的权重身份。
+
+服务器绘图分析入口支持 `--skip-plots`，可先导出数值、逐视频结果和原始数组，再在提供 Arial 的环境中重绘。
+
 ## 先看这些文件
 
 | 文件 | 用途 |
