@@ -114,6 +114,7 @@ def plot_masks(records,phases,out):
             rough=records[label]['phase_statistics'][name]['curvature_penalty']
             axes[row,column].set_title(f'{label}\n{name.replace("_"," ")}, curvature {rough:.3g}')
             fig.colorbar(image,ax=axes[row,column],shrink=.7,label='Phase (rad)')
+    fig.suptitle('Phase at physical video slot 0\nCurvature is averaged over all 16 phase tiles', fontsize=14)
     fig.savefig(out,dpi=180)
     plt.close(fig)
 
