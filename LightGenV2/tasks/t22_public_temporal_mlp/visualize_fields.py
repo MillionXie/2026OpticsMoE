@@ -189,7 +189,7 @@ def plot_overview(stage, values, out):
         ax.set(title=title, xlabel='x (pixel)', ylabel='y (pixel)')
         fig.colorbar(artist, ax=ax, shrink=.75, pad=.02)
     label = 'Frame global, 16 videos × 4 frames' if stage.frame_level else 'Video global, 16 video fields'
-    fig.suptitle(label + '\nSimulated fields from the selected linear PT; 518 canvas / 478 active; alpha = 2/3', fontsize=15)
+    fig.suptitle(label + '\nSimulated fields from the selected linear PT; 518 canvas / 478 active', fontsize=15)
     fig.savefig(out, dpi=180)
     plt.close(fig)
     return {'intensity_display_upper_percentile': 99.8, 'intensity_display_upper': upper,

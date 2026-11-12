@@ -22,9 +22,11 @@ from scipy.stats import spearmanr, kendalltau, pearsonr
 if __package__:
     from .model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from .data import load_inputs, groups, batch, sha256, attach_train_soft_targets
+    from .phase_regularization import model_phase_penalties, phase_statistics
 else:
     from model import LightGenTemporal, ModelConfig, load_lightgen, QUALITY_WORDS
     from data import load_inputs, groups, batch, sha256, attach_train_soft_targets
+    from phase_regularization import model_phase_penalties, phase_statistics
 
 ROOT=Path(__file__).resolve().parent
 
@@ -269,6 +271,10 @@ def train(args):
             reg,_=router_regularization(result['routing'],keep)
             loss=loss+cfg['router_balance_weight']*reg['balance']+cfg['router_importance_weight']*reg['importance']
             loss=loss+cfg['router_diversity_weight']*reg['diversity']+cfg['guard_weight']*result['guard_energy']
+            if cfg.get('phase_slope_weight',0) or cfg.get('phase_curvature_weight',0):
+                phase_terms = model_phase_penalties(model)
+                loss = (loss + cfg.get('phase_slope_weight',0)*phase_terms['slope']
+                        + cfg.get('phase_curvature_weight',0)*phase_terms['curvature'])
             if cfg['slot_consistency_weight'] and step%cfg['slot_consistency_interval']==0:
                 # Two deterministic forwards: penalize physical-slot sensitivity,
                 # not different random phase/shift/noise augmentation draws.
@@ -306,6 +312,8 @@ def train(args):
     selected,_=load_lightgen(out/'best_checkpoint.pt',args.device)
     final=evaluate(selected,payload,args.device,cfg['eval_batch_fields'],out)
     final['reference_srcc']=cfg['reference_srcc'];final['absolute_srcc_difference']=abs(final['srcc']-cfg['reference_srcc'])
+    write(out/'phase_statistics.json', {name:phase_statistics(getattr(selected,name))
+                                       for name in ('frame_global','video_global')})
     final['within_target']=final['absolute_srcc_difference']<=cfg['allowed_absolute_srcc_difference']
     cycles=[evaluate(selected,payload,args.device,cfg['eval_batch_fields'],slot_shift=k)['srcc'] for k in range(16)]
     write(out/'slot_cycle_audit.json',{'srcc_by_shift':cycles,'mean_srcc':float(np.mean(cycles)),

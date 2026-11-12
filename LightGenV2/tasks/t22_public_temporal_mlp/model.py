@@ -47,6 +47,7 @@ class ModelConfig:
     ccd_shift: int = 4
     phase_dropout: float = 0.05
     phase_dropout_cell: int = 4
+    phase_noise_std: float = 0.0
     leakage_min: float = 0.20
     leakage_max: float = 0.35
     leakage_eval: float = 0.20
@@ -66,6 +67,8 @@ class ModelConfig:
             raise ValueError('Invalid model width/temperature')
         if self.expert_mode not in ('mlp', 'linear'):
             raise ValueError('Unsupported expert mode')
+        if not math.isfinite(self.phase_noise_std) or self.phase_noise_std < 0:
+            raise ValueError('Phase noise standard deviation must be finite and nonnegative')
         if self.orm_mode not in ('legacy_energy', 'amplitude'):
             raise ValueError('Unsupported ORM mode')
         if not 0 <= self.alpha_min <= self.alpha_max <= 1 or not 0 <= self.alpha_eval <= 1:
@@ -224,6 +227,8 @@ class GlobalStage(nn.Module):
 
     def modulation(self):
         phase=2*math.pi*torch.sigmoid(self.raw_global_phase)
+        if self.training and self.cfg.phase_noise_std:
+            phase = phase + self.cfg.phase_noise_std*torch.randn_like(phase)
         value=torch.exp(1j*phase)
         if self.training and self.cfg.phase_dropout:
             k=self.cfg.phase_dropout_cell

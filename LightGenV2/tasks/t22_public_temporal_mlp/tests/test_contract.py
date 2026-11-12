@@ -10,6 +10,7 @@ from ..model import LightGenTemporal, ModelConfig, GlobalStage, Propagation, Rou
 from ..run import save_checkpoint
 from ..data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
+from ..phase_regularization import phase_penalties, gaussian_phase, illumination_support
 
 
 class Contracts(unittest.TestCase):
@@ -42,6 +43,27 @@ class Contracts(unittest.TestCase):
             with self.assertRaises(ValueError):
                 frames_from_video('unreadable.mp4')
         decoder.release.assert_called_once_with()
+
+    def test_periodic_phase_regularization_and_support(self):
+        phase = torch.randn(2,111,111,requires_grad=True)
+        original = phase_penalties(phase)
+        shifted = phase_penalties(phase + 2*torch.pi)
+        self.assertTrue(torch.allclose(original['curvature'],shifted['curvature'],atol=1e-6))
+        smoothed = gaussian_phase(phase.detach(),1.5)
+        self.assertLess(float(phase_penalties(smoothed)['curvature']),float(original['curvature'].detach()))
+        original['curvature'].backward()
+        self.assertTrue(torch.isfinite(phase.grad).all())
+        self.assertEqual(int(illumination_support(True).sum()),4*27*27)
+        self.assertEqual(int(illumination_support(False).sum()),42*56)
+
+    def test_phase_noise_is_training_only(self):
+        cfg = ModelConfig(width=8,orm_mode='amplitude',phase_noise_std=.02,
+                          phase_shift=0,phase_dropout=0)
+        stage = GlobalStage(cfg,False)
+        stage.eval()
+        self.assertTrue(torch.equal(stage.modulation(),stage.modulation()))
+        stage.train()
+        self.assertFalse(torch.equal(stage.modulation(),stage.modulation()))
 
     def test_dark_relu_field_has_finite_backward(self):
         cfg=ModelConfig(width=8,input_shift=0,phase_shift=0,ccd_shift=0,phase_dropout=0)
