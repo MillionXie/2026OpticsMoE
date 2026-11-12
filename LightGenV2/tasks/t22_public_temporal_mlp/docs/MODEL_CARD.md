@@ -63,29 +63,40 @@ The direct-video/cache mean absolute MOS difference is 0.019374,
 with maximum 2.122620. The lowest tested two-pixel
 detector-shift SRCC is 0.7747974614.
 
-## Electronic-capacity check
+## From-scratch electronic control
 
-A companion electronic model uses the input adapters, custom mean/max frame
-merger, position parameters, and a two-layer 8064→32→5 readout. Its parameter
-count is 942,341, and its development SRCC is 0.7937765654. Its retained
-electronic layers are optimized on the 2250 TRAIN videos for 400 epochs from
-the corresponding parent initialization. The optical reference optimizes the
-129,221 readout parameters over 400 epochs and uses a 4032-dimensional head
-input. This capacity comparison has different head input dimensions and
-optimization scopes, which must be accounted for in interpreting the result.
+The control uses fixed Qwen-derived visual embeddings of shape 4×49×1024 and
+fixed text embeddings of shape 38×2048. Full flattening gives 200,704 visual
+values and 77,824 text values. Concatenation produces a 278,528-dimensional
+input for Linear278528→32, ReLU, and Linear32→5, followed by softmax and the
+TRAIN-derived five-grade MOS expectation. The evaluated flattening arrangement
+is an explicit provisional shape choice that retains all embedding entries.
 
-The electronic control selects hidden units from all 256 parent units using
-its TRAIN activations. It uses seed 713 and selects its highest evaluated
-development SRCC without an upper bound.
+Its 8,913,093 trainable parameters are the weights and biases of the two FC
+layers, stored in four tensors. Both layers use fresh random initialization
+with seed 713. Optimization uses 2250 TRAIN videos for 400 epochs, and the
+highest evaluated original-TEST development SRCC selects epoch 30. The control
+uses label-based loss and TRAIN-derived MOS statistics.
 
-| Metric | Optical reference | Electronic capacity control |
+| Metric | Optical reference | From-scratch two-FC control |
 |---|---:|---:|
-| SRCC | 0.7988976462 | 0.7937765654 |
-| PLCC | 0.8005052856 | 0.8074254715 |
-| RMSE | 8.4795709019 | 8.2045499911 |
-| MAE | 6.3281161469 | 6.2657914521 |
+| SRCC | 0.7988976462 | 0.7409566246 |
+| PLCC | 0.8005052856 | 0.7736740243 |
+| KRCC | 0.5864579021 | 0.5310321863 |
+| RMSE | 8.4795709019 | 8.6899832681 |
+| MAE | 6.3281161469 | 6.7342148579 |
 
-Both models reach the 0.79 SRCC range in this single-seed comparison.
+The optical reference inherits task-trained adapters, merger, routers, experts,
+and phase parameters. Its final refinement trains the 129,221 readout parameters
+with TRAIN teacher distillation and interval-based development selection.
+Interpretation of the accuracy difference must account for these representation,
+initialization, objective, and optimization-scope differences.
+
+A historical task-warm-start electronic capacity check retained the task-trained
+adapters, mean/max merger, positions, and an 8064→32→5 head. Training all its
+942,341 retained parameters produced development SRCC 0.7937765654. That run and
+its original predictions are preserved with their initialization protocol in
+the author records.
 
 ## Phase and propagation controls
 

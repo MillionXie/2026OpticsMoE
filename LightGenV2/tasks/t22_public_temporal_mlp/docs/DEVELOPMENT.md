@@ -172,24 +172,55 @@ python tools/refine_electronics.py --help
 python tools/refine_electronics.py --weights assets/initialization/simplification_parent.pt --paths paths.local.json --out runs/simulation/reproduce_readout --hidden 32 --epochs 400 --learning-rate 0.0003 --teacher-weight 10 --minimum-srcc 0.790 --maximum-srcc 0.799
 ```
 
-## 电子容量检查
+## 从随机初始化训练的电子对照
 
-电子对照保留视觉与文本 adapters、mean/max frame merger、位置参数，以及
-8064→32→5 两层读出头，共 942,341 个参数。该模型从对应父初始化开始，使用
-2250 条 TRAIN 优化全部保留电子层，完成 400 轮，开发 SRCC 为 0.7937765654。
+本轮按用户指定协议，冻结 Qwen 来源的视觉 `4×49×1024` 和文本 `38×2048`
+embedding，将各自全部元素展平为 200,704 和 77,824 个值，拼接为 278,528 维。
+输入经过随机初始化的 `Linear278528→32→ReLU→Linear32→5`，随后通过 softmax
+和五等级分数期望输出 MOS。完整 flatten 是本轮已运行的暂定形状选择，保留
+embedding 的全部元素。
 
-当前光学参考模型使用 4032→32→5 读出头，仅优化其中的 129,221 个参数。
-两组的读出输入维度与更新范围不同，容量对照的解释需要同时交代这些差异。
+模型仅学习两层 FC 的权重与偏置，共四个张量、8,913,093 个参数。种子为 713，
+AdamW 初始学习率为 0.0001，batch size 为 128，完成 400 轮 TRAIN 标签训练。
+MOS 均值、标准差、等级分数和边界由 2250 条 TRAIN 标签重新计算。原 TEST
+开发评价选取已评价轮次中的最高 SRCC，选中第 30 轮。
 
-| 已核验模型 | 开发 SRCC | 训练范围 |
+| 指标 | 当前光学参考模型 | 随机初始化两 FC 对照 |
+|---|---:|---:|
+| SRCC | 0.7988976462 | 0.7409566246 |
+| PLCC | 0.8005052856 | 0.7736740243 |
+| KRCC | 0.5864579021 | 0.5310321863 |
+| RMSE | 8.4795709019 | 8.6899832681 |
+| MAE | 6.3281161469 | 6.7342148579 |
+
+当前光学参考模型继承已训练的 adapters、merger、router、expert 和相位，最后
+阶段仅优化 129,221 个读出参数，并使用 TRAIN 教师蒸馏。解释两组精度差时需要
+同时交代输入表示、初始化、训练目标、选模规则和更新范围的差异。
+
+从随机初始化复现电子对照的命令如下，输出目录应为尚未使用的新运行目录。
+
+```powershell
+python tools/embedding_readout_control.py --input-mode flatten_concat --paths paths.local.json --out runs/simulation/reproduce_embedding_readout --hidden 32 --epochs 400 --batch-size 128 --learning-rate 0.0001 --seed 713 --device cuda
+```
+
+当前记录保存在 `runs/simulation/embedding_readout_control_20261113/flatten_concat/`，
+包含配置、源码与缓存 SHA、初始权重指纹、逐轮日志、best/last 权重和逐视频结果。
+
+### 历史任务 warm-start 容量检查
+
+此前协议保留了父模型已训练的视觉与文本 adapters、mean/max frame merger、
+位置参数，以及 8064→32→5 读出头。优化全部 942,341 个保留电子参数，完成
+400 轮后，第 305 轮开发 SRCC 为 0.7937765654。其 PLCC、RMSE 和 MAE 分别为
+0.8074254715、8.2045499911 和 6.2657914521。
+
+| 历史候选 | 开发 SRCC | 初始化与训练范围 |
 |---|---:|---|
-| 当前 32 头光学参考模型 | 0.7988976462 | 读出头 |
-| 32 头电子容量对照 | 0.7937765654 | 全部保留电子层 |
-| 已归档 128 头光学参考候选 | 0.7989651231 | 读出头 |
-| 已归档 128 头电子容量对照 | 约 0.79764 | 全部保留电子层 |
+| 32 头任务 warm-start 电子检查 | 0.7937765654 | 父任务层初始化，全部保留电子层更新 |
+| 128 头光学参考候选 | 0.7989651231 | 父任务模型初始化，读出头更新 |
+| 128 头任务 warm-start 电子检查 | 约 0.79764 | 父任务层初始化，全部保留电子层更新 |
 
-128 头的电子容量对照与光学候选表现接近。训练日志、原始预测和结构配置作为
-容量检查证据保存在内部归档。当前公开参考采用用户选定的 32 头配置。
+128 头的任务 warm-start 电子检查与光学候选表现接近。这些历史协议的训练日志、
+原始预测和结构配置保存在内部归档，保留各自的初始化与评价身份。
 
 ## 相位与传播控制
 
@@ -224,4 +255,5 @@ python tools/plot_global_ablation.py --summary releases/current/results/global_a
 发布权重使用公开元数据，模型张量与当前研究权重逐个核对。文件白名单、权重指纹、
 逐文件 SHA256、示例推理及参数一致性验证记录在发布清单中。
 
-本轮32头完整原始视频SRCC为0.7992454773。完整父256候选池电子控制为0.7937765654，第305/400轮，其PLCC、RMSE和MAE分别为0.8074254715、8.2045499911、6.2657914521。此前128候选池控制0.7842540330保留在内部归档。
+此前限定 128 单元候选池的任务 warm-start 检查 SRCC 0.7842540330 随其协议
+保存在内部归档。

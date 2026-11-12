@@ -58,10 +58,12 @@ epochs using the requested 0.790–0.799 development-SRCC range.
 Full evaluation conditions and selected-weight checks are described in
 `MODEL_CARD.md`.
 
-An electronic-capacity check with 942,341 parameters and an 8064 → 32 → 5 head
-achieved development SRCC 0.78425 after training its retained electronic layers.
-The optical reference fine-tunes its readout. The differing head input sizes and
-optimization scopes are described in `MODEL_CARD.md`.
+A from-scratch electronic control flattens the fixed visual and text embeddings
+into 278,528 values and trains a random 278528 → 32 → 5 readout. Its 8,913,093
+parameters achieved development SRCC 0.74096 at epoch 30 of 400. The optical
+reference uses task-trained frontend components and TRAIN teacher distillation.
+The input, initialization, and training conditions are described in
+`MODEL_CARD.md`, together with the historical task-warm-start control at 0.79378.
 
 Post-training phase and propagation controls retain each stage's input/output
 interface. Their condition definitions and selected-weight results are supplied
