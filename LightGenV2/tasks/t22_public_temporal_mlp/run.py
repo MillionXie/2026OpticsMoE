@@ -165,7 +165,7 @@ def train(args):
     out=args.out.resolve()
     if out.exists():raise FileExistsError('Refusing to overwrite run: '+str(out))
     if args.device.startswith('cuda') and not args.allow_shared_gpu:admission=ensure_idle_gpu()
-    else:admission='local smoke or explicitly allowed device; no exclusive-resource measurement claim'
+    else:admission='CPU run or nonexclusive GPU training requested by --allow-shared-gpu'
     torch.set_num_threads(4);torch.manual_seed(cfg['seed']);np.random.seed(cfg['seed'])
     payload=load_inputs(paths)
     if cfg.get('soft_target_weight',0):
@@ -404,7 +404,7 @@ def main():
     p.add_argument('--paper-initialize',type=Path,help='Explicitly whitelist matching front, merger, global tensors for initialization')
     p.add_argument('--train-soft-targets',type=Path)
     p.add_argument('--smoke-steps',type=int,default=0)
-    p.add_argument('--allow-shared-gpu',action='store_true',help='Only for explicitly authorized nonexclusive correctness smoke')
+    p.add_argument('--allow-shared-gpu',action='store_true',help='Allow nonexclusive GPU training and record the resource mode')
     args=p.parse_args()
     try:train(args)
     except BaseException as error:

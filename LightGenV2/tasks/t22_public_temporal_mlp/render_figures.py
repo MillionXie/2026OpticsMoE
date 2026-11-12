@@ -45,7 +45,8 @@ def read_json(path):
     return json.loads(Path(path).read_text('utf-8-sig'))
 
 
-def plot_phase_training(initial, trained, output, arrays_path, statistics_path):
+def plot_phase_training(initial, trained, output, arrays_path, statistics_path,
+                        initialization_path, trained_path):
     arrays = {}
     statistics = {}
     for name in STAGES:
@@ -89,8 +90,8 @@ def plot_phase_training(initial, trained, output, arrays_path, statistics_path):
         'difference': 'atan2(sin(trained-initial), cos(trained-initial))',
         'statistics_scope': 'all 16 physical phase tiles unless explicitly marked slot0',
         'image_scope': 'physical video slot 0',
-        'initialization_sha256': sha256(ROOT / 'assets/initialization/initialization.pt'),
-        'selected_sha256': sha256(ROOT / 'runs/simulation/current/LightGen.pt'),
+        'initialization_sha256': sha256(initialization_path),
+        'selected_sha256': sha256(trained_path),
         'statistics': statistics,
     }, indent=2) + '\n', 'utf-8')
 
@@ -186,7 +187,8 @@ def main():
     plot_masks(robust, phases, output / 'phase_masks.png')
     plot_phase_training(initial, model, output / 'phase_training_update.png',
                         current / 'fields/phase_training_arrays.npz',
-                        current / 'fields/phase_training_statistics.json')
+                        current / 'fields/phase_training_statistics.json',
+                        ROOT / 'assets/initialization/initialization.pt', checkpoint)
     explain_model.draw_network(output / 'network_overview.png')
     explain_model.draw_frame(output / 'frame_dimensions.png')
     record = {
