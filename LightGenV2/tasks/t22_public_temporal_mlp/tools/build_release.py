@@ -34,7 +34,7 @@ else:
 ROOT = _paths.ROOT
 PUBLIC = ROOT.parents[2]/'LightGen2'
 RUNTIME_FILES = (
-    '.gitignore', 'infer.py', 'model.py', 'README.md', '中文导读.md', 'MODEL_CARD.md',
+    '.gitignore', '.gitattributes', 'infer.py', 'model.py', 'README.md', '中文导读.md', 'MODEL_CARD.md',
     'requirements.txt', 'requirements-visualization.txt', 'LICENSE', 'NOTICE',
     'licenses/QWEN_LICENSE.txt', 'examples/make_example.py',
     'tools/__init__.py', 'tools/_paths.py', 'tools/plot_style.py',
@@ -48,7 +48,7 @@ RESULT_FILES = (
 
 
 def write_json(path, value):
-    Path(path).write_text(json.dumps(value, indent=2, ensure_ascii=False)+'\n', 'utf-8')
+    Path(path).write_text(json.dumps(value, indent=2, ensure_ascii=False)+'\n', 'utf-8', newline='\n')
 
 
 def read_csv(path):
