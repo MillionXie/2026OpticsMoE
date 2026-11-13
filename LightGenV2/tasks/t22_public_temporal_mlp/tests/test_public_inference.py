@@ -147,14 +147,14 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertEqual(model.calls, 35)
         self.assertEqual(capture.call_count, 1)
         self.assertEqual(len(records), 558)
-        self.assertEqual(metrics['tail_padding_videos'], 2)
-        self.assertFalse(metrics['padding_in_metrics'])
+        self.assertEqual(metrics['fields'], 35)
+        self.assertEqual(metrics['videos'], 558)
         self.assertEqual([record['sample_id'] for record in records], sample_ids)
         self.assertEqual(export.call_args.args[2]['vision']['selected'].shape[0], 558)
         field_records = fields.call_args.args[1]
         self.assertEqual(len(field_records), 16)
         self.assertEqual(sum(record['is_padding'] for record in field_records), 2)
-        self.assertEqual([record['predicted_MOS'] for record in field_records[-2:]], [35000., 35001.])
+        self.assertEqual([record['sample_id'] for record in field_records[-2:]], ['0', '1'])
 
 
 if __name__ == '__main__':

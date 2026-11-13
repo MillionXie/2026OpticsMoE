@@ -73,13 +73,13 @@ def evaluate(model, archive, sample_ids, targets, device, directory, *, visualiz
     routing = {branch: {'selected': [], 'probabilities': []}
                for branch in ('vision', 'language')}
     optical_capture = None
-    for field_number, (start, count, pixels) in enumerate(iter_rgb_fields(archive, sample_ids), 1):
-        pixels = pixels.to(device)
+    for field_number, (start, count, normalized_rgb) in enumerate(iter_rgb_fields(archive, sample_ids), 1):
+        normalized_rgb = normalized_rgb.to(device)
         if field_number == visualize_field:
-            result, captured = capture_optical_fields(model, pixels)
-            optical_capture = (pixels, captured, result['prediction'][0].cpu().tolist())
+            result, captured = capture_optical_fields(model, normalized_rgb)
+            optical_capture = (normalized_rgb, captured)
         else:
-            result = model(normalized_rgb=pixels)
+            result = model(normalized_rgb=normalized_rgb)
         prediction = result['prediction'][0, :count].cpu().tolist()
         for slot, value in enumerate(prediction, 1):
             records.append({'sample_id': sample_ids[start + slot - 1],
@@ -94,27 +94,20 @@ def evaluate(model, archive, sample_ids, targets, device, directory, *, visualiz
     correlation = None
     if np.ptp(targets) > 0 and np.ptp(predictions) > 0:
         correlation = float(spearmanr(predictions, targets).statistic)
-    metrics = {'model': 'LightGen2', 'videos': len(records),
-               'distinct_sample_ids': len({record['sample_id'] for record in records}),
-               'input_type': 'normalized_RGB',
-               'fields': field_count, 'videos_per_field': 16,
-               'tail_real_videos': len(sample_ids) - 16 * (field_count - 1),
-               'tail_padding_videos': (-len(sample_ids)) % 16,
-               'padding_in_metrics': False, 'SRCC': correlation,
-               'visualized_field': visualize_field, 'device': str(device)}
+    metrics = {'videos': len(records), 'fields': field_count, 'SRCC': correlation,
+               'visualized_field': visualize_field}
     full_routing = {branch: {key: np.concatenate(values) for key, values in data.items()}
                     for branch, data in routing.items()}
     directory = Path(directory)
     export_evaluation(records, metrics, full_routing, directory)
-    pixels, captured, captured_predictions = optical_capture
+    normalized_rgb, captured = optical_capture
     start = (visualize_field - 1) * 16
-    field_records = [dict(record, is_padding=False) for record in records[start:start + 16]]
-    for padding_index in range(16 - len(field_records)):
-        padding_record = dict(records[padding_index], field=visualize_field,
-                              slot=len(field_records) + 1, is_padding=True,
-                              predicted_MOS=captured_predictions[len(field_records)])
-        field_records.append(padding_record)
-    export_visualizations(model, field_records, pixels, captured, directory,
+    real_count = min(16, len(sample_ids) - start)
+    padding_ids = [sample_ids[index % len(sample_ids)] for index in range(16 - real_count)]
+    field_ids = sample_ids[start:start + 16] + padding_ids
+    field_records = [{'sample_id': sample_id, 'is_padding': slot >= real_count}
+                     for slot, sample_id in enumerate(field_ids)]
+    export_visualizations(model, field_records, normalized_rgb, captured, directory,
                           field_number=visualize_field, field_count=field_count)
     return records, metrics
 
@@ -130,15 +123,21 @@ def main():
                         help='One-based field number captured during the full inference')
     args = parser.parse_args()
     torch.set_num_threads(4)
+    if __package__:
+        from .visualize import configure_figures
+    else:
+        from visualize import configure_figures
+    configure_figures()
+    device_name = (torch.cuda.get_device_name(torch.device(args.device))
+                   if torch.device(args.device).type == 'cuda' else 'CPU')
+    print('Running on ' + device_name, flush=True)
     model, _ = load_lightgen2(args.weights, args.device)
     with np.load(args.input, allow_pickle=False) as archive:
         sample_ids, targets = read_input_metadata(archive)
         _, metrics = evaluate(model, archive, sample_ids, targets, args.device, args.output,
                               visualize_field=args.visualize_field)
     metrics['total_runtime_seconds'] = time.perf_counter() - PROGRAM_STARTED
-    metrics['runtime_scope'] = 'program imports, model loading, full NPZ inference and result figure export'
-    metrics['device_name'] = (torch.cuda.get_device_name(torch.device(args.device))
-                              if torch.device(args.device).type == 'cuda' else 'CPU')
+    metrics['device_name'] = device_name
     (args.output / '02_metrics.json').write_text(json.dumps(metrics, indent=2, allow_nan=False)
                                               + '\n', encoding='utf-8', newline='\n')
     print(f"SRCC {metrics['SRCC']} over {metrics['videos']} distinct videos")

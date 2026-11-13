@@ -33,10 +33,9 @@ SOURCE_FILES = (
 )
 RESULT_FILES = (
     '01_predictions.csv', '02_metrics.json', '03_prediction_vs_mos.png',
-    '04_prediction_overview.png', '05_visualized_field.csv', '06_input_frames.png',
-    '07_optical_expert_share.npz', '07_optical_expert_share.png',
+    '04_input_frames.png', '05_optical_expert_share.npz', '05_optical_expert_share.png',
 ) + tuple(f'{number:02d}_{branch}_{kind}.{suffix}'
-          for branch, first in (('vision', 8), ('language', 11))
+          for branch, first in (('vision', 6), ('language', 9))
           for number, kind in enumerate(('mask', 'input_field', 'output_field'), first)
           for suffix in ('npz', 'png'))
 ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.docx', 'data/test_rgb.npz') + tuple(
@@ -59,23 +58,20 @@ def import_public_module(name):
 
 def verify_optical_arrays(directory, predictions):
     reports = {}
-    with (directory / '05_visualized_field.csv').open(encoding='utf-8', newline='') as stream:
-        captured = list(csv.DictReader(stream))
-    if len(captured) != 16:
-        raise ValueError('Expected all sixteen captured slots')
-    for row in captured:
-        if row['is_padding'] == 'False':
-            original = predictions[int(row['field']) * 16 - 16 + int(row['slot']) - 1]
-            if row['sample_id'] != original['sample_id'] or row['predicted_MOS'] != original['predicted_MOS']:
-                raise ValueError('Captured field predictions differ from full evaluation')
-    for branch, first in (('vision', 8), ('language', 11)):
+    metrics = json.loads((directory / '02_metrics.json').read_text('utf-8'))
+    start = (metrics['visualized_field'] - 1) * 16
+    captured = predictions[start:start + 16]
+    real_count = len(captured)
+    captured = captured + predictions[:16 - real_count]
+    expected_valid = (np.arange(16) < real_count).tolist()
+    for branch, first in (('vision', 6), ('language', 9)):
         with np.load(directory / f'{first:02d}_{branch}_mask.npz', allow_pickle=False) as mask, \
                 np.load(directory / f'{first+1:02d}_{branch}_input_field.npz', allow_pickle=False) as source, \
                 np.load(directory / f'{first+2:02d}_{branch}_output_field.npz', allow_pickle=False) as target:
             for archive in (mask, source, target):
                 if archive['video_names'].tolist() != [row['sample_id'] for row in captured]:
                     raise ValueError('Optical array video order differs')
-                if archive['valid'].tolist() != [row['is_padding'] == 'False' for row in captured]:
+                if archive['valid'].tolist() != expected_valid:
                     raise ValueError('Optical array padding flags differ')
             phase = np.zeros((518, 518), dtype=np.float32)
             if mask['phase_tiles'].shape != (16, 111, 111):
@@ -94,7 +90,7 @@ def verify_optical_arrays(directory, predictions):
             np.testing.assert_allclose(target['display_intensity'], np.clip(target['intensity'] / target['display_scale'], 0, 1), rtol=1e-6)
             np.testing.assert_allclose(target['display_scale'], np.percentile(target['intensity'], 99.8), rtol=1e-6)
             reports[branch] = {'phase_tiles': 16, 'numpy_propagation_relative_error': error}
-    with np.load(directory / '07_optical_expert_share.npz', allow_pickle=False) as routing:
+    with np.load(directory / '05_optical_expert_share.npz', allow_pickle=False) as routing:
         if routing['sample_ids'].tolist() != [row['sample_id'] for row in predictions]:
             raise ValueError('Full routing identities differ')
         for branch in ('vision', 'language'):
@@ -149,7 +145,7 @@ def build_release():
     from scipy.stats import spearmanr
     score = float(spearmanr([float(row['predicted_MOS']) for row in predictions], targets).statistic)
     metrics = json.loads((result_dir / '02_metrics.json').read_text('utf-8'))
-    if score != metrics['SRCC'] or metrics['videos'] != 558 or metrics['tail_padding_videos'] != 2:
+    if score != metrics['SRCC'] or metrics['videos'] != 558 or metrics['fields'] != 35:
         raise ValueError('Published summary differs from per-video scores')
     if metrics['total_runtime_seconds'] <= 0:
         raise ValueError('Complete program runtime is missing')

@@ -89,8 +89,8 @@ def capture_optical_fields(model, normalized_rgb):
     return output, captured
 
 
-def plot_input_frames(pixels, output, field_number, field_count):
-    images = ((pixels[0].float() + 1) * 127.5).round().clamp(0, 255).to(torch.uint8)
+def plot_input_frames(normalized_rgb, output, field_number, field_count):
+    images = ((normalized_rgb[0].float() + 1) * 127.5).round().clamp(0, 255).to(torch.uint8)
     images = images.permute(0, 1, 3, 4, 2).cpu().numpy()
     figure, axes = plt.subplots(4, 4, figsize=(6.6, 7.0), layout='constrained')
     for slot, axis in enumerate(axes.flat):
@@ -124,8 +124,8 @@ def export_routing(routing, records, directory):
         axis.spines[['top', 'right']].set_visible(False)
         for index, value in enumerate(share):
             axis.text(index, value + 1, f'{value:.1f}', ha='center')
-    np.savez_compressed(directory / '07_optical_expert_share.npz', **arrays)
-    save_figure(figure, directory / '07_optical_expert_share.png')
+    np.savez_compressed(directory / '05_optical_expert_share.npz', **arrays)
+    save_figure(figure, directory / '05_optical_expert_share.png')
 
 
 def write_records(path, records):
@@ -152,32 +152,19 @@ def export_evaluation(records, metrics, routing, directory):
     axis.set_title(f"{len(records)} videos with SRCC {score}")
     axis.spines[['top', 'right']].set_visible(False)
     save_figure(figure, directory / '03_prediction_vs_mos.png')
-    order = np.argsort(target, kind='stable')
-    figure, axis = plt.subplots(figsize=(5.3, 2.4), layout='constrained')
-    axis.plot(np.arange(len(records)) + 1, target[order], color='#444444', linewidth=1,
-              label='Human MOS')
-    axis.scatter(np.arange(len(records)) + 1, prediction[order], s=5, alpha=.55,
-                 color=EXPERT_COLORS[0], linewidths=0, label='Predicted MOS')
-    axis.set_xlabel('Videos ordered by human MOS')
-    axis.set_ylabel('Temporal MOS')
-    axis.set_title('Complete evaluation predictions')
-    axis.spines[['top', 'right']].set_visible(False)
-    axis.legend(frameon=False)
-    save_figure(figure, directory / '04_prediction_overview.png')
     export_routing(routing, records, directory)
 
 
 @torch.inference_mode()
-def export_visualizations(model, records, pixels, captured, directory, *, field_number, field_count):
+def export_visualizations(model, records, normalized_rgb, captured, directory, *, field_number, field_count):
     """Export the field already captured during the complete evaluation."""
-    if len(records) != 16 or tuple(pixels.shape[:3]) != (1, 16, 4):
+    if len(records) != 16 or tuple(normalized_rgb.shape[:3]) != (1, 16, 4):
         raise ValueError('Visualizations require exactly 16 videos in one optical field')
     configure_figures()
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     names = np.asarray([record['sample_id'] for record in records])
     valid = np.asarray([not record['is_padding'] for record in records])
-    write_records(directory / '05_visualized_field.csv', records)
     for branch in BRANCHES:
         stage = getattr(model, branch + '_global')
         record = captured[branch]
@@ -189,7 +176,7 @@ def export_visualizations(model, records, pixels, captured, directory, *, field_
         phase_map = np.zeros((518, 518), dtype=np.float32)
         for slot, (row, column) in enumerate(stage.origins):
             phase_map[row + 2:row + 113, column + 2:column + 113] = phase_tiles[slot]
-        first_number = 8 if branch == 'vision' else 11
+        first_number = 6 if branch == 'vision' else 9
         mask_prefix = directory / f'{first_number:02d}_{branch}_mask'
         input_prefix = directory / f'{first_number + 1:02d}_{branch}_input_field'
         output_prefix = directory / f'{first_number + 2:02d}_{branch}_output_field'
@@ -221,4 +208,4 @@ def export_visualizations(model, records, pixels, captured, directory, *, field_
                             valid=valid, field_number=field_number)
         plot_field(display_intensity, str(output_prefix) + '.png',
                    branch.capitalize() + f' output field {field_number}')
-    plot_input_frames(pixels, directory / '06_input_frames.png', field_number, field_count)
+    plot_input_frames(normalized_rgb, directory / '04_input_frames.png', field_number, field_count)

@@ -156,7 +156,7 @@ def build_guide():
               '02_metrics.json records total_runtime_seconds. Runtime varies with hardware '
               'and filesystem performance.')
     paragraph(document, 'Field 1 is captured during this same evaluation. Its sixteen slots '
-              'are linked to sample IDs and predictions in results/05_visualized_field.csv. '
+              'can be matched to results/01_predictions.csv using field and slot numbers. '
               'To display another field, select a number from 1 to 35.')
     code(document, 'python infer.py --visualize-field 12')
     paragraph(document, 'Each invocation processes the complete input archive. Figures use '
@@ -257,22 +257,20 @@ def build_guide():
     page(document, 'Read the results in numbered order')
     table(document, ['Result', 'Content and scope'], [
         ('01_predictions.csv', 'One record per actual video with sample ID, one-based field/slot, human MOS and predicted MOS'),
-        ('02_metrics.json', 'SRCC, distinct sample count, field/padding counts, complete program runtime and device'),
+        ('02_metrics.json', 'SRCC, video/field counts, complete program runtime and device'),
         ('03_prediction_vs_mos.png', '558 points comparing predicted and human temporal MOS'),
-        ('04_prediction_overview.png', 'All predictions ordered by human MOS for display after evaluation'),
-        ('05_visualized_field.csv', 'All sixteen captured slots, sample IDs, MOS predictions and padding flags'),
-        ('06_input_frames.png', 'Four sampled frames from each slot in the selected field'),
-        ('07_optical_expert_share.npz and .png', 'Top2 events, probabilities and shares for all 558 actual videos'),
-        ('08_vision_mask.npz and .png', 'Complete vision phase canvas, all sixteen tiles and actual complex modulation'),
-        ('09_vision_input_field.npz and .png', 'Vision incident field and its amplitude, intensity and modulated field'),
-        ('10_vision_output_field.npz and .png', 'Vision propagated field, detector intensity and transfer function'),
-        ('11_language_mask.npz and .png', 'Complete language phase canvas, tiles and modulation'),
-        ('12_language_input_field.npz and .png', 'Language incident field and modulated field'),
-        ('13_language_output_field.npz and .png', 'Language propagated field, intensity and transfer function'),
+        ('04_input_frames.png', 'Four sampled frames from each slot in the selected field'),
+        ('05_optical_expert_share.npz and .png', 'Top2 events, probabilities and shares for all 558 actual videos'),
+        ('06_vision_mask.npz and .png', 'Complete vision phase canvas, all sixteen tiles and actual complex modulation'),
+        ('07_vision_input_field.npz and .png', 'Vision incident field and its amplitude, intensity and modulated field'),
+        ('08_vision_output_field.npz and .png', 'Vision propagated field, detector intensity and transfer function'),
+        ('09_language_mask.npz and .png', 'Complete language phase canvas, tiles and modulation'),
+        ('10_language_input_field.npz and .png', 'Language incident field and modulated field'),
+        ('11_language_output_field.npz and .png', 'Language propagated field, intensity and transfer function'),
     ], [2.85, 3.9])
     paragraph(document, 'The selected field is observed while computing its predictions. '
               'Each field is evaluated once. The fields used for figures and their sample '
-              'identities are recorded in both 05_visualized_field.csv and the optical NPZ files. '
+              'identities are recorded in the optical NPZ files and matched to 01_predictions.csv. '
               'Expert shares use all 558 actual videos and exclude padding.')
     paragraph(document, 'To choose another input archive, output directory or visualized field, '
               'use the same entry point with the corresponding arguments.')
@@ -283,17 +281,17 @@ def build_guide():
               'Fields and modulation use complex64. Intensities and phase use float32. '
               'Coordinates are zero-based pixels, indexed as [y,x]. CSV fields and slots are one-based.')
     table(document, ['Archive', 'Numerical keys'], [
-        ('08 and 11 mask files', 'phase [518,518], phase_tiles [16,111,111], modulation [518,518], slot_origins [16,2]'),
-        ('09 and 12 input files', 'field, amplitude, intensity and modulated_field, each [518,518]'),
-        ('10 and 13 output files', 'field, intensity and transfer, each [518,518]'),
+        ('06 and 09 mask files', 'phase [518,518], phase_tiles [16,111,111], modulation [518,518], slot_origins [16,2]'),
+        ('07 and 10 input files', 'field, amplitude, intensity and modulated_field, each [518,518]'),
+        ('08 and 11 output files', 'field, intensity and transfer, each [518,518]'),
         ('All optical files', 'video_names [16], valid [16] and field_number'),
-        ('07 expert share', 'sample_ids [558], vision_selected/probabilities [558,4,4], language equivalents [558,4], and counts/shares [4] per branch'),
+        ('05 expert share', 'sample_ids [558], vision_selected/probabilities [558,4,4], language equivalents [558,4], and counts/shares [4] per branch'),
     ], [1.85, 4.9])
     paragraph(document, 'Phase is in radians on [−π,π]. modulation stores the actual complex '
               'factor used by the forward. The incident field precedes modulation. '
               'modulated_field is the input passed to propagation. Output intensity is the '
               'squared magnitude of the propagated field before detector normalization.')
-    code(document, "import numpy as np\nmask = np.load('results/08_vision_mask.npz', allow_pickle=False)\nsource = np.load('results/09_vision_input_field.npz', allow_pickle=False)\ntarget = np.load('results/10_vision_output_field.npz', allow_pickle=False)\nmodulated = source['field'] * mask['modulation']\nnp.testing.assert_allclose(modulated, source['modulated_field'], rtol=1e-6)\nreplayed = np.fft.ifft2(np.fft.fft2(modulated) * target['transfer'])")
+    code(document, "import numpy as np\nmask = np.load('results/06_vision_mask.npz', allow_pickle=False)\nsource = np.load('results/07_vision_input_field.npz', allow_pickle=False)\ntarget = np.load('results/08_vision_output_field.npz', allow_pickle=False)\nmodulated = source['field'] * mask['modulation']\nnp.testing.assert_allclose(modulated, source['modulated_field'], rtol=1e-6)\nreplayed = np.fft.ifft2(np.fft.fft2(modulated) * target['transfer'])")
     paragraph(document, 'Phase plots use a linear −π to π color scale. Input amplitude is '
               'peak-normalized for display. Output detector intensity is displayed linearly '
               'using its 99.8th percentile as the upper limit, saturating the brightest 0.2% '
@@ -309,7 +307,7 @@ def build_guide():
     page(document, 'Complete phase and normalized optical fields')
     paragraph(document, 'These panels show field 1 captured during the complete 558-video '
               'reference evaluation. Paired NPZ files contain the exact arrays used for plotting.')
-    for kind, vision_number, language_number in (('mask', 8, 11), ('input_field', 9, 12), ('output_field', 10, 13)):
+    for kind, vision_number, language_number in (('mask', 6, 9), ('input_field', 7, 10), ('output_field', 8, 11)):
         item = document.add_paragraph()
         item.alignment = WD_ALIGN_PARAGRAPH.CENTER
         item.paragraph_format.space_after = Pt(3)
