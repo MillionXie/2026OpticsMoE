@@ -1,0 +1,22 @@
+{
+  "seed": 714,
+  "epochs": 40,
+  "batch_fields": 2,
+  "eval_batch_fields": 2,
+  "eval_interval": 2,
+  "audit_train_fields": 4,
+  "source_slots_per_step": 4,
+  "phase_learning_rate": 0.004,
+  "readout_learning_rate": 0.00005,
+  "spatial_weight": 5.0,
+  "teacher_weight": 5.0,
+  "correlation_weight": 0.2,
+  "router_importance_weight": 0.1,
+  "phase_curvature_weight": 0.01,
+  "phase_anchor_weight": 0.01,
+  "phase_gradient_smoothing_sigma": 0.8,
+  "minimum_srcc": 0.790,
+  "maximum_srcc": 0.799,
+  "maximum_slot_share_deviation": 0.10,
+  "maximum_global_share_deviation": 0.05
+}
