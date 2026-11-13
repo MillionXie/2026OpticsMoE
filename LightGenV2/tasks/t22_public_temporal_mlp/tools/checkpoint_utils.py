@@ -1,6 +1,7 @@
 """Checkpoint fingerprints and a metadata-minimal public export."""
 from pathlib import Path
 import hashlib
+import tempfile
 
 import torch
 
@@ -57,3 +58,40 @@ def export_public_checkpoint(source,destination):
         raise ValueError('Public export changed model tensors')
     return {'input_checkpoint_sha256':source_hash,'public_checkpoint_sha256':file_sha256(destination),
             'model_state_sha256':fingerprint,'model_tensors_bitwise_equal':True}
+
+
+def export_inference_checkpoint(source, destination, config_fields, architecture):
+    """Export the selected forward tensors and inference configuration."""
+    with tempfile.TemporaryDirectory(prefix='lightgen-inference-export-') as directory:
+        intermediate = Path(directory)/'LightGen.pt'
+        identity = export_public_checkpoint(source, intermediate)
+        payload = torch.load(intermediate, map_location='cpu', weights_only=True)
+    source_fingerprint = identity['model_state_sha256']
+    omitted = ('target_mean', 'target_std', 'level_boundaries')
+    state = {name: tensor for name, tensor in payload['model'].items() if name not in omitted}
+    fingerprint = tensor_fingerprint(state)
+    metadata = dict(payload['metadata'])
+    metadata.update(model_state_sha256=fingerprint,
+                    source_model_state_sha256=source_fingerprint,
+                    omitted_auxiliary_buffers=list(omitted))
+    exported = {
+        'schema': 1,
+        'architecture': architecture,
+        'config': {name: payload['config'][name] for name in config_fields},
+        'model': state,
+        'metadata': metadata,
+    }
+    destination = Path(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(exported, destination)
+    restored = torch.load(destination, map_location='cpu', weights_only=True)
+    if tensor_fingerprint(restored['model']) != fingerprint:
+        raise ValueError('Inference export changed retained tensors')
+    return {
+        'input_checkpoint_sha256': identity['input_checkpoint_sha256'],
+        'public_checkpoint_sha256': file_sha256(destination),
+        'source_model_state_sha256': source_fingerprint,
+        'model_state_sha256': fingerprint,
+        'retained_model_tensors_bitwise_equal': True,
+        'omitted_auxiliary_buffers': list(omitted),
+    }

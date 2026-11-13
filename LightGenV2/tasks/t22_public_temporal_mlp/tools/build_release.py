@@ -1,9 +1,11 @@
-"""Build and verify the standalone public reference distribution."""
+"""Build the Google Drive inference package from the repository-root LightGen2."""
 from __future__ import annotations
 
 import argparse
 import csv
+from dataclasses import fields
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -17,29 +19,36 @@ import torch
 
 if __package__:
     from . import _paths
-    from .checkpoint_utils import export_public_checkpoint, file_sha256
+    from .checkpoint_utils import export_inference_checkpoint, file_sha256
 else:
     import _paths
-    from checkpoint_utils import export_public_checkpoint, file_sha256
+    from checkpoint_utils import export_inference_checkpoint, file_sha256
 
-if __package__ and __package__!='tools':
+if __package__ and __package__ != 'tools':
     from ..model import load_lightgen
     from ..infer import iter_video_fields
 else:
     from model import load_lightgen
     from infer import iter_video_fields
 
-ROOT=_paths.ROOT
-RUNTIME_FILES=(
-    'infer.py','model.py','requirements.txt','requirements-visualization.txt',
-    'LICENSE','NOTICE','licenses/QWEN_LICENSE.txt','examples/make_example.py',
-    'tools/__init__.py','tools/_paths.py','tools/data.py','tools/plot_style.py',
-    'tools/phase_plotting.py','tools/visualize_fields.py','tools/plot_global_ablation.py',
+ROOT = _paths.ROOT
+PUBLIC = ROOT.parents[2]/'LightGen2'
+RUNTIME_FILES = (
+    '.gitignore', 'infer.py', 'model.py', 'README.md', '中文导读.md', 'MODEL_CARD.md',
+    'requirements.txt', 'requirements-visualization.txt', 'LICENSE', 'NOTICE',
+    'licenses/QWEN_LICENSE.txt', 'examples/make_example.py',
+    'tools/__init__.py', 'tools/_paths.py', 'tools/plot_style.py',
+    'tools/phase_plotting.py', 'tools/visualize_fields.py', 'tools/plot_global_ablation.py',
+)
+RESULT_FILES = (
+    'global_ablation_summary.csv', 'global_ablation_seeds.csv', 'global_ablation_protocol.json',
+    'global_ablation.png', 'phase_masks.png', 'optical_expert_share.png',
+    'phase_controls.json', 'propagation_controls.json', 'reference_metrics.json',
 )
 
 
-def write_json(path,value):
-    Path(path).write_text(json.dumps(value,indent=2,ensure_ascii=False)+'\n','utf-8')
+def write_json(path, value):
+    Path(path).write_text(json.dumps(value, indent=2, ensure_ascii=False)+'\n', 'utf-8')
 
 
 def read_csv(path):
@@ -47,14 +56,15 @@ def read_csv(path):
         return list(csv.DictReader(stream))
 
 
-def write_csv(path,rows):
-    with Path(path).open('w',encoding='utf-8',newline='') as stream:
-        writer=csv.DictWriter(stream,fieldnames=list(rows[0]))
-        writer.writeheader();writer.writerows(rows)
+def write_csv(path, rows):
+    with Path(path).open('w', encoding='utf-8', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
 
 
 def copy_results(run,output):
-    output.mkdir()
+    output.mkdir(exist_ok=True)
     summaries={}
     conditions={}
     directories = [run/'global_ablation']
@@ -84,133 +94,151 @@ def copy_results(run,output):
         'random_global_default':'complete default GlobalStage initialization; retain the final task readout',
         'standard_deviation':'sample SD over ten seeds',
     })
-    for name in ('phase_masks.png','phase_training_update.png','optical_expert_share.png'):
+    for name in ('phase_masks.png','optical_expert_share.png'):
         shutil.copyfile(run/'figures'/name,output/name)
     shutil.copyfile(run/'phase_effect/phase_effect.json', output/'phase_controls.json')
     if (run/'propagation_controls.json').exists():
         shutil.copyfile(run/'propagation_controls.json', output/'propagation_controls.json')
-    for name in ('electronic_capacity_control.json', 'historical_electronic_capacity_control.json'):
-        if (run/name).exists():
-            shutil.copyfile(run/name, output/name)
+    metrics = json.loads((run/'metrics.json').read_text('utf-8'))
+    control = json.loads((run/'electronic_capacity_control.json').read_text('utf-8'))
+    write_json(output/'reference_metrics.json', {
+        'evaluation_scope': 'original_TEST_development', 'videos': 558,
+        'reference': {key: metrics[key] for key in ('n', 'srcc', 'krcc', 'plcc', 'rmse', 'mae')},
+        'direct_video_srcc': 0.7992454772867189,
+        'slot_cycle_mean_srcc': 0.7953460323798703,
+        'slot_cycle_minimum_srcc': 0.7885972250393563,
+        'electronic_control': {'role': control['role'], 'parameters': control['parameters'],
+                               'head': control['head'], 'metrics': control['metrics'],
+                               'initialization': control['initialization'],
+                               'comparison_context': control['comparison_context']},
+    })
 
 
 def verify_manifest(directory):
-    manifest=json.loads((directory/'MANIFEST.json').read_text('utf-8-sig'))
-    for name,expected in manifest['files'].items():
-        path=(directory/name).resolve()
-        if not path.is_relative_to(directory.resolve()) or file_sha256(path)!=expected:
+    manifest = json.loads((directory/'MANIFEST.json').read_text('utf-8-sig'))
+    for name, expected in manifest['files'].items():
+        path = (directory/name).resolve()
+        if not path.is_relative_to(directory.resolve()) or file_sha256(path) != expected:
             raise ValueError('Release file checksum differs: '+name)
     return manifest
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out',type=Path,default=ROOT/'releases/current')
-    parser.add_argument('--readme-pdf',type=Path,help='PDF reading edition of the public README')
-    args=parser.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--out', type=Path, default=ROOT/'releases/current')
+    parser.add_argument('--readme-pdf', type=Path, help='Matching PDF edition of the public README')
+    args = parser.parse_args()
+    output = args.out.resolve()
+    release_root = (ROOT/'releases').resolve()
+    if output.parent != release_root or output.name != 'current':
+        raise ValueError('The generated mirror uses releases/current')
+    if not PUBLIC.is_dir():
+        raise FileNotFoundError(PUBLIC)
     if args.readme_pdf is not None and (args.readme_pdf.suffix.lower() != '.pdf' or not args.readme_pdf.is_file()):
         raise ValueError('The README reading edition must be an existing PDF file')
-    output=args.out.resolve()
-    release_root=(ROOT/'releases').resolve()
-    if output.parent!=release_root or output.name!='current':
-        raise ValueError('The generated distribution uses releases/current')
     release_root.mkdir(exist_ok=True)
-    stage=Path(tempfile.mkdtemp(prefix='lightgen-build-')).resolve()
-    if stage.parent!=Path(tempfile.gettempdir()).resolve():
-        raise ValueError('Unexpected build directory')
-    profile=json.loads((ROOT/'configs/selected.json').read_text('utf-8-sig'))
-    source=ROOT/profile['checkpoint']
-    if file_sha256(source)!=profile['checkpoint_sha256']:
+    profile = json.loads((ROOT/'configs/selected.json').read_text('utf-8-sig'))
+    source = ROOT/profile['checkpoint']
+    if file_sha256(source) != profile['checkpoint_sha256']:
         raise ValueError('Selected research checkpoint checksum differs')
-    for name in RUNTIME_FILES:
-        target=stage/name
-        target.parent.mkdir(parents=True,exist_ok=True)
-        shutil.copyfile(ROOT/name,target)
-    readme = (ROOT/'README.md').read_text('utf-8-sig').split('\n## Author workspace',1)[0]
-    readme = readme.replace('](docs/MODEL_CARD.md)', '](MODEL_CARD.md)')
-    (stage/'README.md').write_text(readme, 'utf-8')
-    if args.readme_pdf is not None:
-        shutil.copyfile(args.readme_pdf, stage/'README.pdf')
-    shutil.copyfile(ROOT/'docs/MODEL_CARD.md',stage/'MODEL_CARD.md')
-    exported=export_public_checkpoint(source,stage/'weights/LightGen.pt')
-    (stage/'configs').mkdir()
-    write_json(stage/'configs/selected.json',{
-        'checkpoint':'weights/LightGen.pt','checkpoint_sha256':exported['public_checkpoint_sha256'],
-        'architecture':profile['architecture'],'model_parameters':profile['model_parameters'],
-        'evaluation':profile['evaluation'],
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location('_lightgen2_release_model', PUBLIC/'model.py')
+    public_module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = public_module
+    spec.loader.exec_module(public_module)
+    exported = export_inference_checkpoint(
+        source, PUBLIC/'weights/LightGen.pt',
+        [field.name for field in fields(public_module.ModelConfig)], public_module.ARCHITECTURE)
+    (PUBLIC/'configs').mkdir(exist_ok=True)
+    write_json(PUBLIC/'configs/selected.json', {
+        'checkpoint': 'weights/LightGen.pt',
+        'checkpoint_sha256': exported['public_checkpoint_sha256'],
+        'architecture': public_module.ARCHITECTURE,
+        'model_parameters': profile['model_parameters'],
     })
-    copy_results(source.parent,stage/'results')
-    environment=os.environ.copy()
-    environment.update(PYTHONPATH='',PYTHONNOUSERSITE='1',PYTHONDONTWRITEBYTECODE='1',OMP_NUM_THREADS='4')
-    commands=[
-        [sys.executable,str(stage/'examples/make_example.py'),'--output','examples/demo.mp4'],
-        [sys.executable,str(stage/'infer.py'),'--weights','weights/LightGen.pt','--videos','examples/demo.mp4',
-         '--device','cpu','--output','examples/expected_predictions.json'],
-        [sys.executable,str(stage/'tools/plot_global_ablation.py'),'--summary','results/global_ablation_summary.csv',
-         '--output','results/global_ablation.png'],
+    copy_results(source.parent, PUBLIC/'results')
+    environment = os.environ.copy()
+    environment.update(PYTHONPATH='', PYTHONNOUSERSITE='1', PYTHONDONTWRITEBYTECODE='1', OMP_NUM_THREADS='4')
+    commands = [
+        [sys.executable, 'examples/make_example.py', '--output', 'examples/demo.mp4'],
+        [sys.executable, 'infer.py', '--weights', 'weights/LightGen.pt', '--videos', 'examples/demo.mp4',
+         '--device', 'cpu', '--output', 'examples/expected_predictions.json'],
+        [sys.executable, 'tools/plot_global_ablation.py', '--summary', 'results/global_ablation_summary.csv',
+         '--output', 'results/global_ablation.png'],
     ]
     for command in commands:
-        result=subprocess.run(command,cwd=stage,env=environment,capture_output=True,text=True,timeout=180)
+        result = subprocess.run(command, cwd=PUBLIC, env=environment, capture_output=True, text=True, timeout=180)
         if result.returncode:
             raise RuntimeError(result.stdout+result.stderr)
     torch.set_num_threads(4)
-    original,_=load_lightgen(source)
-    _,pixels=next(iter_video_fields([stage/'examples/demo.mp4']))
+    original, _ = load_lightgen(source)
+    inference, _ = public_module.load_lightgen(PUBLIC/'weights/LightGen.pt')
+    if sum(parameter.numel() for parameter in inference.parameters()) != profile['model_parameters']:
+        raise ValueError('Inference parameter count differs')
+    _, pixels = next(iter_video_fields([PUBLIC/'examples/demo.mp4']))
     with torch.inference_mode():
-        expected=float(original(pixels=pixels)['prediction'][0,0])
-    predictions=json.loads((stage/'examples/expected_predictions.json').read_text('utf-8-sig'))['predictions']
-    if len(predictions)!=1 or abs(predictions[0]['MOS']-expected)>1e-4:
-        raise ValueError('Standalone release inference differs from the source model')
-    for path in stage.rglob('*'):
-        if path.is_file() and path.suffix in ('.py','.md','.json','.csv','.txt'):
-            text=path.read_text('utf-8-sig')
-            for marker in ('Xml12','OneDrive','/DATA/','/home/','xwechat_files'):
-                if marker in text:
-                    raise ValueError('Local/private text in release file: '+path.relative_to(stage).as_posix())
-    payload=torch.load(stage/'weights/LightGen.pt',map_location='cpu',weights_only=True)
-    metadata_text=json.dumps(payload['metadata'])
-    if any(marker in metadata_text for marker in ('Xml12','OneDrive','/DATA/','/home/')):
-        raise ValueError('Private checkpoint metadata remains')
-    files={path.relative_to(stage).as_posix():file_sha256(path) for path in sorted(stage.rglob('*')) if path.is_file()}
-    commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
-    manifest={'project':'LightGen-II temporal quality reference','license':'Apache-2.0',
-              'source_commit':commit,'checkpoint_export':exported,'files':files,
-              'verification':{'standalone_empty_PYTHONPATH':True,'source_tensor_identity':True,
-                              'example_MOS':predictions[0]['MOS'],'source_example_MOS':expected,
-                              'public_metadata_checked':True}}
-    write_json(stage/'MANIFEST.json',manifest)
+        expected = original(pixels=pixels)['prediction']
+        actual = inference(pixels=pixels)['prediction']
+    if actual.requires_grad:
+        raise ValueError('The public forward must run in inference mode')
+    maximum_difference = float((expected-actual).abs().max())
+    if not torch.equal(expected, actual):
+        raise ValueError('Inference forward differs from the selected research model')
+    if args.readme_pdf is not None:
+        shutil.copyfile(args.readme_pdf, PUBLIC/'README.pdf')
+    names = list(RUNTIME_FILES)+['weights/LightGen.pt', 'configs/selected.json',
+                                'examples/demo.mp4', 'examples/expected_predictions.json']
+    names += ['results/'+name for name in RESULT_FILES]
+    if args.readme_pdf is not None:
+        names.append('README.pdf')
+    for name in names:
+        path = PUBLIC/name
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        if path.suffix in ('.py', '.md', '.json', '.csv', '.txt'):
+            text = path.read_text('utf-8-sig')
+            if any(marker in text for marker in ('Xml12', 'OneDrive', '/DATA/', '/home/', 'xwechat_files')):
+                raise ValueError('Local/private text in release file: '+name)
+    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+    manifest = {
+        'project': 'LightGen-II temporal inference', 'license': 'Apache-2.0',
+        'source_commit': commit, 'canonical_directory': 'LightGen2',
+        'checkpoint_export': exported,
+        'files': {name: file_sha256(PUBLIC/name) for name in sorted(names)},
+        'verification': {'standalone_empty_PYTHONPATH': True,
+                         'retained_source_tensors_equal': True, 'inference_mode_forward': True,
+                         'source_demo_prediction_maximum_difference': maximum_difference,
+                         'example_MOS': float(actual[0, 0])},
+    }
+    write_json(PUBLIC/'MANIFEST.json', manifest)
+    verify_manifest(PUBLIC)
+    stage = Path(tempfile.mkdtemp(prefix='lightgen2-release-')).resolve()
+    for name in names+['MANIFEST.json']:
+        destination = stage/name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(PUBLIC/name, destination)
     verify_manifest(stage)
-    archive=release_root/'.current.zip.building'
-    with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=4) as zipped:
-        for path in sorted(stage.rglob('*')):
-            if path.is_file():
-                zipped.write(path,'lightgen-temporal/'+path.relative_to(stage).as_posix())
+    archive = release_root/'.LightGen2.zip.building'
+    with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=4) as zipped:
+        for name in names+['MANIFEST.json']:
+            zipped.write(stage/name, 'LightGen2/'+name)
     with zipfile.ZipFile(archive) as zipped:
-        for name,digest in files.items():
-            if hashlib.sha256(zipped.read('lightgen-temporal/'+name)).hexdigest()!=digest:
-                raise ValueError('Distributable ZIP checksum differs: '+name)
-    backup=None
+        for name, digest in manifest['files'].items():
+            if hashlib.sha256(zipped.read('LightGen2/'+name)).hexdigest() != digest:
+                raise ValueError('ZIP checksum differs: '+name)
     if output.exists():
         verify_manifest(output)
-        backup=Path(tempfile.mkdtemp(prefix='lightgen-release-backup-')).resolve()
-        if backup.parent!=Path(tempfile.gettempdir()).resolve():
-            raise ValueError('Unexpected backup directory')
-        shutil.move(str(output),str(backup/'current'))
-        if (release_root/'current.zip').exists():
-            shutil.copyfile(release_root/'current.zip',backup/'current.zip')
-    try:
-        shutil.move(str(stage),str(output))
-    except BaseException:
-        if backup is not None:
-            shutil.move(str(backup/'current'),str(output))
-        raise
-    archive.replace(release_root/'current.zip')
-    digest=file_sha256(release_root/'current.zip')
-    (release_root/'current.zip.sha256').write_text(digest+'  current.zip\n','utf-8')
-    print(json.dumps({'directory':str(output),'archive':str(release_root/'current.zip'),
-                      'archive_sha256':digest,'files':len(files)+1,'weights':exported,
-                      'standalone_verified':True},indent=2))
+        backup = Path(tempfile.mkdtemp(prefix='lightgen2-previous-release-')).resolve()
+        shutil.move(str(output), str(backup/'current'))
+    shutil.move(str(stage), str(output))
+    archive.replace(release_root/'LightGen2.zip')
+    digest = file_sha256(release_root/'LightGen2.zip')
+    (release_root/'LightGen2.zip.sha256').write_text(digest+'  LightGen2.zip\n', 'utf-8')
+    print(json.dumps({'canonical_directory': str(PUBLIC), 'mirror': str(output),
+                      'archive': str(release_root/'LightGen2.zip'), 'archive_sha256': digest,
+                      'files': len(names)+1, 'weights': exported,
+                      'source_prediction_maximum_difference': maximum_difference}, indent=2))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

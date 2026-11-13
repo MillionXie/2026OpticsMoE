@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+/outputs/
+/weights/
+/results/
+/examples/demo.mp4
+/examples/expected_predictions.json
+/MANIFEST.json
+/README.pdf
