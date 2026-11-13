@@ -19,7 +19,7 @@ from torch.nn import functional as F
 if __package__:
     from . import _paths
     from .data import load_inputs, groups, batch, sha256
-    from .phase_regularization import model_phase_penalties, smooth_phase_gradients, phase_statistics
+    from .phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics
     from .run import evaluate, write, save_checkpoint, correlation, router_regularization
     from .spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from .training_policy import restrict_training_to
@@ -27,7 +27,7 @@ if __package__:
 else:
     import _paths
     from data import load_inputs, groups, batch, sha256
-    from phase_regularization import model_phase_penalties, smooth_phase_gradients, phase_statistics
+    from phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics
     from run import evaluate, write, save_checkpoint, correlation, router_regularization
     from spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from training_policy import restrict_training_to
@@ -47,6 +47,7 @@ def candidate_score(metrics, spatial, config):
     if global_deviation > config['maximum_global_share_deviation']:
         return None
     return -sum(spatial[name]['foreign_fraction'] + spatial[name]['dark_source_fraction']
+                + config.get('spatial_guard_weight', 0.) * spatial[name]['guard_fraction']
                 for name in ('vision', 'language')) / 2
 
 
@@ -82,12 +83,21 @@ def train(args):
     if not torch.equal(model.prompt_embedding.cpu(), payload['prompt']):
         raise ValueError('Frozen prompt identity differs')
     teacher = copy.deepcopy(model).requires_grad_(False).eval()
-    restrict_training_to(model, ('frame_global.raw_global_phase', 'video_global.raw_global_phase', 'readout'))
-    optimizer = torch.optim.AdamW([
+    prefixes = ['frame_global.raw_global_phase', 'video_global.raw_global_phase', 'readout']
+    encoders = ('frame_global.width_to_field', 'frame_global.tokens_to_field', 'video_global.width_to_field')
+    if config.get('train_field_encoders', False):
+        prefixes.extend(encoders)
+    restrict_training_to(model, prefixes)
+    parameter_groups = [
         {'params': [model.frame_global.raw_global_phase, model.video_global.raw_global_phase],
          'lr': config['phase_learning_rate'], 'name': 'phase'},
         {'params': model.readout.parameters(), 'lr': config['readout_learning_rate'], 'name': 'readout'},
-    ], weight_decay=0)
+    ]
+    if config.get('train_field_encoders', False):
+        parameters = [value for name, value in model.named_parameters()
+                      if any(name.startswith(prefix + '.') for prefix in encoders)]
+        parameter_groups.append({'params': parameters, 'lr': config['encoder_learning_rate'], 'name': 'field_encoders'})
+    optimizer = torch.optim.AdamW(parameter_groups, weight_decay=0)
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer,
         lambda epoch: .05 + .95 * (1 + math.cos(math.pi * epoch / config['epochs'])) / 2)
     anchors = [stage.phase().detach().clone() for stage in (model.frame_global, model.video_global)]
@@ -136,7 +146,8 @@ def train(args):
                 loss = loss + config['teacher_weight'] * F.smooth_l1_loss(prediction, teacher_prediction)
                 slots = [(step * config['source_slots_per_step'] + offset) % 16
                          for offset in range(config['source_slots_per_step'])]
-                local = spatial_locality_loss(model, captured, keep, slots)
+                local = spatial_locality_loss(model, captured, keep, slots,
+                                              guard_weight=config.get('spatial_guard_weight', 0.))
                 loss = loss + config['spatial_weight'] * local
                 regularization, _ = router_regularization(result['routing'], keep)
                 loss = loss + config['router_importance_weight'] * regularization['importance']
@@ -153,6 +164,7 @@ def train(args):
                 if not bool(torch.isfinite(gradient_norm)):
                     raise FloatingPointError('Nonfinite spatial-refinement gradient')
                 optimizer.step()
+                smooth_phase_parameters(model, config.get('phase_parameter_smoothing_sigma', 0.))
                 losses.append(float(loss.detach()))
                 spatial_values.append(float(local.detach()))
                 captured.clear()

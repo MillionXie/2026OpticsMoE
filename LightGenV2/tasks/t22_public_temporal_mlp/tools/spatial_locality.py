@@ -83,12 +83,13 @@ def isolated_video_response(stage, modulated_field, slots):
             'dark_source_fraction': (total_energy == 0).to(total_energy)}
 
 
-def spatial_locality_loss(model, captured, valid, slots):
+def spatial_locality_loss(model, captured, valid, slots, *, guard_weight=0.):
     penalties = []
     for name, attribute in STAGES.items():
         response = isolated_video_response(getattr(model, attribute), captured[name], slots)
         weights = valid[:, slots].to(response['foreign_fraction'])
-        penalty = response['foreign_fraction'] + response['dark_source_fraction']
+        penalty = (response['foreign_fraction'] + guard_weight * response['guard_fraction']
+                   + response['dark_source_fraction'])
         penalties.append((penalty * weights).sum() / weights.sum().clamp_min(1))
     return torch.stack(penalties).mean()
 
