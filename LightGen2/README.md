@@ -61,8 +61,8 @@ propagation couples the slots, so preserve sample order and field composition.
 Before packaging, each video contributes four RGB frames sampled at 10% to 90%
 of its frame range. Frames are center-cropped to 65% of their shorter side,
 resized to 448 × 448, and normalized by `(RGB / 255 - 0.5) / 0.5`.
-The archive stores these normalized frames in float16 at the bfloat16 precision
-used by the frozen patch projection. This preserves its original inputs exactly.
+Frames are normalized on CPU and rounded to the frozen patch kernel's bfloat16
+precision. Float16 storage preserves these prepared values exactly.
 Patch projection, position addition, fixed pooling and the remaining network
 are executed by the inference code. Higher MOS indicates better predicted quality.
 
