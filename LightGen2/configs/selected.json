@@ -1,6 +1,0 @@
-{
-  "checkpoint": "weights/LightGen.pt",
-  "checkpoint_sha256": "2c3dc8efa438417b911be58673b165518ed01764a5e955c86a82e1b44b936574",
-  "architecture": "lightgen2_temporal_inference_v1",
-  "model_parameters": 3777350
-}

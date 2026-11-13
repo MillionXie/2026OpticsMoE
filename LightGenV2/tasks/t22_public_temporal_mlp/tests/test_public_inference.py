@@ -3,12 +3,14 @@ from dataclasses import fields
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import torch
 
 from LightGen2 import model as public
+from LightGen2 import infer as public_infer
 from .. import model as research
-from ..tools.checkpoint_utils import export_inference_checkpoint
+from ..tools.checkpoint_utils import export_inference_checkpoint, inference_state_name
 
 
 class PublicInferenceTests(unittest.TestCase):
@@ -30,9 +32,10 @@ class PublicInferenceTests(unittest.TestCase):
             cls.original.prompt_embedding.normal_()
         cls.config_fields = [field.name for field in fields(public.ModelConfig)]
         public_config = public.ModelConfig(**{name: getattr(config, name) for name in cls.config_fields})
-        cls.inference = public.LightGenTemporal(public_config).eval()
+        cls.inference = public.LightGen2(public_config).eval()
         cls.omitted = {'target_mean', 'target_std', 'level_boundaries'}
-        state = {name: value for name, value in cls.original.state_dict().items() if name not in cls.omitted}
+        state = {inference_state_name(name): value for name, value in cls.original.state_dict().items()
+                 if name not in cls.omitted}
         cls.inference.load_state_dict(state, strict=True)
         cls.input = torch.randn(1, 16, 4, 49, 1024)
 
@@ -44,25 +47,28 @@ class PublicInferenceTests(unittest.TestCase):
     def test_forward_matches_research_inference(self):
         with torch.inference_mode():
             expected = self.original(self.input)
-            actual = self.inference(self.input)
+            actual = self.inference.predict_from_embeddings(self.input)
         for name in ('prediction', 'quality_logits', 'quality_probabilities'):
             self.assertTrue(torch.equal(expected[name], actual[name]), name)
-        for stage in ('frame', 'video'):
-            self.assertTrue(torch.equal(expected['routing'][stage]['weights'],
-                                        actual['routing'][stage]['weights']))
+        for old, new in (('frame', 'vision'), ('video', 'language')):
+            self.assertTrue(torch.equal(expected['routing'][old]['weights'],
+                                        actual['routing'][new]['weights']))
 
     def test_export_runs_in_inference_mode_and_retains_tensors(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)/'source.pt'
-            destination = Path(directory)/'LightGen.pt'
+            destination = Path(directory)/'LightGen2.pt'
             torch.save(self.original.checkpoint(), source)
             identity = export_inference_checkpoint(source, destination, self.config_fields, public.ARCHITECTURE)
-            loaded, _ = public.load_lightgen(destination)
-            self.assertFalse(loaded(self.input)['prediction'].requires_grad)
+            loaded, _ = public.load_lightgen2(destination)
+            self.assertFalse(loaded.predict_from_embeddings(self.input)['prediction'].requires_grad)
             self.assertEqual(set(identity['omitted_auxiliary_buffers']), self.omitted)
             self.assertTrue(identity['retained_model_tensors_bitwise_equal'])
-            self.assertEqual(set(loaded.state_dict()), set(self.original.state_dict())-self.omitted)
-            self.assertTrue(torch.equal(loaded(self.input)['prediction'], self.inference(self.input)['prediction']))
+            expected_names = {inference_state_name(name) for name in self.original.state_dict()
+                              if name not in self.omitted}
+            self.assertEqual(set(loaded.state_dict()), expected_names)
+            self.assertTrue(torch.equal(loaded.predict_from_embeddings(self.input)['prediction'],
+                                        self.inference.predict_from_embeddings(self.input)['prediction']))
 
     def test_profile_dimensions_are_bound_to_selected_architecture(self):
         with self.assertRaises(ValueError):
@@ -75,6 +81,30 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertFalse(hasattr(self.inference, 'checkpoint'))
         self.assertFalse(self.omitted.intersection(self.inference.state_dict()))
         self.assertEqual(sum(parameter.numel() for parameter in self.inference.parameters()), 3777350)
+
+    def test_558_video_grouping_retains_order_and_two_tail_padding_entries(self):
+        paths = [Path(str(index)) for index in range(558)]
+        with patch.object(public_infer, 'frames_from_video', side_effect=lambda path: torch.tensor([int(path.name)])):
+            fields = list(public_infer.iter_video_fields(paths))
+        self.assertEqual(len(fields), 35)
+        self.assertEqual(len(fields[-1][0]), 14)
+        self.assertEqual(fields[-1][1][0, :, 0].tolist(), list(range(544, 558)) + [0, 1])
+        self.assertEqual([path for chunk, _ in fields for path in chunk], paths)
+
+    def test_evaluation_csv_preserves_order_and_rejects_duplicate_ids(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ('a.mp4', 'b.mp4'):
+                (root / name).touch()
+            path = root / 'test.csv'
+            path.write_text('sample_id,video_path,mos\nb,b.mp4,20\na,a.mp4,10\n', encoding='utf-8')
+            rows, videos, targets = public_infer.read_evaluation_csv(path, root)
+            self.assertEqual([row['sample_id'] for row in rows], ['b', 'a'])
+            self.assertEqual([video.name for video in videos], ['b.mp4', 'a.mp4'])
+            self.assertEqual(targets.tolist(), [20, 10])
+            path.write_text('sample_id,video_path,mos\na,b.mp4,20\na,a.mp4,10\n', encoding='utf-8')
+            with self.assertRaises(ValueError):
+                public_infer.read_evaluation_csv(path, root)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 # LightGen-II temporal video-quality reference
 
 作者侧研究入口为本T22目录。Google Drive的独立推理与审阅入口为仓库根目录
-[`LightGen2`](../../../LightGen2/README.md)，其中的
-[`中文导读`](../../../LightGen2/中文导读.md)逐项解释文件和配置。
+[`LightGen2`](../../../LightGen2/README.md)。
+发行包内的 `README.docx` 逐项解释输入输出、网络及光场文件。
 T22保留研究缓存、训练入口和核验材料。打包命令从根目录LightGen2读取推理源码。
 
 LightGen-II predicts the temporal perceptual quality of a video. This compact
@@ -408,5 +408,8 @@ The generated release is `releases/current/`, with one distributable ZIP and
 checksum alongside it. The release builder validates the exported tensors,
 file hashes, privacy checks, and standalone example inference.
 
-A PDF reading edition of the current root LightGen2 README can be included
-through `--readme-pdf`. The canonical package is `releases/LightGen2.zip`.
+The editable `LightGen2/README.docx` is included byte-for-byte in the package.
+The builder checks sixteen-video inference and packages the branch-named optical
+NPZ/PNG files. Private checksums remain in
+`runs/simulation/current/validation/public_inference/release_verification.json`.
+The canonical package is `releases/LightGen2.zip`.

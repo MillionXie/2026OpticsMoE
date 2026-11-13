@@ -1,4 +1,4 @@
-"""Frozen inference model for the selected LightGen-II temporal checkpoint."""
+"""LightGen2 inference with vision and language optical branches."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,7 +9,7 @@ from torch import nn
 from torch.nn import functional as F
 
 
-ARCHITECTURE = 'lightgen2_temporal_inference_v1'
+ARCHITECTURE = 'lightgen2_temporal_inference_v2'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -45,8 +45,12 @@ class ModelConfig:
             raise ValueError('Invalid modulation coefficient')
 
 
-class FrozenFront(nn.Module):
-    """Embedded patch projection and position tensors for four RGB frames."""
+class FrozenVisionFront(nn.Module):
+    """Saved Qwen patch and position tensors followed by fixed mean pooling.
+
+    The constructor allocates buffers. The LightGen2 checkpoint supplies their
+    frozen values through load_state_dict before inference.
+    """
 
     def __init__(self):
         super().__init__()
@@ -94,7 +98,7 @@ class Router(nn.Module):
 
 
 class Experts(nn.Module):
-    """Four independent tokenwise linear matrices with shared frame parameters."""
+    """Four tokenwise linear matrices shared across items in one branch."""
 
     def __init__(self, config):
         super().__init__()
@@ -133,21 +137,24 @@ class Propagation(nn.Module):
         return torch.fft.ifft2(spectrum * self.transfer)
 
 
-class GlobalStage(nn.Module):
+class OpticalGlobal(nn.Module):
     """Amplitude encoding, phase modulation, propagation and detector readout."""
 
-    def __init__(self, config, frame_level):
+    def __init__(self, config, branch):
         super().__init__()
+        if branch not in ('vision', 'language'):
+            raise ValueError('Expected the vision or language branch')
         self.cfg = config
-        self.frame_level = frame_level
-        side = 27 if frame_level else 56
+        self.branch = branch
+        self.is_vision = branch == 'vision'
+        side = 27 if self.is_vision else 56
         self.width_to_field = nn.Linear(config.width, side)
-        if frame_level:
+        if self.is_vision:
             self.tokens_to_field = nn.Linear(config.tokens, side)
-        self.raw_global_phase = nn.Parameter(torch.empty(16, 111, 111))
+        self.raw_phase = nn.Parameter(torch.empty(16, 111, 111))
         self.propagation = Propagation(config)
         self.norm = nn.LayerNorm(96)
-        self.output = nn.Linear(96, config.width) if frame_level else nn.Identity()
+        self.output = nn.Linear(96, config.width) if self.is_vision else nn.Identity()
 
     @property
     def origins(self):
@@ -156,7 +163,7 @@ class GlobalStage(nn.Module):
 
     def fields(self, tokens):
         value = F.relu(self.width_to_field(tokens))
-        if self.frame_level:
+        if self.is_vision:
             value = F.relu(self.tokens_to_field(value.transpose(-2, -1))).transpose(-2, -1)
         else:
             value = F.pad(value, (0, 0, 0, 56 - value.shape[-2]))
@@ -164,7 +171,7 @@ class GlobalStage(nn.Module):
         return value / scale
 
     def phase(self, *, wrapped=False):
-        value = 2 * math.pi * torch.sigmoid(self.raw_global_phase)
+        value = 2 * math.pi * torch.sigmoid(self.raw_phase)
         return value.remainder(2 * math.pi) if wrapped else value
 
     def modulation(self):
@@ -175,24 +182,35 @@ class GlobalStage(nn.Module):
     def process_detector(self, patches):
         return patches / patches.mean((-2, -1), keepdim=True).clamp_min(1e-6)
 
-    def forward(self, tokens):
+    def input_field(self, tokens):
+        """Pack all 16 videos into the incident 518 by 518 amplitude field."""
         fields = self.fields(tokens)
         canvas = fields.new_zeros(len(fields), 518, 518)
         frame_offsets = [(0, 0), (0, 59), (59, 0), (59, 59)]
         for slot, (row, column) in enumerate(self.origins):
-            if self.frame_level:
+            if self.is_vision:
                 for frame, (dy, dx) in enumerate(frame_offsets):
                     canvas[:, row+dy+14:row+dy+41, column+dx+14:column+dx+41] = fields[:, slot, frame]
             else:
                 canvas[:, row+29:row+85, column+29:column+85] = fields[:, slot]
+        return canvas
+
+    def modulation_field(self, canvas):
+        """Embed all 16 learned modulation tiles at their physical positions."""
         mask = torch.ones_like(canvas, dtype=torch.complex64)
         modulation = self.modulation()
         for slot, (row, column) in enumerate(self.origins):
             mask[:, row+2:row+113, column+2:column+113] = modulation[slot]
+        return mask
+
+    def forward(self, tokens):
+        canvas = self.input_field(tokens)
+        mask = self.modulation_field(canvas)
         detector = self.propagation(canvas.to(torch.complex64) * mask).abs().square().float()
         patches = []
+        frame_offsets = [(0, 0), (0, 59), (59, 0), (59, 59)]
         for row, column in self.origins:
-            if self.frame_level:
+            if self.is_vision:
                 pieces = [detector[:, row+dy:row+dy+56, column+dx:column+dx+56]
                           for dy, dx in frame_offsets]
                 patches.append(torch.stack(pieces, 1))
@@ -200,86 +218,97 @@ class GlobalStage(nn.Module):
                 patches.append(detector[:, row:row+115, column:column+115])
         patches = self.process_detector(torch.stack(patches, 1).clamp_min(0))
         leading = patches.shape[:-2]
-        count = self.cfg.tokens if self.frame_level else tokens.shape[-2]
+        count = self.cfg.tokens if self.is_vision else tokens.shape[-2]
         pooled = F.adaptive_avg_pool2d(patches.reshape(-1, 1, *patches.shape[-2:]), (count, 96))[:, 0]
         output = self.output(F.relu(self.norm(pooled)))
         return output.reshape(*leading, count, output.shape[-1])
 
 
-class LightGenTemporal(nn.Module):
-    """Selected serial visual and vision-language inference graph."""
+class LightGen2(nn.Module):
+    """Vision processing followed by language-conditioned quality readout.
+
+    The language branch combines four visual summary tokens with 38 prompt
+    tokens. Its router and experts process the complete 42-token sequence.
+    """
 
     def __init__(self, config):
         super().__init__()
         self.cfg = config
-        self.front = FrozenFront()
-        self.register_buffer('prompt_embedding', torch.zeros(config.prompt_length, 2048, dtype=torch.float16))
-        self.register_buffer('prompt_ready', torch.tensor(False))
+        self.vision_frontend = FrozenVisionFront()
+        self.register_buffer('language_prompt_embedding', torch.zeros(config.prompt_length, 2048, dtype=torch.float16))
+        self.register_buffer('language_prompt_ready', torch.tensor(False))
         self.vision_adapter = nn.Sequential(nn.LayerNorm(1024), nn.Linear(1024, config.width))
         self.language_adapter = nn.Sequential(nn.LayerNorm(2048), nn.Linear(2048, config.width))
-        self.frame_router = Router(config, 49)
-        self.frame_experts = Experts(config)
-        self.frame_global = GlobalStage(config, True)
-        self.frame_merger = nn.Sequential(nn.LayerNorm(2 * config.width),
+        self.vision_router = Router(config, 49)
+        self.vision_experts = Experts(config)
+        self.vision_global = OpticalGlobal(config, 'vision')
+        self.vision_merger = nn.Sequential(nn.LayerNorm(2 * config.width),
                                           nn.Linear(2 * config.width, config.width), nn.ReLU())
-        self.frame_position = nn.Parameter(torch.empty(1, 1, 4, config.width))
-        self.sequence_position = nn.Parameter(torch.empty(1, 64, config.width))
-        self.video_router = Router(config, 4 + config.prompt_length)
-        self.video_experts = Experts(config)
-        self.video_global = GlobalStage(config, False)
+        self.vision_frame_position = nn.Parameter(torch.empty(1, 1, 4, config.width))
+        self.language_sequence_position = nn.Parameter(torch.empty(1, 64, config.width))
+        self.language_router = Router(config, 4 + config.prompt_length)
+        self.language_experts = Experts(config)
+        self.language_global = OpticalGlobal(config, 'language')
         self.readout = nn.Sequential(nn.Flatten(-2),
                                      nn.Linear((4 + config.prompt_length) * 96, config.readout_hidden),
                                      nn.ReLU(), nn.Linear(config.readout_hidden, 5))
-        self.register_buffer('level_scores', torch.zeros(5))
-        self.register_buffer('quality_ready', torch.tensor(False))
+        self.register_buffer('grade_scores', torch.zeros(5))
+        self.register_buffer('readout_ready', torch.tensor(False))
 
     @torch.no_grad()
     def set_prompt(self, embedding):
         value = embedding.reshape(-1, 2048)
-        if value.shape != self.prompt_embedding.shape:
+        if value.shape != self.language_prompt_embedding.shape:
             raise ValueError('Fixed prompt shape mismatch')
-        self.prompt_embedding.copy_(value.to(self.prompt_embedding))
-        self.prompt_ready.fill_(True)
+        self.language_prompt_embedding.copy_(value.to(self.language_prompt_embedding))
+        self.language_prompt_ready.fill_(True)
 
-    def encode_frames(self, vision_tokens):
-        if tuple(vision_tokens.shape[1:]) != (16, 4, 49, 1024):
+    def encode_vision(self, visual_embeddings):
+        if tuple(visual_embeddings.shape[1:]) != (16, 4, 49, 1024):
             raise ValueError('Expected [batch,16,4,49,1024] visual features')
-        vision = self.vision_adapter(vision_tokens.float())
-        routing = self.frame_router(vision)
-        vision = self.frame_experts(vision, routing['weights'])
-        vision = self.frame_global(vision)
+        vision = self.vision_adapter(visual_embeddings.float())
+        routing = self.vision_router(vision)
+        vision = self.vision_experts(vision, routing['weights'])
+        vision = self.vision_global(vision)
         summary = torch.cat((vision.mean(-2), vision.amax(-2)), -1)
-        frames = self.frame_merger(summary) + self.frame_position
-        return frames, routing
+        visual_summary = self.vision_merger(summary) + self.vision_frame_position
+        return visual_summary, routing
+
+    def encode_language(self, visual_summary):
+        prompt = self.language_adapter(self.language_prompt_embedding.float())
+        prompt = prompt[None, None].expand(len(visual_summary), 16, -1, -1)
+        sequence = torch.cat((visual_summary, prompt), dim=-2)
+        sequence = sequence + self.language_sequence_position[:, None, :sequence.shape[-2]]
+        routing = self.language_router(sequence)
+        sequence = self.language_experts(sequence, routing['weights'])
+        sequence = self.language_global(sequence)
+        return sequence, routing
 
     @torch.inference_mode()
-    def forward(self, vision_tokens=None, *, pixels=None):
-        if (vision_tokens is None) == (pixels is None):
-            raise ValueError('Provide exactly one visual-feature or pixel input')
-        if pixels is not None:
-            vision_tokens = self.front(pixels)
-        if not bool(self.prompt_ready) or not bool(self.quality_ready):
+    def forward(self, pixels):
+        """Predict from uint8 RGB pixels shaped [batch,16,4,3,448,448]."""
+        visual_embeddings = self.vision_frontend(pixels)
+        return self.predict_from_embeddings(visual_embeddings)
+
+    @torch.inference_mode()
+    def predict_from_embeddings(self, visual_embeddings):
+        """Predict from saved frontend outputs shaped [batch,16,4,49,1024]."""
+        if not bool(self.language_prompt_ready) or not bool(self.readout_ready):
             raise RuntimeError('Prompt or grade-score tensors have not been loaded')
-        frames, frame_routing = self.encode_frames(vision_tokens)
-        prompt = self.language_adapter(self.prompt_embedding.float())
-        prompt = prompt[None, None].expand(len(frames), 16, -1, -1)
-        sequence = torch.cat((frames, prompt), dim=-2)
-        sequence = sequence + self.sequence_position[:, None, :sequence.shape[-2]]
-        video_routing = self.video_router(sequence)
-        sequence = self.video_experts(sequence, video_routing['weights'])
-        sequence = self.video_global(sequence)
+        visual_summary, vision_routing = self.encode_vision(visual_embeddings)
+        sequence, language_routing = self.encode_language(visual_summary)
         logits = self.readout(sequence)
         probabilities = logits.softmax(-1)
-        prediction = probabilities @ self.level_scores
+        prediction = probabilities @ self.grade_scores
         return {'prediction': prediction, 'quality_logits': logits,
                 'quality_probabilities': probabilities,
-                'routing': {'frame': frame_routing, 'video': video_routing}}
+                'routing': {'vision': vision_routing, 'language': language_routing}}
 
 
-def load_lightgen(path, device='cpu'):
+def load_lightgen2(path, device='cpu'):
     payload = torch.load(path, map_location='cpu', weights_only=True)
-    if payload['schema'] != 1 or payload['architecture'] != ARCHITECTURE:
+    if payload['schema'] != 2 or payload['architecture'] != ARCHITECTURE:
         raise ValueError('Expected the LightGen2 inference checkpoint')
-    model = LightGenTemporal(ModelConfig(**payload['config']))
+    model = LightGen2(ModelConfig(**payload['config']))
     model.load_state_dict(payload['model'], strict=True)
     return model.to(device).eval(), payload['metadata']

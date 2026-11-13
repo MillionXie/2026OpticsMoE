@@ -1,403 +1,157 @@
-# LightGen-II temporal video-quality reference
+# LightGen2 temporal video quality inference
 
-LightGen-II predicts the temporal perceptual quality of a video. This compact
-PyTorch reference combines a frozen Qwen-derived input front, electronic Top2
-routing and linear experts, two simulated optical global stages, and a
-five-grade electronic readout. Each video receives one predicted mean opinion
-score (MOS).
+LightGen2 predicts a mean opinion score (MOS) for each video. The numerical
+inference graph combines a frozen Qwen-derived visual frontend, electronic
+routers and linear experts, vision and language optical propagation, and a
+two-layer quality readout. Each optical field contains 16 videos.
 
-The standalone checkpoint contains the extracted visual tensors, fixed-prompt
-embedding, task layers, and learned phase masks. Inference runs offline once
-the Python dependencies and release files are installed.
+The editable user guide is supplied as `README.docx` in the distribution.
 
-The Chinese review guide explains the purpose of each file and the relation to
-the author workspace. [中文导读](中文导读.md)
+## Installation
 
-| Item | Selected reference |
-|---|---|
-| Task | Temporal video-quality prediction |
-| Input | One or more video files, supplied in a fixed order |
-| Output | One MOS per video, saved as JSON |
-| Sampled frames | Four RGB frames per video, each 448 × 448 |
-| Field organization | Sixteen videos per coherent simulated field |
-| Registered model parameters | 3,777,350, with frozen frontend tensors stored as buffers |
-| Final readout | 4032 → 32 → 5, with 129,221 parameters |
-| Standalone checkpoint | Approximately 19.11 MiB |
-| License | Apache-2.0, with Qwen attribution |
-
-## Contents
-
-- [Quick start](#quick-start)
-- [Environment and installation](#environment-and-installation)
-- [Input preparation](#input-preparation)
-- [Configuration](#configuration)
-- [Outputs and score interpretation](#outputs-and-score-interpretation)
-- [Model structure](#model-structure)
-- [Reference performance](#reference-performance)
-- [Optical-field visualization](#optical-field-visualization)
-- [Release files and verification](#release-files-and-verification)
-- [Troubleshooting](#troubleshooting)
-- [License and acknowledgements](#license-and-acknowledgements)
-
-## Quick start
-
-Extract the release ZIP and open a terminal in its `LightGen2` directory.
-The commands below use paths relative to that directory.
+Use Python 3.11 and install the dependencies from this directory.
 
 ```bash
 python -m pip install -r requirements.txt
-python infer.py --weights weights/LightGen.pt --videos examples/demo.mp4 --output outputs/demo.json
 ```
 
-The supplied video is a deterministic synthetic example. The command prints
-its prediction and creates `outputs/demo.json`. The verified example MOS is
-approximately **47.5284**. The release also supplies its recorded output in
-`examples/expected_predictions.json`. Floating-point and video-decoder
-differences can produce small numerical changes.
+PyTorch 2.6 or later supports the checkpoint loader. For GPU inference, install
+a CUDA-enabled PyTorch build compatible with your driver. Figure export uses
+Arial, with 7 pt labels and 8 pt titles.
 
-To score your own videos, supply their paths in the intended order.
+## Sixteen video demo
+
+The distribution includes 16 distinct synthetic clips in `demo_videos`.
+One forward processes their 64 sampled frames in a shared optical field.
 
 ```bash
-python infer.py --weights weights/LightGen.pt --videos video_a.mp4 video_b.mp4 --output outputs/mos.json
+python demo.py --device cpu
 ```
 
-Append `--device cuda` to use the default CUDA GPU. A specific GPU can be
-selected with `--device cuda:0`. CPU is the default device.
-
-| Option | Usage |
-|---|---|
-| `--weights` | Required checkpoint path |
-| `--videos` | Required ordered list of one or more video paths |
-| `--device` | PyTorch device, default `cpu` |
-| `--output` | Required destination JSON path |
-
-## Environment and installation
-
-Python 3.11 is the tested Python series. Independent inference and regression
-checks have passed in the following environments.
-
-| Environment | Python | PyTorch |
-|---|---|---|
-| Windows | 3.11.9 | 2.11.0+cu128 |
-| Linux | 3.11.15 | 2.6.0+cu124 |
-
-The inference requirements are `torch>=2.6`, `numpy`, and `opencv-python`.
-Visualization additionally uses `matplotlib`. The Windows checks used NumPy
-2.4.4, OpenCV 5.0.0, and Matplotlib 3.11.0.
-
-A separate environment can be created with Conda.
+For a CUDA device, use the following command.
 
 ```bash
-conda create -n lightgen2 python=3.11
-conda activate lightgen2
-python -m pip install -r requirements.txt
+python demo.py --device cuda
 ```
 
-For GPU execution, select the PyTorch build matching your platform and CUDA
-driver, then install the remaining requirements. The official installation
-selector provides the corresponding command. [PyTorch installation](https://pytorch.org/get-started/locally/)
+The demo writes predictions, complete phase masks, and input/output optical
+fields to `outputs/demo`. Numerical arrays use NPZ and figures use PNG.
+The bundled `results` directory contains reference outputs from the same demo.
+The synthetic clips provide a reproducible execution example. Their MOS values
+are model predictions without human-rated reference labels.
 
-Optional visualization dependencies can be installed separately.
+## Your own videos
 
 ```bash
-python -m pip install -r requirements-visualization.txt
+python infer.py --video-dir path/to/videos --device cuda --output outputs/predictions.json
 ```
 
-The plotting tools use Arial. Install Arial in the operating system and verify
-that Matplotlib can resolve it before generating figures.
-
-## Input preparation
-
-### Video files
-
-The command accepts at least one video path. MP4 is used by the supplied example.
-Video decoding is handled by the installed OpenCV backend. Quote paths that
-contain spaces.
-
-The inference entry point performs these steps for every video.
-
-1. Read the total frame count and select four frame indices at approximately
-   10%, 36.67%, 63.33%, and 90% of the video.
-2. Convert each decoded frame from BGR to RGB.
-3. Take a centered square crop with side length equal to 65% of the shorter
-   image dimension, rounded to an integer.
-4. Resize the crop to 448 × 448 using OpenCV area interpolation.
-5. Stack the four frames as a `uint8` tensor of shape `4 × 3 × 448 × 448`.
-
-Frame positions use `round(fraction * (frame_count - 1))`. Short videos can
-therefore reuse frame indices. Pixel scaling for the frozen visual front is
-performed inside the model.
-
-### Ordered groups of sixteen
-
-The entry point packs consecutive videos into groups of sixteen, producing
-`1 × 16 × 4 × 3 × 448 × 448` pixel tensors. A short final group is filled by
-cyclically repeating videos from the beginning of the input list. Only the
-supplied videos receive records in the prediction JSON.
-
-All sixteen slots participate in a joint coherent optical simulation. Preserve
-the video order, group membership, and tail-padding convention when comparing
-results. The same video can receive different predictions when its slot or
-neighboring inputs change. The reference performance section reports this
-slot sensitivity.
-
-### Text conditioning
-
-The checkpoint stores 38 language embeddings for the temporal-quality prompt.
-The prompt asks for a rating using Excellent, Good, Fair, Poor, or Bad. The
-command-line workflow uses these embedded tokens automatically.
-
-The Python model's `set_prompt()` method accepts a compatible `38 × 2048`
-embedding tensor. Preparing another prompt requires its matching Qwen-derived
-embeddings and a corresponding evaluation profile.
-
-## Configuration
-
-`configs/selected.json` contains the relative checkpoint path, its SHA256,
-the inference architecture identifier, and the registered parameter count.
-The field-visualization command reads this profile and verifies the checkpoint.
-The video-inference command uses its explicit `--weights` argument.
-
-Network dimensions, routing temperature, and optical settings are loaded from
-the checkpoint's inference configuration. The same PT also supplies the frozen
-front, fixed-prompt embedding, learned task tensors, and grade scores.
-
-## Outputs and score interpretation
-
-A single-video result has the following JSON structure.
-
-```json
-{
-  "model": "public_surrogate",
-  "predictions": [
-    {
-      "video": "examples/demo.mp4",
-      "slot": 0,
-      "MOS": 47.528350830078125
-    }
-  ]
-}
-```
-
-| Field | Meaning |
-|---|---|
-| `model` | The implementation identifier `public_surrogate` |
-| `predictions` | One record for each supplied video, in input order |
-| `video` | The supplied video path, with platform-specific path separators |
-| `slot` | Position within its sixteen-video field, numbered 0 through 15 |
-| `MOS` | Predicted temporal mean opinion score |
-
-Slot numbering restarts for every group. The output directory is created
-automatically. JSON is written after all requested groups finish successfully.
-
-The readout produces five softmax probabilities ordered as Bad, Poor, Fair,
-Good, and Excellent. These probabilities weight the five TRAIN-derived grade
-scores stored in the checkpoint, approximately
-
-```text
-28.62, 40.79, 52.96, 65.13, 77.30
-```
-
-Their weighted sum gives the MOS. Higher values indicate higher predicted
-temporal quality. The current weighted-score range is approximately
-28.62 to 77.30. The synthetic example demonstrates the input/output workflow.
-Dataset-level accuracy is evaluated using correlations with human MOS labels.
-
-## Model structure
-
-The visual front applies the extracted Qwen patch projection and position
-tensors. Two fixed spatial mean-pooling operations produce 49 tokens per frame.
-Task adapters, routing, experts, optical propagation, and readout then process
-these tokens in sequence.
-
-Shapes below refer to one video within a sixteen-video field.
-
-| Stage | Operation | Output shape |
-|---|---|---|
-| Visual front | Frozen patch projection, position features, spatial mean pooling | 4 × 49 × 1024 |
-| Visual adapter | LayerNorm1024 and Linear1024→192 | 4 × 49 × 192 |
-| Visual router | Per-frame LayerNorm, Flatten9408, FC128, ReLU, FC4, softmax and Top2 | Four probabilities per frame |
-| Visual experts | Four independent bias-free Linear192→192 experts, Top2 weighted sum | 4 × 49 × 192 |
-| Vision field encoder | Channel projection 192→27 and token-axis projection 49→27, with ReLU | Four 27 × 27 amplitude patches |
-| Vision global | Whole-field phase modulation, angular-spectrum propagation and intensity detection | Four 56 × 56 detector regions |
-| Vision detector processing | Relative intensity, adaptive pooling, LayerNorm96, ReLU and Linear96→192 | 4 × 49 × 192 |
-| Frame merger | Spatial mean/max, LayerNorm384, Linear384→192, ReLU and frame positions | 4 × 192 |
-| Text adapter | LayerNorm2048 and Linear2048→192 | 38 × 192 |
-| Joint sequence | Four visual tokens, 38 text tokens and sequence positions | 42 × 192 |
-| Joint router and experts | Router reads all 42 tokens and mixes a separate set of four linear experts | 42 × 192 |
-| Joint field encoder | Linear192→56, ReLU and row padding | One 56 × 56 amplitude patch |
-| Joint global | Whole-field propagation and intensity detection | One 115 × 115 detector region |
-| Joint detector processing | Relative intensity, adaptive pooling, LayerNorm96 and ReLU | 42 × 96 |
-| Readout | Flatten4032, Linear4032→32, ReLU, Linear32→5, softmax and grade expectation | One MOS |
-
-Within a stage, expert parameters are shared across its frames, videos, and
-slots. The four experts have independent matrices. Each visual frame uses one
-Top2 choice for all of its 49 tokens. The joint stage makes one choice per
-video using both visual and text tokens. The selected two weights are
-normalized by their sum. The software computes all four expert outputs before
-applying the sparse weights.
-
-Both global stages use a 518 × 518 propagation canvas and a central
-478 × 478 active area. The vision stage places four frames per video in a
-2 × 2 arrangement, forming 8 × 8 frame patches across the field. The joint
-stage places one patch per video in a 4 × 4 arrangement. Both field encoders
-apply per-patch root-mean-square (RMS) normalization.
-
-Detector processing divides each region's intensity by its mean, with a
-denominator floor of 0.000001. Adaptive pooling maps the detector grid to
-49 × 96 vision features or 42 × 96 joint features. The final joint projection
-has been merged algebraically into the first readout layer.
-
-The 3,777,350 count refers to registered model parameters. Frozen visual tensors
-and prompt embeddings are stored as buffers. The model card gives the selected
-training history and evaluation conditions. [Model card](MODEL_CARD.md)
-
-## Reference performance
-
-The LGVQ temporal reference uses 2250 TRAIN videos and 558 original TEST videos.
-The original TEST split was used for development selection. The selected
-32-unit readout comes from epoch 290 of 400, using the requested development
-SRCC interval of 0.790 to 0.799.
-
-| Evaluation condition | SRCC |
-|---|---:|
-| Original ordered groups, cached visual input, full-model forward | 0.7988976 |
-| Direct video input over the same 558 videos | 0.7992455 |
-| Mean across sixteen cyclic slot shifts | 0.7953460 |
-| Minimum across sixteen cyclic slot shifts | 0.7885972 |
-
-SRCC is the Spearman rank correlation coefficient. For the original ordered
-cached-input evaluation, Pearson linear correlation coefficient (PLCC) is
-0.8005053, Kendall rank correlation coefficient (KRCC) is 0.5864579, root mean
-square error (RMSE) is 8.4795709, and mean absolute error (MAE) is 6.3281161.
-
-The direct-video and cached-input evaluations have a mean absolute MOS
-difference of 0.019374 and a maximum difference of 2.122620. Decoder, frontend
-numerics, and grouping conditions should be recorded when reproducing scores.
-Full LGVQ evaluation requires its videos, labels, exact sample order, and split
-manifest. Dataset access is provided by the original authors. [LGVQ dataset](https://github.com/zczhang-sjtu/UGVQ)
-
-### Electronic and optical controls
-
-The from-scratch electronic control concatenates the complete fixed visual
-`4 × 49 × 1024` and text `38 × 2048` embeddings. It trains a randomly initialized
-`278528 → 32 → 5` readout with 8,913,093 parameters using TRAIN labels.
-The best development SRCC is **0.7409566**, at epoch 30 of 400 with seed 713.
-
-The optical reference inherits task-trained components and uses TRAIN teacher
-distillation during readout refinement. Interpretation of the accuracy
-difference should account for the input representation, initialization,
-objective, and optimization history. The model card also records the earlier
-task-initialized electronic capacity check and its SRCC of 0.7937766.
-
-Post-training phase and propagation controls keep the other trained components
-fixed. Constant phase in both globals gives SRCC 0.7945205. Identity propagation
-in both globals gives 0.6436202. The supplied random-control summaries report
-ten seeds and their sample standard deviation. Condition definitions are stored
-in `results/global_ablation_protocol.json`.
-
-## Optical-field visualization
-
-After installing the visualization requirements and Arial, trace the supplied
-example through both optical stages.
+Videos in a directory are sorted by filename. Supply an explicit list to control
+their order.
 
 ```bash
-python tools/visualize_fields.py --profile configs/selected.json --videos examples/demo.mp4 --out outputs/fields
+python infer.py --videos video_a.mp4 video_b.mp4 --device cpu --output outputs/predictions.json
 ```
 
-Choose a fresh output directory. The tool checks the selected checkpoint SHA256
-and verifies that tracing reproduces the model's prediction. Use `--group` to
-choose a sixteen-video group, `--detail-slot` to choose a slot, and
-`--device cuda` for GPU execution.
+Inputs are grouped into 16-video fields in order. The last field is padded
+cyclically from the beginning of the supplied list. Predictions are returned
+only for the supplied videos. Optical propagation couples the field, so keep
+video order, grouping and padding fixed when comparing results.
 
-| Generated file | Contents |
-|---|---|
-| `input_frames.png` | Cropped four-frame previews for the sixteen slots |
-| `frame_global.png` | Vision-stage input, phase, modulated field, propagation and detection |
-| `video_global.png` | Corresponding joint-stage optical panels |
-| `slot_detail.png` | Selected slot's frames, detector regions, routing and grade probabilities |
-| `frame_global_arrays.npz` | Vision-stage complex fields, intensities, phase and detector arrays |
-| `video_global_arrays.npz` | Corresponding joint-stage arrays |
-| `group_predictions.csv` | Slot predictions, video paths and valid-input flags |
-| `routing.json` | Selected Top2 weights for both stages |
-| `visualization_manifest.json` | Checkpoint, input and source hashes, display settings and numerical audits |
+Each video is sampled at four positions from 10% to 90% of its frame range.
+Each frame is center-cropped to 65% of its shorter side and resized to 448 × 448.
+The model returns one MOS per video. Higher values indicate better predicted
+temporal quality. The bundled checkpoint includes the prompt and grade-score
+tensors needed for this task.
 
-The CSV includes all sixteen physical slots. Padding slots have `valid=false`.
-The NPZ files retain numerical arrays for additional plotting and inspection.
-Phase plots use a linear scale from −π to π. Intensity display transformations
-are recorded separately from the model's relative-intensity processing.
+## Full evaluation
 
-The release includes learned phase masks and expert-selection statistics.
-
-![Learned vision and joint phase masks](results/phase_masks.png)
-
-The expert-share figure reports each expert's Top2 selection count divided by
-the total number of selections. [Optical expert share](results/optical_expert_share.png)
-
-The provided random-control summary can be replotted directly.
+The supplied `test_videos.csv` records the order, relative video paths and
+temporal MOS labels of the 558-video evaluation. Obtain the original videos
+from the dataset authors and point `--video-root` to the directory containing
+their generator subdirectories. [LGVQ dataset](https://github.com/zczhang-sjtu/UGVQ)
 
 ```bash
-python tools/plot_global_ablation.py --summary results/global_ablation_summary.csv --output outputs/ablation.png
+python infer.py --evaluation-csv test_videos.csv --video-root path/to/LGVQ/videos --device cpu --output outputs/test.json
 ```
 
-Figures use Arial at 7 pt with 8 pt titles. New dataset-level expert shares and
-full-dataset control evaluations require the corresponding dataset inputs and
-author-side analysis workflow.
+The same forward processes 35 fields of 16 videos. The final field contains 14
+actual videos and two cyclic padding entries. The JSON contains 558 predictions
+and the overall SRCC calculated against their temporal MOS labels. The reference
+pixel-input result is approximately 0.7992. The evaluation split was used in
+checkpoint selection. Keep the CSV order to reproduce this field composition.
 
-## Release files and verification
+## Vision and language branches
+
+The names in the code follow the two branches.
+
+| Component | Processing |
+| --- | --- |
+| `vision_frontend` | Saved Qwen patch projection and position tensors, followed by fixed mean pooling |
+| `vision_adapter` | 49 × 1024 visual embeddings to 49 × 192 per frame |
+| `vision_router`, `vision_experts` | Top2 routing and four tokenwise linear experts |
+| `vision_global` | 27 × 27 input patches, phase modulation and wave propagation |
+| `vision_merger` | One 192-dimensional summary per frame |
+| `language_adapter` | 38 × 2048 prompt embeddings to 38 × 192 |
+| `language_router`, `language_experts` | Process four visual summaries plus 38 language tokens |
+| `language_global` | 56 × 56 input patch per video, phase modulation and wave propagation |
+| `readout` | 42 × 96 features to five grade probabilities and their MOS expectation |
+
+Both optical branches use a 518 × 518 canvas with a 478 × 478 active area.
+Sixteen videos occupy a 4 × 4 arrangement. Within each vision slot, the four
+frames occupy a 2 × 2 arrangement. The language branch uses one patch per video.
+
+`LightGen2.forward(pixels)` accepts uint8 RGB data of shape
+`[batch, 16, 4, 3, 448, 448]`. The separate
+`predict_from_embeddings(visual_embeddings)` method accepts saved frontend
+outputs of shape `[batch, 16, 4, 49, 1024]`.
+
+## Optical arrays and figures
+
+To export one 16-video field from a directory, run the following command.
+
+```bash
+python visualize.py --video-dir path/to/16_videos --device cuda --output outputs/fields
+```
+
+| Files in each branch | Contents |
+| --- | --- |
+| `vision_mask.npz`, `language_mask.npz` | Complete phase map, all 16 phase tiles and actual complex modulation |
+| `vision_input_field.npz`, `language_input_field.npz` | Incident complex field, amplitude, intensity and modulated input to propagation |
+| `vision_output_field.npz`, `language_output_field.npz` | Propagated complex field, detected intensity and propagation transfer function |
+| Same stems with `.png` | Matching full-canvas visualizations |
+| `input_frames.png` | The four sampled frames from all 16 videos |
+| `optical_expert_share.npz`, `optical_expert_share.png` | Top2 selections and shares for this demonstration batch |
+| `predictions.json` | Video filename, field index, zero-based slot and MOS |
+
+Complex fields are stored as `complex64`. Phase and intensity arrays are
+`float32`. NPZ files load with `numpy.load(path, allow_pickle=False)`.
+Phase plots use a linear scale from −π to π. Input plots show field amplitude
+and output plots show detected intensity. Both use a linear color scale from
+zero to the maximum value in each field.
+
+## Files
 
 | Path | Purpose |
-|---|---|
-| `infer.py` | Video preprocessing, ordered grouping and JSON inference |
-| `model.py` | Model components, optical simulation and checkpoint loader |
-| `weights/LightGen.pt` | Selected standalone checkpoint |
-| `configs/selected.json` | Checkpoint identity and evaluation profile |
-| `examples/demo.mp4` | Deterministic synthetic demonstration video |
-| `examples/make_example.py` | Script that regenerates the demonstration video |
-| `examples/expected_predictions.json` | Recorded demonstration output |
-| `tools/visualize_fields.py` | True-forward optical-field tracing and plotting |
-| `tools/plot_global_ablation.py` | Plotting from the supplied control summary |
-| `results/` | Phase images, expert shares, control metrics and protocols |
-| `MODEL_CARD.md` | Training history, evaluation conditions and control interpretation |
-| `requirements*.txt` | Inference and visualization dependencies |
-| `LICENSE`, `NOTICE`, `licenses/` | Project license and upstream attribution |
-| `MANIFEST.json` | Source commit, checkpoint export and per-file SHA256 hashes |
+| --- | --- |
+| `model.py` | Network layers, wave propagation and checkpoint loader |
+| `infer.py` | Video decoding, input grouping and prediction |
+| `demo.py` | Sixteen-video demonstration and synthetic clip generation |
+| `visualize.py` | Actual-forward field capture and NPZ/PNG export |
+| `weights/LightGen2.pt` | Standalone weights, configuration and frozen frontend tensors |
+| `demo_videos` | Sixteen bundled synthetic input videos |
+| `test_videos.csv` | Ordered 558-video evaluation list and temporal MOS labels |
+| `results` | Reference predictions, optical arrays and figures |
+| `README.docx` | Editable installation, architecture and file-format guide |
+| `requirements.txt` | Inference and visualization dependencies |
+| `LICENSE`, `NOTICE`, `licenses` | Apache-2.0 terms and Qwen attribution |
 
-The checksum beside the ZIP verifies the complete archive. `MANIFEST.json`
-records the distributed files and model-state fingerprint. The public-export
-verification checks each model tensor against the selected research checkpoint.
+## License
 
-In the directory containing `LightGen2.zip`, check its checksum with either of
-these platform-specific commands.
+The source, LightGen2 weights and generated demo clips are distributed under
+Apache-2.0. The frozen Qwen components retain their upstream attribution.
+See `NOTICE` and `licenses/QWEN_LICENSE.txt`.
 
-```bash
-sha256sum LightGen2.zip
-```
-
-```powershell
-Get-FileHash -Algorithm SHA256 LightGen2.zip
-```
-
-Compare the result with `LightGen2.zip.sha256`. For a reproducibility report,
-record the source commit, checkpoint SHA256, Python and PyTorch versions,
-device, command, input video hashes, and exact video order.
-
-## Troubleshooting
-
-| Situation | Action |
-|---|---|
-| `Cannot decode video` or `Frame decoding failed` | Check the path and test decoding with the same OpenCV environment. Confirm that the video has a readable frame count. |
-| CUDA initialization or device errors | Check the installed PyTorch build and GPU driver. Use `--device cpu` for the verified CPU workflow. |
-| Arial font lookup error | Install Arial and refresh Matplotlib's font discovery before plotting. |
-| `FileExistsError` during field visualization | Select a fresh `--out` directory. |
-| Checkpoint SHA mismatch | Restore the matching checkpoint and `configs/selected.json` from the same verified release. |
-| Scores change across runs with different input lists | Restore the same ordered groups, neighboring videos and cyclic padding. Then compare decoder, dependency and device versions. |
-
-## License and acknowledgements
-
-The code is distributed under Apache-2.0. Qwen-derived patch-projection,
-position tensors, and prompt embeddings are acknowledged in `NOTICE`, with the
-upstream license in `licenses/QWEN_LICENSE.txt`. [Qwen3-VL-2B-Instruct](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct)
-
-LGVQ data should be obtained and cited through its authors' distribution.
-The bundled demonstration is generated by `examples/make_example.py`.
+The upstream visual components originate from Qwen3-VL-2B-Instruct.
+[Qwen model](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct),
+[Qwen source](https://github.com/QwenLM/Qwen3-VL).

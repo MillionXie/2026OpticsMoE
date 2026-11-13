@@ -60,6 +60,34 @@ def export_public_checkpoint(source,destination):
             'model_state_sha256':fingerprint,'model_tensors_bitwise_equal':True}
 
 
+def inference_state_name(name):
+    """Map private checkpoint names to the public vision/language vocabulary."""
+    prefixes = {
+        'front.': 'vision_frontend.',
+        'frame_router.': 'vision_router.',
+        'frame_experts.': 'vision_experts.',
+        'frame_global.': 'vision_global.',
+        'frame_merger.': 'vision_merger.',
+        'video_router.': 'language_router.',
+        'video_experts.': 'language_experts.',
+        'video_global.': 'language_global.',
+    }
+    exact = {
+        'frame_position': 'vision_frame_position',
+        'sequence_position': 'language_sequence_position',
+        'prompt_embedding': 'language_prompt_embedding',
+        'prompt_ready': 'language_prompt_ready',
+        'level_scores': 'grade_scores',
+        'quality_ready': 'readout_ready',
+    }
+    result = exact.get(name, name)
+    for old, new in prefixes.items():
+        if name.startswith(old):
+            result = new + name[len(old):]
+            break
+    return result.replace('.raw_global_phase', '.raw_phase')
+
+
 def export_inference_checkpoint(source, destination, config_fields, architecture):
     """Export the selected forward tensors and inference configuration."""
     with tempfile.TemporaryDirectory(prefix='lightgen-inference-export-') as directory:
@@ -68,14 +96,16 @@ def export_inference_checkpoint(source, destination, config_fields, architecture
         payload = torch.load(intermediate, map_location='cpu', weights_only=True)
     source_fingerprint = identity['model_state_sha256']
     omitted = ('target_mean', 'target_std', 'level_boundaries')
-    state = {name: tensor for name, tensor in payload['model'].items() if name not in omitted}
+    state = {inference_state_name(name): tensor for name, tensor in payload['model'].items()
+             if name not in omitted}
+    if len(state) != len(payload['model']) - len(omitted):
+        raise ValueError('Inference key mapping has a collision or missing buffer')
     fingerprint = tensor_fingerprint(state)
-    metadata = dict(payload['metadata'])
-    metadata.update(model_state_sha256=fingerprint,
-                    source_model_state_sha256=source_fingerprint,
-                    omitted_auxiliary_buffers=list(omitted))
+    metadata = {name: payload['metadata'][name]
+                for name in ('upstream_model', 'upstream_revision', 'fixed_prompt', 'license')
+                if name in payload['metadata']}
     exported = {
-        'schema': 1,
+        'schema': 2,
         'architecture': architecture,
         'config': {name: payload['config'][name] for name in config_fields},
         'model': state,
@@ -87,6 +117,9 @@ def export_inference_checkpoint(source, destination, config_fields, architecture
     restored = torch.load(destination, map_location='cpu', weights_only=True)
     if tensor_fingerprint(restored['model']) != fingerprint:
         raise ValueError('Inference export changed retained tensors')
+    for name, tensor in payload['model'].items():
+        if name not in omitted and not torch.equal(tensor, restored['model'][inference_state_name(name)]):
+            raise ValueError('Inference export changed tensor: ' + name)
     return {
         'input_checkpoint_sha256': identity['input_checkpoint_sha256'],
         'public_checkpoint_sha256': file_sha256(destination),
