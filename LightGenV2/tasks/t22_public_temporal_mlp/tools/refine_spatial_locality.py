@@ -20,7 +20,7 @@ if __package__:
     from . import _paths
     from .data import load_inputs, groups, batch, sha256
     from .phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics
-    from .run import evaluate, write, save_checkpoint, correlation, router_regularization
+    from .run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from .spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from .training_policy import restrict_training_to
     from ..model import load_lightgen
@@ -28,7 +28,7 @@ else:
     import _paths
     from data import load_inputs, groups, batch, sha256
     from phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics
-    from run import evaluate, write, save_checkpoint, correlation, router_regularization
+    from run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from training_policy import restrict_training_to
     from model import load_lightgen
@@ -83,16 +83,22 @@ def train(args):
     if not torch.equal(model.prompt_embedding.cpu(), payload['prompt']):
         raise ValueError('Frozen prompt identity differs')
     teacher = copy.deepcopy(model).requires_grad_(False).eval()
-    prefixes = ['frame_global.raw_global_phase', 'video_global.raw_global_phase', 'readout']
+    prefixes = ['readout']
+    if config.get('train_phases', True):
+        prefixes.extend(('frame_global.raw_global_phase', 'video_global.raw_global_phase'))
+    if config.get('train_language_router_bias', False):
+        prefixes.append('video_router.fc2.bias')
     encoders = ('frame_global.width_to_field', 'frame_global.tokens_to_field', 'video_global.width_to_field')
     if config.get('train_field_encoders', False):
         prefixes.extend(encoders)
     restrict_training_to(model, prefixes)
-    parameter_groups = [
-        {'params': [model.frame_global.raw_global_phase, model.video_global.raw_global_phase],
-         'lr': config['phase_learning_rate'], 'name': 'phase'},
-        {'params': model.readout.parameters(), 'lr': config['readout_learning_rate'], 'name': 'readout'},
-    ]
+    parameter_groups = [{'params': model.readout.parameters(), 'lr': config['readout_learning_rate'], 'name': 'readout'}]
+    if config.get('train_phases', True):
+        parameter_groups.append({'params': [model.frame_global.raw_global_phase, model.video_global.raw_global_phase],
+                                 'lr': config['phase_learning_rate'], 'name': 'phase'})
+    if config.get('train_language_router_bias', False):
+        parameter_groups.append({'params': [model.video_router.fc2.bias],
+                                 'lr': config['router_learning_rate'], 'name': 'language_router_bias'})
     if config.get('train_field_encoders', False):
         parameters = [value for name, value in model.named_parameters()
                       if any(name.startswith(prefix + '.') for prefix in encoders)]
@@ -164,6 +170,8 @@ def train(args):
                 if not bool(torch.isfinite(gradient_norm)):
                     raise FloatingPointError('Nonfinite spatial-refinement gradient')
                 optimizer.step()
+                update_router_bias(model.video_router, result['routing']['video']['selected'], keep,
+                                   config.get('language_router_bias_update_rate', 0.))
                 smooth_phase_parameters(model, config.get('phase_parameter_smoothing_sigma', 0.))
                 losses.append(float(loss.detach()))
                 spatial_values.append(float(local.detach()))
@@ -186,6 +194,10 @@ def train(args):
         history.append(row)
         write(args.out / 'history.json', history)
         print(json.dumps(row), flush=True)
+    if not (args.out / 'best_checkpoint.pt').is_file():
+        write(args.out / 'status.json', {'state': 'no_qualified_candidate',
+              'epochs': config['epochs'], 'elapsed_seconds': time.monotonic() - started})
+        return
     selected, selected_metadata = load_lightgen(args.out / 'best_checkpoint.pt', args.device)
     final = evaluate(selected, payload, args.device, config['eval_batch_fields'], args.out,
                      selected_metadata['epoch'])
