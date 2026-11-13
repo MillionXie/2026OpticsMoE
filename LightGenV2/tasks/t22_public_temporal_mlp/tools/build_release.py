@@ -41,10 +41,8 @@ RESULT_FILES = tuple(f'{branch}_{kind}.{suffix}'
                      for kind in ('mask', 'input_field', 'output_field')
                      for suffix in ('npz', 'png')) + (
     'input_frames.png', 'optical_expert_share.npz', 'optical_expert_share.png', 'predictions.json',
-    'vision_output_detail.png',
 )
 ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.docx', 'test_videos.csv') + tuple(
-    f'demo_videos/video_{index:02d}.mp4' for index in range(1, 17)) + tuple(
     'results/' + name for name in RESULT_FILES)
 
 
@@ -96,11 +94,9 @@ def verify_optical_arrays(directory):
             if not np.isfinite(relative_error) or relative_error > 1e-5:
                 raise ValueError('Optical propagation replay differs in ' + branch)
             np.testing.assert_allclose(np.abs(target['field']) ** 2, target['intensity'], rtol=1e-5, atol=1e-7)
-            np.testing.assert_allclose(source['display_amplitude'] * source['display_scale'], source['amplitude'], rtol=1e-6)
-            display_source = target['intensity']
-            if branch == 'vision':
-                display_source = display_source.reshape(259, 2, 259, 2).mean((1, 3))
-            np.testing.assert_allclose(target['display_intensity'] * target['display_scale'], display_source, rtol=1e-6)
+            np.testing.assert_allclose(source['display_amplitude'], np.clip(source['amplitude'] / source['display_scale'], 0, 1), rtol=1e-6)
+            np.testing.assert_allclose(target['display_intensity'], np.clip(target['intensity'] / target['display_scale'], 0, 1), rtol=1e-6)
+            np.testing.assert_allclose(target['display_scale'], np.percentile(target['intensity'], 99.8), rtol=1e-6)
             reports[branch] = {'phase_tiles': 16, 'canvas': [518, 518],
                                'numpy_propagation_relative_error': relative_error}
     with np.load(directory / 'optical_expert_share.npz', allow_pickle=False) as routing:
@@ -162,7 +158,8 @@ def build_release(device='cpu'):
     if actual.requires_grad or not torch.equal(expected, actual):
         raise ValueError('Public inference differs from the selected research model')
     optical_replay = verify_optical_arrays(PUBLIC / 'results')
-    names = SOURCE_FILES + ARTIFACT_FILES
+    demo_files = tuple('demo_videos/' + row['sample_id'] for row in rows[:16])
+    names = SOURCE_FILES + ARTIFACT_FILES + demo_files
     for name in names:
         path = PUBLIC / name
         if not path.is_file():

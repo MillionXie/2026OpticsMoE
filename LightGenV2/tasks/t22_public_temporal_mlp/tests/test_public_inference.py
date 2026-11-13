@@ -106,6 +106,18 @@ class PublicInferenceTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 public_infer.read_evaluation_csv(path, root)
 
+    def test_demo_subset_reads_only_requested_video_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'a.mp4').touch()
+            (root / 'b.mp4').touch()
+            path = root / 'test.csv'
+            path.write_text('sample_id,video_path,mos\na,a.mp4,10\nb,b.mp4,20\nc,absent.mp4,30\n', encoding='utf-8')
+            rows, videos, targets = public_infer.read_evaluation_csv(path, root, limit=2)
+            self.assertEqual([row['sample_id'] for row in rows], ['a', 'b'])
+            self.assertEqual([video.name for video in videos], ['a.mp4', 'b.mp4'])
+            self.assertEqual(targets.tolist(), [10, 20])
+
 
 if __name__ == '__main__':
     unittest.main()

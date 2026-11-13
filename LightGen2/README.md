@@ -21,8 +21,9 @@ Arial, with 7 pt labels and 8 pt titles.
 
 ## Sixteen video demo
 
-The distribution includes 16 distinct synthetic clips in `demo_videos`.
-One forward processes their 64 sampled frames in a shared optical field.
+The distribution includes the first 16 TEST videos from `test_videos.csv` in
+`demo_videos`, with their original relative paths. One forward processes their
+64 sampled frames in a shared optical field.
 
 ```bash
 python demo.py --device cpu
@@ -37,8 +38,7 @@ python demo.py --device cuda
 The demo writes predictions, complete phase masks, and input/output optical
 fields to `outputs/demo`. Numerical arrays use NPZ and figures use PNG.
 The bundled `results` directory contains reference outputs from the same demo.
-The synthetic clips provide a reproducible execution example. Their MOS values
-are model predictions without human-rated reference labels.
+Video identities and temporal MOS labels are recorded in `test_videos.csv`.
 
 ## Your own videos
 
@@ -78,7 +78,7 @@ python infer.py --evaluation-csv test_videos.csv --video-root path/to/LGVQ/video
 The same forward processes 35 fields of 16 videos. The final field contains 14
 actual videos and two cyclic padding entries. The JSON contains 558 predictions
 and the overall SRCC calculated against their temporal MOS labels. The reference
-pixel-input result is approximately 0.7992. The evaluation split was used in
+pixel-input result is approximately 0.7989. The evaluation split was used in
 checkpoint selection. Keep the CSV order to reproduce this field composition.
 
 ## Vision and language branches
@@ -123,21 +123,19 @@ python visualize.py --video-dir path/to/16_videos --device cuda --output outputs
 | `input_frames.png` | The four sampled frames from all 16 videos |
 | `optical_expert_share.npz`, `optical_expert_share.png` | Top2 selections and shares for this demonstration batch |
 | `predictions.json` | Video filename, field index, zero-based slot and MOS |
-| `vision_output_detail.png` | Native detector pixels and a labeled 2 × 2 display average of the first region |
 
 Complex fields are stored as `complex64`. Phase and intensity arrays are
 `float32`. NPZ files load with `numpy.load(path, allow_pickle=False)`.
 Phase plots use a linear scale from −π to π. Input plots show field amplitude
-and output plots show detected intensity, independently peak-normalized to
-[0, 1]. The vision output display averages adjacent 2 × 2 intensity pixels to
-reduce fine-scale rendering artifacts. Its title identifies this display
-average. The detail figure shows native pixels beside the averaged view.
+with peak normalization. Output plots show native-pixel detector intensity,
+scaled linearly using its 99.8th percentile as the display upper limit. The
+brightest 0.2% of output pixels saturate in the displayed color scale. Cyan
+outlines mark the 478 × 478 active area.
 
 Input archives include `display_amplitude` and its `display_scale`. Output
-archives include `display_intensity`, `display_scale` and `display_bin_size`.
-The vision display array is 259 × 259 and the language display array is
-518 × 518. The `field`, `amplitude` and `intensity` keys store the original
-518 × 518 arrays used to derive these views.
+archives include `display_intensity`, `display_scale` and `display_percentile`.
+Display arrays have shape 518 × 518 and use a linear [0, 1] color scale.
+The `field`, `amplitude` and `intensity` keys store the original numerical arrays.
 
 ## Files
 
@@ -145,10 +143,10 @@ The vision display array is 259 × 259 and the language display array is
 | --- | --- |
 | `model.py` | Network layers, wave propagation and checkpoint loader |
 | `infer.py` | Video decoding, input grouping and prediction |
-| `demo.py` | Sixteen-video demonstration and synthetic clip generation |
+| `demo.py` | Sixteen-video demonstration using the first evaluation batch |
 | `visualize.py` | Actual-forward field capture and NPZ/PNG export |
 | `weights/LightGen2.pt` | Standalone weights, configuration and frozen frontend tensors |
-| `demo_videos` | Sixteen bundled synthetic input videos |
+| `demo_videos` | First sixteen TEST videos with their dataset-relative paths |
 | `test_videos.csv` | Ordered 558-video evaluation list and temporal MOS labels |
 | `results` | Reference predictions, optical arrays and figures |
 | `README.docx` | Editable installation, architecture and file-format guide |
@@ -157,8 +155,9 @@ The vision display array is 259 × 259 and the language display array is
 
 ## License
 
-The source, LightGen2 weights and generated demo clips are distributed under
-Apache-2.0. The frozen Qwen components retain their upstream attribution.
+The source and LightGen2 weights are distributed under Apache-2.0. The frozen
+Qwen components retain their upstream attribution. The demo videos and
+evaluation labels originate from LGVQ and retain attribution to their authors.
 See `NOTICE` and `licenses/QWEN_LICENSE.txt`.
 
 The upstream visual components originate from Qwen3-VL-2B-Instruct.

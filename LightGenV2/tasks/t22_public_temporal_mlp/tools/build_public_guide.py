@@ -132,23 +132,23 @@ def build_guide():
     heading(document, 'Environment and installation')
     table(document, ['Item', 'Configuration'], [
         ('Python', 'Python 3.11'),
-        ('Inference', 'PyTorch 2.6 or later, NumPy, SciPy and OpenCV'),
+        ('Inference', 'PyTorch 2.6 or later, OpenCV 4.10 or later, NumPy and SciPy'),
         ('Figures', 'Matplotlib 3.7 or later and an installed Arial font'),
         ('Execution', 'CPU or a CUDA-capable GPU with a compatible PyTorch build'),
     ], [1.3, 5.45])
     paragraph(document, 'Open a terminal in the extracted LightGen2 directory and install the dependencies.')
     code(document, 'python -m pip install -r requirements.txt')
     heading(document, 'Run the sixteen video demo')
-    paragraph(document, 'The demo loads video_01.mp4 through video_16.mp4 in filename order and '
-              'processes all sixteen together. Each clip contributes four sampled RGB frames.')
+    paragraph(document, 'The demo loads the first sixteen TEST videos listed in test_videos.csv '
+              'and processes them together in the same order. Each clip contributes four sampled RGB frames.')
     code(document, 'python demo.py --device cpu\npython demo.py --device cuda')
     paragraph(document, 'Choose either CPU or CUDA. The command writes predictions.json, complete '
               'vision and language masks, and input/output optical fields to outputs/demo. '
               'The bundled results directory contains reference outputs from the same demonstration.')
-    paragraph(document, 'The sixteen distinct clips are generated synthetic videos with moving shapes, '
-              'textures and noise. They provide a reproducible execution example. Their MOS values '
-              'are model predictions without human-rated reference labels. The generation procedure '
-              'is included in demo.py.')
+    paragraph(document, 'The bundled demo_videos directory contains these sixteen LGVQ clips with '
+              'their original dataset-relative paths. Their sample identities and temporal MOS '
+              'labels are recorded in test_videos.csv. The --video-root argument can also point '
+              'the demo to a complete local LGVQ videos directory.')
     paragraph(document, 'The distribution contains all frozen frontend tensors and the fixed-prompt '
               'embedding inside weights/LightGen2.pt. After installing dependencies, inference '
               'uses the local files directly.')
@@ -224,7 +224,7 @@ def build_guide():
     table(document, ['Path', 'Purpose'], [
         ('model.py', 'Layer definitions, vision/language optical processing and load_lightgen2'),
         ('infer.py', 'Video decoding, 16-video grouping, JSON prediction and pixel preprocessing'),
-        ('demo.py', 'Run the bundled sixteen videos and generate synthetic clips if missing'),
+        ('demo.py', 'Run the first sixteen TEST videos through the same inference graph'),
         ('visualize.py', 'Observe the actual forward and export optical NPZ/PNG files'),
         ('weights/LightGen2.pt', 'Weights, architecture configuration, frozen frontend, prompt and grade scores'),
         ('demo_videos/', 'Sixteen distinct input clips in optical-slot order'),
@@ -244,7 +244,6 @@ def build_guide():
         ('input_frames.png', 'All sixteen videos and the four sampled frames from each'),
         ('optical_expert_share.npz and .png', 'Selections, softmax probabilities, counts and selection shares for this sixteen-video demo'),
         ('predictions.json', 'One filename, field index, zero-based slot and MOS per video'),
-        ('vision_output_detail.png', 'Native pixels and a labeled 2 × 2 display average of the first vision detector region'),
     ], [2.5, 4.25])
     paragraph(document, 'Numerical optical files and their figures share the same stem. The masks '
               'use the complete 518 × 518 canvas. NPZ filenames and embedded video_names arrays '
@@ -269,24 +268,16 @@ def build_guide():
               'detector normalization. Its intensity is the squared field magnitude.')
     code(document, "import numpy as np\nmask = np.load('results/vision_mask.npz', allow_pickle=False)\nsource = np.load('results/vision_input_field.npz', allow_pickle=False)\ntarget = np.load('results/vision_output_field.npz', allow_pickle=False)\nmodulated = source['field'] * mask['modulation']\nnp.testing.assert_allclose(modulated, source['modulated_field'], rtol=1e-6)\nreplayed = np.fft.ifft2(np.fft.fft2(modulated) * target['transfer'])")
     paragraph(document, 'Phase figures use a linear −π to π color scale. Input figures show '
-              'field amplitude and output figures show detected intensity. Each complete input '
-              'and output view is independently peak-normalized to [0, 1] on a linear color scale. '
+              'field amplitude with peak normalization. Output figures show native-pixel detector '
+              'intensity scaled linearly by its 99.8th percentile. The brightest 0.2% of output '
+              'pixels saturate in the displayed [0, 1] color scale. Cyan outlines mark the '
+              '478 × 478 active area. '
               'Expert share is the fraction of '
               'Top2 selection events assigned to each expert in the displayed demo batch.')
-    paragraph(document, 'The vision output figure uses a labeled 2 × 2 display average to reduce '
-              'fine-scale rendering artifacts. It averages adjacent intensity pixels before '
-              'peak normalization. The detail figure compares native pixels with this display '
-              'average, with each panel normalized by its own peak. Its region is the first '
-              '56 × 56 detector window at slot 0, frame 0.')
     paragraph(document, 'Input archives also contain display_amplitude [518,518] and display_scale. '
-              'Output archives contain display_intensity, display_scale and display_bin_size. '
-              'The vision display array has shape [259,259] and bin size 2. The language display '
-              'array has shape [518,518] and bin size 1. The original field and intensity arrays '
-              'retain shape [518,518]. Multiplying a display array by its scale recovers the '
-              'corresponding amplitude or averaged intensity. The vision archive records '
-              'detail_region as [y, x, height, width] and the native/averaged detail_scales.')
-
-    page(document, 'Custom inference and full evaluation')
+              'Output archives contain display_intensity [518,518], display_scale and '
+              'display_percentile. The original field and intensity arrays are stored at their '
+              'full numerical values and native 518 × 518 resolution.')
     code(document, 'python infer.py --video-dir path/to/videos --device cuda\npython visualize.py --video-dir path/to/16_videos --device cuda')
     paragraph(document, 'Directory inputs are sorted by filename and include MP4, MOV, AVI and MKV. '
               'For an explicit order, use --videos followed by the paths with infer.py. '
@@ -298,18 +289,14 @@ def build_guide():
     code(document, 'python infer.py --evaluation-csv test_videos.csv '
          '--video-root path/to/LGVQ/videos --device cpu --output outputs/test.json')
     paragraph(document, 'The selected checkpoint yields SRCC 0.798898 on the 558-video cached-feature '
-              'development evaluation. Direct video decoding yields SRCC 0.799245 under the '
-              'reference preprocessing. The evaluation split was used in checkpoint selection.')
+              'development evaluation. Direct video decoding on the validated CUDA runtime '
+              'yields SRCC 0.798892. The evaluation split was used in checkpoint selection.')
     paragraph(document, 'LightGen2 is distributed under Apache-2.0. The embedded visual tensors '
               'and fixed-prompt embedding were extracted from Qwen3-VL-2B-Instruct, revision '
               '89644892e4d85e24eaac8bacfd4f463576704203. Upstream attribution and terms are '
               'provided in NOTICE and licenses/QWEN_LICENSE.txt.')
     paragraph(document, 'The evaluation identities and temporal MOS labels originate from LGVQ. '
               'Original videos are available through github.com/zczhang-sjtu/UGVQ.')
-    item = document.add_paragraph()
-    item.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    picture = item.add_run().add_picture(str(PUBLIC / 'results/vision_output_detail.png'), width=Inches(6.1))
-    picture._inline.docPr.set('descr', 'Native and display-averaged vision detector pixels')
 
     page(document, 'Complete phase and normalized optical fields')
     paragraph(document, 'These panels show all sixteen video slots from the bundled demonstration. '

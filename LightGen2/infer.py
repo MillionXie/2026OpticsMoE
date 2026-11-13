@@ -23,7 +23,8 @@ def frames_from_video(path):
     """Sample four RGB frames with the checkpoint's fixed crop and resize."""
     import cv2
 
-    capture = cv2.VideoCapture(str(path))
+    cv2.setNumThreads(1)
+    capture = cv2.VideoCapture(str(path), cv2.CAP_FFMPEG, [cv2.CAP_PROP_N_THREADS, 1])
     count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
     if count <= 0:
         capture.release()
@@ -58,10 +59,12 @@ def videos_in_directory(directory):
     return paths
 
 
-def read_evaluation_csv(path, video_root):
+def read_evaluation_csv(path, video_root, *, limit=None):
     """Preserve the evaluation file's sample order and its temporal MOS labels."""
     with Path(path).open(encoding='utf-8-sig', newline='') as stream:
         rows = list(csv.DictReader(stream))
+    if limit is not None:
+        rows = rows[:limit]
     if len(rows) < 2 or not {'sample_id', 'video_path', 'mos'}.issubset(rows[0]):
         raise ValueError('Evaluation CSV requires sample_id, video_path and mos columns')
     if len({row['sample_id'] for row in rows}) != len(rows):
@@ -91,7 +94,7 @@ def iter_video_fields(video_paths):
         yield chunk, torch.stack(frames + padding)[None]
 
 
-def predict_videos(model, video_paths, device):
+def predict_videos(model, video_paths, device, *, show_progress=False):
     records = []
     for field_index, (chunk, pixels) in enumerate(iter_video_fields(video_paths)):
         output = model(pixels=pixels.to(device))
@@ -99,6 +102,8 @@ def predict_videos(model, video_paths, device):
         records.extend({'video': str(path), 'field': field_index, 'slot': slot,
                         'MOS': float(prediction[slot])}
                        for slot, path in enumerate(chunk))
+        if show_progress:
+            print(f'Processed {len(records)}/{len(video_paths)} videos', flush=True)
     return records
 
 
@@ -123,6 +128,7 @@ def main():
     parser.add_argument('--device', default='cpu')
     parser.add_argument('--output', type=Path, default=PROJECT / 'outputs/predictions.json')
     args = parser.parse_args()
+    torch.set_num_threads(4)
     evaluation = None
     if args.evaluation_csv is not None:
         if args.video_root is None:
@@ -131,7 +137,7 @@ def main():
     else:
         paths = args.videos if args.videos is not None else videos_in_directory(args.video_dir)
     model, _ = load_lightgen2(args.weights, args.device)
-    records = predict_videos(model, paths, args.device)
+    records = predict_videos(model, paths, args.device, show_progress=True)
     metrics = None
     if evaluation is not None:
         from scipy.stats import spearmanr
