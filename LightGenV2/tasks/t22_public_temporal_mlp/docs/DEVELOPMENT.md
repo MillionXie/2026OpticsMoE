@@ -177,7 +177,7 @@ python tools/refine_electronics.py --weights assets/initialization/simplificatio
 本轮按用户指定协议，冻结 Qwen 来源的视觉 `4×49×1024` 和文本 `38×2048`
 embedding，将各自全部元素展平为 200,704 和 77,824 个值，拼接为 278,528 维。
 输入经过随机初始化的 `Linear278528→32→ReLU→Linear32→5`，随后通过 softmax
-和五等级分数期望输出 MOS。完整 flatten 是本轮已运行的暂定形状选择，保留
+和五等级分数期望输出 MOS。完整 flatten 是用户确认的输入形式，保留
 embedding 的全部元素。
 
 模型仅学习两层 FC 的权重与偏置，共四个张量、8,913,093 个参数。种子为 713，

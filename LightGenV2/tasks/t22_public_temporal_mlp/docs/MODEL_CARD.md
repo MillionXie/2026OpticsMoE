@@ -70,7 +70,7 @@ fixed text embeddings of shape 38×2048. Full flattening gives 200,704 visual
 values and 77,824 text values. Concatenation produces a 278,528-dimensional
 input for Linear278528→32, ReLU, and Linear32→5, followed by softmax and the
 TRAIN-derived five-grade MOS expectation. The evaluated flattening arrangement
-is an explicit provisional shape choice that retains all embedding entries.
+is the approved input arrangement and retains all embedding entries.
 
 Its 8,913,093 trainable parameters are the weights and biases of the two FC
 layers, stored in four tensors. Both layers use fresh random initialization
