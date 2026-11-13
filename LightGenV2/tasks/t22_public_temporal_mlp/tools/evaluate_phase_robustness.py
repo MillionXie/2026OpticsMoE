@@ -6,6 +6,7 @@ from contextlib import ExitStack
 from dataclasses import replace
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import subprocess
@@ -179,7 +180,8 @@ def main():
         'plots_exported':not args.skip_plots,
         'phase_display':PHASE_DISPLAY,
         'scope':'phase-mask/CCD shifts, independent phase noise, 8-bit numerical phase quantization, distance +/-1%',
-        'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
+        'source_commit':os.environ.get('LIGHTGEN_SOURCE_COMMIT',subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()),
+        'checkout_HEAD':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
         'source_SHA256':{name:sha256(_paths.source_path(name)) for name in ('model.py','evaluate_phase_robustness.py','phase_regularization.py')},
         'environment':{'python':platform.python_version(),'torch':str(torch.__version__),'device':args.device}},indent=2)+'\n')
 

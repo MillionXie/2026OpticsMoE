@@ -6,6 +6,7 @@ from contextlib import ExitStack
 import csv
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import subprocess
@@ -174,7 +175,8 @@ def main():
         'random_global_default':'complete default GlobalStage initialization, including raw phase N(0,0.25^2)',
         'unchanged_components':'all modules outside the named GlobalStage replacements',
         'padding_excluded':True,'videos':558,'data_identity':payload['identity'],
-        'source_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
+        'source_commit':os.environ.get('LIGHTGEN_SOURCE_COMMIT',subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()),
+        'checkout_HEAD':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'script_sha256':sha256(Path(__file__)),
         'command':sys.argv,
         'environment':{'python':platform.python_version(),'torch':str(torch.__version__),'device':args.device}})

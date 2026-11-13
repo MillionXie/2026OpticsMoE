@@ -5,6 +5,7 @@ import argparse
 from contextlib import ExitStack
 import json
 import math
+import os
 from pathlib import Path
 from unittest.mock import patch
 
@@ -143,6 +144,7 @@ def main():
           'plots_exported':not args.skip_plots,
           'phase_display':PHASE_DISPLAY,
           'hardware_measurement':False,'script_SHA256':sha256(Path(__file__)),
+          'source_commit':os.environ.get('LIGHTGEN_SOURCE_COMMIT'),
           'files':{p.name:sha256(p) for p in args.out.iterdir() if p.is_file()}})
 
 
