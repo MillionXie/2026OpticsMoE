@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from contextlib import contextmanager
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -141,7 +142,10 @@ def main():
     payload = load_inputs(json.loads(args.paths.read_text('utf-8')))
     summary, arrays = audit_spatial_locality(model, payload, args.device, split=args.split, field_count=args.fields)
     summary['checkpoint_sha256'] = sha256(args.weights)
-    summary['source_commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=_paths.ROOT, text=True).strip()
+    head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=_paths.ROOT, text=True).strip()
+    summary['source_commit'] = os.environ.get('LIGHTGEN_SOURCE_COMMIT', head)
+    summary['checkout_HEAD'] = head
+    summary['source_sha256'] = sha256(Path(__file__))
     args.out.mkdir(parents=True, exist_ok=False)
     write(args.out / 'metrics.json', summary)
     np.savez_compressed(args.out / 'source_to_detector.npz', **arrays)

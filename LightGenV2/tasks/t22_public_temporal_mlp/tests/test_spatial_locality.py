@@ -32,6 +32,13 @@ class SpatialLocalityTests(unittest.TestCase):
         self.assertTrue(bool(torch.isfinite(phase.grad).all()))
         self.assertGreater(float(phase.grad.abs().sum()), 0)
 
+    def test_dark_source_is_reported_without_spurious_guard_energy(self):
+        stage = self.make_stage(torch.nn.Identity())
+        response = isolated_video_response(stage, torch.zeros(1, 518, 518, dtype=torch.complex64), [0])
+        self.assertEqual(float(response['dark_source_fraction'].item()), 1.)
+        self.assertEqual(float(response['guard_fraction'].item()), 0.)
+        self.assertEqual(float(response['filter_transmission'].item()), 0.)
+
 
 if __name__ == '__main__':
     unittest.main()
