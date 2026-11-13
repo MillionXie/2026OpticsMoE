@@ -36,11 +36,11 @@ Predictions, metrics and figures are written to `results`.
 The 558 distinct videos are processed in 35 ordered optical fields. Fields 1–34
 contain 544 distinct videos. Field 35 contains the remaining 14 videos and two
 padding entries copied from videos 1 and 2. SRCC uses exactly the 558 actual
-video predictions and labels. The normalized-RGB reference SRCC is 0.798898.
+video predictions and labels. The normalized-RGB reference SRCC is 0.798371.
 The evaluation split was used in checkpoint selection.
 
-The complete reference program took 23.216 seconds on an NVIDIA GeForce RTX
-4070 Laptop GPU. This covers imports, model loading, all 558 inputs, prediction,
+The complete reference program took 34.413 seconds on an NVIDIA A100-PCIE-40GB.
+This covers imports, model loading, all 558 inputs, prediction,
 metrics and result/figure export. The measured total is saved after inference
 as `total_runtime_seconds` in `02_metrics.json`. Runtime varies with hardware
 and filesystem performance.
@@ -54,7 +54,8 @@ python infer.py --visualize-field 12
 ```
 
 Every invocation evaluates all samples in the input NPZ. The selected field's slots
-are linked to video IDs, predictions and padding flags in `05_visualized_field.csv`.
+can be looked up by field and slot in `01_predictions.csv`. Optical NPZ files
+also record the selected field's video IDs and padding flags.
 Expert-share statistics cover all 558 actual videos. Whole-canvas coherent
 propagation couples the slots, so preserve sample order and field composition.
 
@@ -100,23 +101,21 @@ accepts saved frontend outputs with shape `[batch, 16, 4, 49, 1024]`.
 | Result files | Contents |
 | --- | --- |
 | `01_predictions.csv` | All 558 video IDs, field/slot numbers, human MOS and predicted MOS |
-| `02_metrics.json` | SRCC, distinct input counts, field/padding counts and complete program runtime |
+| `02_metrics.json` | SRCC, video/field counts, complete program runtime and device |
 | `03_prediction_vs_mos.png` | Predicted versus human MOS for all 558 videos |
-| `04_prediction_overview.png` | All predictions ordered by human MOS for display |
-| `05_visualized_field.csv` | Sixteen captured slots, IDs, predictions and padding flags |
-| `06_input_frames.png` | Four sampled frames from each captured slot |
-| `07_optical_expert_share.npz` and `.png` | Expert selections, probabilities and shares over 558 actual videos |
-| `08_vision_mask.npz` and `.png` | Complete phase map, sixteen phase tiles and complex modulation |
-| `09_vision_input_field.npz` and `.png` | Incident field, amplitude, intensity and modulated field |
-| `10_vision_output_field.npz` and `.png` | Propagated field, intensity and propagation transfer |
-| `11_language_mask.npz` and `.png` | Complete language phase map and modulation |
-| `12_language_input_field.npz` and `.png` | Language incident field and modulated field |
-| `13_language_output_field.npz` and `.png` | Language propagated field, intensity and transfer |
+| `04_input_frames.png` | Four sampled frames from each captured slot |
+| `05_optical_expert_share.npz` and `.png` | Expert selections, probabilities and shares over 558 actual videos |
+| `06_vision_mask.npz` and `.png` | Complete phase map, sixteen phase tiles and complex modulation |
+| `07_vision_input_field.npz` and `.png` | Incident field, amplitude, intensity and modulated field |
+| `08_vision_output_field.npz` and `.png` | Propagated field, intensity and propagation transfer |
+| `09_language_mask.npz` and `.png` | Complete language phase map and modulation |
+| `10_language_input_field.npz` and `.png` | Language incident field and modulated field |
+| `11_language_output_field.npz` and `.png` | Language propagated field, intensity and transfer |
 
 CSV field and slot numbers start at 1. Each optical NPZ includes its
 `field_number`, sixteen `video_names` and a `valid` mask. Expert-share arrays
-contain 558 sample IDs and exclude padding. The overview figure sorts values
-for display after inference. Evaluation follows the original NPZ sample order.
+contain 558 sample IDs and exclude padding. Evaluation follows the original
+NPZ sample order.
 
 Complex fields use `complex64`. Phase and intensity use `float32`. Load NPZ
 files with `numpy.load(path, allow_pickle=False)`. Phase plots use a linear

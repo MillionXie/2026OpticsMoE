@@ -1,4 +1,8 @@
-# Model card
+# Parent model record from 20261113
+
+This document retains the parent checkpoint's development results. The selected
+20261114 spatial refinement and current release are described in the task README
+and configs/selected.json.
 
 ## Model and inputs
 
