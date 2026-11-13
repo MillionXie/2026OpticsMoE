@@ -147,7 +147,8 @@ def build_release(device='cpu'):
     if result.returncode:
         raise RuntimeError(result.stdout + result.stderr)
     public_infer = import_public_module('infer')
-    paths = public_infer.videos_in_directory(PUBLIC / 'demo_videos')
+    _, paths, _ = public_infer.read_evaluation_csv(
+        PUBLIC / 'test_videos.csv', PUBLIC / 'demo_videos', limit=16)
     _, pixels = next(public_infer.iter_video_fields(paths))
     torch.set_num_threads(4)
     original, _ = load_lightgen(source, device)
