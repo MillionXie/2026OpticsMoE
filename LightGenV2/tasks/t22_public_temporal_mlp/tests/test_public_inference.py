@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 import torch
+import numpy as np
 
 from LightGen2 import model as public
 from LightGen2 import infer as public_infer
@@ -82,41 +83,78 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertFalse(self.omitted.intersection(self.inference.state_dict()))
         self.assertEqual(sum(parameter.numel() for parameter in self.inference.parameters()), 3777350)
 
-    def test_558_video_grouping_retains_order_and_two_tail_padding_entries(self):
-        paths = [Path(str(index)) for index in range(558)]
-        with patch.object(public_infer, 'frames_from_video', side_effect=lambda path: torch.tensor([int(path.name)])):
-            fields = list(public_infer.iter_video_fields(paths))
-        self.assertEqual(len(fields), 35)
-        self.assertEqual(len(fields[-1][0]), 14)
-        self.assertEqual(fields[-1][1][0, :, 0].tolist(), list(range(544, 558)) + [0, 1])
-        self.assertEqual([path for chunk, _ in fields for path in chunk], paths)
+    def test_normalized_rgb_groups_preserve_order_and_tail_padding(self):
+        first = np.empty((16, 4, 3, 448, 448), dtype=np.float16)
+        for index in range(16):
+            first[index].fill(index / 16)
+        last = np.full((2, 4, 3, 448, 448), .5, dtype=np.float16)
+        archive = {'rgb_0001': first, 'rgb_0002': last}
+        fields = list(public_infer.iter_rgb_fields(archive, [str(i) for i in range(18)]))
+        self.assertEqual([(start, count) for start, count, _ in fields], [(0, 16), (16, 2)])
+        self.assertEqual(fields[-1][2].shape, (1, 16, 4, 3, 448, 448))
+        self.assertEqual(fields[-1][2][0, 2:, 0, 0, 0, 0].tolist(),
+                         [index / 16 for index in range(14)])
 
-    def test_evaluation_csv_preserves_order_and_rejects_duplicate_ids(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            for name in ('a.mp4', 'b.mp4'):
-                (root / name).touch()
-            path = root / 'test.csv'
-            path.write_text('sample_id,video_path,mos\nb,b.mp4,20\na,a.mp4,10\n', encoding='utf-8')
-            rows, videos, targets = public_infer.read_evaluation_csv(path, root)
-            self.assertEqual([row['sample_id'] for row in rows], ['b', 'a'])
-            self.assertEqual([video.name for video in videos], ['b.mp4', 'a.mp4'])
-            self.assertEqual(targets.tolist(), [20, 10])
-            path.write_text('sample_id,video_path,mos\na,b.mp4,20\na,a.mp4,10\n', encoding='utf-8')
-            with self.assertRaises(ValueError):
-                public_infer.read_evaluation_csv(path, root)
+    def test_npz_metadata_preserves_order_and_rejects_duplicate_ids(self):
+        archive = {'format_version': np.array(1), 'sample_ids': np.array(['b', 'a']),
+                   'target_mos': np.array([20., 10.])}
+        sample_ids, targets = public_infer.read_input_metadata(archive)
+        self.assertEqual(sample_ids, ['b', 'a'])
+        self.assertEqual(targets.tolist(), [20., 10.])
+        archive['sample_ids'] = np.array(['a', 'a'])
+        with self.assertRaises(ValueError):
+            public_infer.read_input_metadata(archive)
 
-    def test_demo_subset_reads_only_requested_video_rows(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            (root / 'a.mp4').touch()
-            (root / 'b.mp4').touch()
-            path = root / 'test.csv'
-            path.write_text('sample_id,video_path,mos\na,a.mp4,10\nb,b.mp4,20\nc,absent.mp4,30\n', encoding='utf-8')
-            rows, videos, targets = public_infer.read_evaluation_csv(path, root, limit=2)
-            self.assertEqual([row['sample_id'] for row in rows], ['a', 'b'])
-            self.assertEqual([video.name for video in videos], ['a.mp4', 'b.mp4'])
-            self.assertEqual(targets.tolist(), [10, 20])
+    def test_normalized_rgb_storage_preserves_patch_projection_precision(self):
+        pixels = torch.arange(256).float()
+        original = ((pixels / 255 - .5) / .5).to(torch.bfloat16)
+        stored = original.to(torch.float16)
+        self.assertTrue(torch.equal(stored.to(torch.bfloat16), original))
+        self.assertTrue(torch.equal(((stored.float() + 1) * 127.5).round(), pixels))
+
+    def test_full_evaluation_scores_each_field_once_and_excludes_padding(self):
+        from LightGen2 import visualize
+
+        class CountingModel:
+            calls = 0
+
+            def __call__(self, *, normalized_rgb):
+                self.calls += 1
+                selected = torch.tensor([True, True, False, False]).expand(1, 16, 4)
+                probabilities = torch.full((1, 16, 4), .25)
+                return {'prediction': normalized_rgb[:, :, 0].float() + 1000 * self.calls,
+                        'routing': {'vision': {'selected': selected[:, :, None].expand(1, 16, 4, 4),
+                                               'probabilities': probabilities[:, :, None].expand(1, 16, 4, 4)},
+                                    'language': {'selected': selected, 'probabilities': probabilities}}}
+
+        model = CountingModel()
+        sample_ids = [str(index) for index in range(558)]
+        targets = np.arange(558)
+
+        def fields(archive, ids):
+            for start in range(0, len(ids), 16):
+                count = min(16, len(ids) - start)
+                indices = list(range(start, start + count)) + list(range(16 - count))
+                yield start, count, torch.tensor(indices)[None, :, None]
+
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(public_infer, 'iter_rgb_fields', side_effect=fields), \
+                patch.object(visualize, 'capture_optical_fields', side_effect=lambda model, pixels: (model(normalized_rgb=pixels), {})) as capture, \
+                patch.object(visualize, 'export_evaluation') as export, \
+                patch.object(visualize, 'export_visualizations') as fields:
+            records, metrics = public_infer.evaluate(model, {}, sample_ids, targets, 'cpu', directory,
+                                                    visualize_field=35)
+        self.assertEqual(model.calls, 35)
+        self.assertEqual(capture.call_count, 1)
+        self.assertEqual(len(records), 558)
+        self.assertEqual(metrics['tail_padding_videos'], 2)
+        self.assertFalse(metrics['padding_in_metrics'])
+        self.assertEqual([record['sample_id'] for record in records], sample_ids)
+        self.assertEqual(export.call_args.args[2]['vision']['selected'].shape[0], 558)
+        field_records = fields.call_args.args[1]
+        self.assertEqual(len(field_records), 16)
+        self.assertEqual(sum(record['is_padding'] for record in field_records), 2)
+        self.assertEqual([record['predicted_MOS'] for record in field_records[-2:]], [35000., 35001.])
 
 
 if __name__ == '__main__':

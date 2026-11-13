@@ -1,7 +1,7 @@
-"""Export complete vision and language masks and optical fields as NPZ and PNG."""
+"""Result plotting and field capture used by the complete infer.py evaluation."""
 from __future__ import annotations
 
-import argparse
+import csv
 from pathlib import Path
 
 import matplotlib
@@ -12,14 +12,6 @@ from matplotlib.colors import Normalize
 from matplotlib.patches import Rectangle
 import numpy as np
 import torch
-
-if __package__:
-    from .infer import PROJECT, iter_video_fields, read_evaluation_csv, save_predictions, videos_in_directory
-    from .model import load_lightgen2
-else:
-    from infer import PROJECT, iter_video_fields, read_evaluation_csv, save_predictions, videos_in_directory
-    from model import load_lightgen2
-
 
 BRANCHES = ('vision', 'language')
 EXPERT_COLORS = ('#6486a3', '#d4a478', '#8eaa93', '#b495b5')
@@ -69,7 +61,7 @@ def plot_field(array, path, title, *, phase=False, quantity='Intensity'):
     save_figure(figure, path)
 
 
-def capture_optical_fields(model, pixels):
+def capture_optical_fields(model, normalized_rgb):
     """Observe the actual forward without changing its tensors or operators."""
     captured = {branch: {} for branch in BRANCHES}
     handles = []
@@ -90,34 +82,34 @@ def capture_optical_fields(model, pixels):
         handles.append(stage.register_forward_pre_hook(capture_tokens(branch)))
         handles.append(stage.propagation.register_forward_hook(capture_propagation(branch)))
     try:
-        output = model(pixels=pixels)
+        output = model(normalized_rgb=normalized_rgb)
     finally:
         for handle in handles:
             handle.remove()
     return output, captured
 
 
-def plot_input_frames(pixels, output):
-    images = pixels[0].permute(0, 1, 3, 4, 2).cpu().numpy()
+def plot_input_frames(pixels, output, field_number, field_count):
+    images = ((pixels[0].float() + 1) * 127.5).round().clamp(0, 255).to(torch.uint8)
+    images = images.permute(0, 1, 3, 4, 2).cpu().numpy()
     figure, axes = plt.subplots(4, 4, figsize=(6.6, 7.0), layout='constrained')
     for slot, axis in enumerate(axes.flat):
         frames = images[slot, :, ::4, ::4]
         mosaic = np.concatenate((np.concatenate(frames[:2], 1),
                                  np.concatenate(frames[2:], 1)), 0)
         axis.imshow(mosaic)
-        axis.set_title(f'Slot {slot}')
+        axis.set_title(f'Slot {slot + 1}')
         axis.set_axis_off()
-    figure.suptitle('Sixteen input videos with four sampled frames each')
+    figure.suptitle(f'Field {field_number} of {field_count} with four frames per video')
     save_figure(figure, output)
 
 
-def export_routing(result, directory):
-    arrays = {}
+def export_routing(routing, records, directory):
+    arrays = {'sample_ids': np.asarray([record['sample_id'] for record in records])}
     figure, axes = plt.subplots(1, 2, figsize=(5.0, 2.1), layout='constrained')
     for branch, axis in zip(BRANCHES, axes):
-        routing = result['routing'][branch]
-        selected = routing['selected'].cpu().numpy()[0]
-        probabilities = routing['probabilities'].cpu().numpy()[0]
+        selected = routing[branch]['selected']
+        probabilities = routing[branch]['probabilities']
         counts = selected.reshape(-1, 4).sum(0)
         share = 100 * counts / counts.sum()
         arrays[branch + '_selected'] = selected
@@ -128,26 +120,64 @@ def export_routing(result, directory):
         axis.set_xticks(range(4), ['E1', 'E2', 'E3', 'E4'])
         axis.set_ylim(0, 60)
         axis.set_ylabel('Optical expert share (%)')
-        axis.set_title(branch.capitalize() + ' branch')
+        axis.set_title(branch.capitalize() + f' branch over {len(records)} videos')
         axis.spines[['top', 'right']].set_visible(False)
         for index, value in enumerate(share):
             axis.text(index, value + 1, f'{value:.1f}', ha='center')
-    np.savez_compressed(directory / 'optical_expert_share.npz', **arrays)
-    save_figure(figure, directory / 'optical_expert_share.png')
+    np.savez_compressed(directory / '07_optical_expert_share.npz', **arrays)
+    save_figure(figure, directory / '07_optical_expert_share.png')
+
+
+def write_records(path, records):
+    with path.open('w', encoding='utf-8', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(records[0]))
+        writer.writeheader()
+        writer.writerows(records)
+
+
+def export_evaluation(records, metrics, routing, directory):
+    """Save every actual video prediction and two whole-evaluation figures."""
+    configure_figures()
+    directory.mkdir(parents=True, exist_ok=True)
+    write_records(directory / '01_predictions.csv', records)
+    target = np.asarray([record['target_MOS'] for record in records])
+    prediction = np.asarray([record['predicted_MOS'] for record in records])
+    figure, axis = plt.subplots(figsize=(3.3, 3.1), layout='constrained')
+    axis.scatter(target, prediction, s=9, alpha=.6, color=EXPERT_COLORS[0], linewidths=0)
+    lower, upper = min(target.min(), prediction.min()), max(target.max(), prediction.max())
+    axis.plot([lower, upper], [lower, upper], color='#888888', linewidth=.7)
+    axis.set_xlabel('Human temporal MOS')
+    axis.set_ylabel('Predicted temporal MOS')
+    score = f"{metrics['SRCC']:.6f}" if metrics['SRCC'] is not None else 'undefined'
+    axis.set_title(f"{len(records)} videos with SRCC {score}")
+    axis.spines[['top', 'right']].set_visible(False)
+    save_figure(figure, directory / '03_prediction_vs_mos.png')
+    order = np.argsort(target, kind='stable')
+    figure, axis = plt.subplots(figsize=(5.3, 2.4), layout='constrained')
+    axis.plot(np.arange(len(records)) + 1, target[order], color='#444444', linewidth=1,
+              label='Human MOS')
+    axis.scatter(np.arange(len(records)) + 1, prediction[order], s=5, alpha=.55,
+                 color=EXPERT_COLORS[0], linewidths=0, label='Predicted MOS')
+    axis.set_xlabel('Videos ordered by human MOS')
+    axis.set_ylabel('Temporal MOS')
+    axis.set_title('Complete evaluation predictions')
+    axis.spines[['top', 'right']].set_visible(False)
+    axis.legend(frameon=False)
+    save_figure(figure, directory / '04_prediction_overview.png')
+    export_routing(routing, records, directory)
 
 
 @torch.inference_mode()
-def export_visualizations(model, video_paths, pixels, directory):
-    """Export one complete 16-video field and its per-video predictions."""
-    if len(video_paths) != 16 or tuple(pixels.shape[:3]) != (1, 16, 4):
+def export_visualizations(model, records, pixels, captured, directory, *, field_number, field_count):
+    """Export the field already captured during the complete evaluation."""
+    if len(records) != 16 or tuple(pixels.shape[:3]) != (1, 16, 4):
         raise ValueError('Visualizations require exactly 16 videos in one optical field')
     configure_figures()
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
-    result, captured = capture_optical_fields(model, pixels)
-    demo_root = PROJECT / 'demo_videos'
-    names = np.asarray([path.relative_to(demo_root).as_posix() if path.is_relative_to(demo_root)
-                        else path.name for path in map(Path, video_paths)])
+    names = np.asarray([record['sample_id'] for record in records])
+    valid = np.asarray([not record['is_padding'] for record in records])
+    write_records(directory / '05_visualized_field.csv', records)
     for branch in BRANCHES:
         stage = getattr(model, branch + '_global')
         record = captured[branch]
@@ -159,59 +189,36 @@ def export_visualizations(model, video_paths, pixels, directory):
         phase_map = np.zeros((518, 518), dtype=np.float32)
         for slot, (row, column) in enumerate(stage.origins):
             phase_map[row + 2:row + 113, column + 2:column + 113] = phase_tiles[slot]
-        prefix = directory / branch
-        np.savez_compressed(str(prefix) + '_mask.npz',
+        first_number = 8 if branch == 'vision' else 11
+        mask_prefix = directory / f'{first_number:02d}_{branch}_mask'
+        input_prefix = directory / f'{first_number + 1:02d}_{branch}_input_field'
+        output_prefix = directory / f'{first_number + 2:02d}_{branch}_output_field'
+        np.savez_compressed(str(mask_prefix) + '.npz',
                             phase=phase_map, phase_tiles=phase_tiles,
                             modulation=modulation[0].cpu().numpy(),
-                            slot_origins=np.asarray(stage.origins), video_names=names)
-        plot_field(phase_map, str(prefix) + '_mask.png', branch.capitalize() + ' phase mask', phase=True)
+                            slot_origins=np.asarray(stage.origins), video_names=names,
+                            valid=valid, field_number=field_number)
+        plot_field(phase_map, str(mask_prefix) + '.png', branch.capitalize() + ' phase mask', phase=True)
         input_field = incident[0].cpu().numpy()
         input_amplitude = np.abs(input_field)
         input_intensity = input_amplitude ** 2
         display_amplitude, input_scale = normalize_display(input_amplitude)
-        np.savez_compressed(str(prefix) + '_input_field.npz',
+        np.savez_compressed(str(input_prefix) + '.npz',
                             field=input_field, amplitude=input_amplitude, intensity=input_intensity,
                             display_amplitude=display_amplitude, display_scale=input_scale,
-                            modulated_field=record['modulated'][0].cpu().numpy(), video_names=names)
-        plot_field(display_amplitude, str(prefix) + '_input_field.png',
-                   branch.capitalize() + ' input field', quantity='Amplitude')
+                            modulated_field=record['modulated'][0].cpu().numpy(), video_names=names,
+                            valid=valid, field_number=field_number)
+        plot_field(display_amplitude, str(input_prefix) + '.png',
+                   branch.capitalize() + f' input field {field_number}', quantity='Amplitude')
         output_field = record['propagated'][0].cpu().numpy()
         output_intensity = record['propagated'].abs().square().float()[0].cpu().numpy()
         display_intensity, output_scale = normalize_display(output_intensity, percentile=99.8)
-        np.savez_compressed(str(prefix) + '_output_field.npz',
+        np.savez_compressed(str(output_prefix) + '.npz',
                             field=output_field, intensity=output_intensity,
                             display_intensity=display_intensity, display_scale=output_scale,
                             display_percentile=99.8,
-                            transfer=stage.propagation.transfer.cpu().numpy(), video_names=names)
-        plot_field(display_intensity, str(prefix) + '_output_field.png', branch.capitalize() + ' output field')
-    plot_input_frames(pixels, directory / 'input_frames.png')
-    export_routing(result, directory)
-    predictions = result['prediction'][0].cpu().tolist()
-    records = [{'video': name, 'field': 0, 'slot': slot, 'MOS': prediction}
-               for slot, (name, prediction) in enumerate(zip(names.tolist(), predictions))]
-    save_predictions(directory / 'predictions.json', records)
-    return records
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--weights', type=Path, default=PROJECT / 'weights/LightGen2.pt')
-    parser.add_argument('--video-dir', type=Path, help='Exactly sixteen videos in filename order')
-    parser.add_argument('--device', default='cpu')
-    parser.add_argument('--output', type=Path, default=PROJECT / 'outputs/visualizations')
-    args = parser.parse_args()
-    torch.set_num_threads(4)
-    if args.video_dir is None:
-        _, paths, _ = read_evaluation_csv(PROJECT / 'test_videos.csv', PROJECT / 'demo_videos', limit=16)
-    else:
-        paths = videos_in_directory(args.video_dir)
-    if len(paths) != 16:
-        raise ValueError('Supply a directory containing exactly 16 videos')
-    _, pixels = next(iter_video_fields(paths))
-    model, _ = load_lightgen2(args.weights, args.device)
-    export_visualizations(model, paths, pixels.to(args.device), args.output)
-    print('Saved vision and language NPZ/PNG files to ' + str(args.output))
-
-
-if __name__ == '__main__':
-    main()
+                            transfer=stage.propagation.transfer.cpu().numpy(), video_names=names,
+                            valid=valid, field_number=field_number)
+        plot_field(display_intensity, str(output_prefix) + '.png',
+                   branch.capitalize() + f' output field {field_number}')
+    plot_input_frames(pixels, directory / '06_input_frames.png', field_number, field_count)

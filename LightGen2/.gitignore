@@ -3,6 +3,5 @@ __pycache__/
 /outputs/
 /weights/
 /results/
-/demo_videos/
+/data/
 /README.docx
-/test_videos.csv

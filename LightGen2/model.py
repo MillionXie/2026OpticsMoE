@@ -62,10 +62,10 @@ class FrozenVisionFront(nn.Module):
     def forward(self, images):
         if not bool(self.ready):
             raise RuntimeError('Visual frontend weights have not been loaded')
-        if tuple(images.shape[-3:]) != (3, 448, 448) or images.dtype != torch.uint8:
-            raise ValueError('Expected uint8 RGB frames shaped [...,3,448,448]')
+        if tuple(images.shape[-3:]) != (3, 448, 448) or not images.is_floating_point():
+            raise ValueError('Expected normalized floating-point RGB frames shaped [...,3,448,448]')
         leading = images.shape[:-3]
-        rgb = (images.reshape(-1, 3, 448, 448).float() / 255.0 - 0.5) / 0.5
+        rgb = images.reshape(-1, 3, 448, 448)
         rgb = rgb.unsqueeze(2).expand(-1, -1, 2, -1, -1).to(self.patch_weight.dtype)
         hidden = F.conv3d(rgb, self.patch_weight, self.patch_bias, stride=(2, 16, 16))[:, :, 0]
         hidden = hidden.reshape(-1, 1024, 14, 2, 14, 2)
@@ -285,9 +285,9 @@ class LightGen2(nn.Module):
         return sequence, routing
 
     @torch.inference_mode()
-    def forward(self, pixels):
-        """Predict from uint8 RGB pixels shaped [batch,16,4,3,448,448]."""
-        visual_embeddings = self.vision_frontend(pixels)
+    def forward(self, normalized_rgb):
+        """Predict from normalized RGB shaped [batch,16,4,3,448,448]."""
+        visual_embeddings = self.vision_frontend(normalized_rgb)
         return self.predict_from_embeddings(visual_embeddings)
 
     @torch.inference_mode()

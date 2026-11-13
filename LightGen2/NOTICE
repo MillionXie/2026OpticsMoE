@@ -14,6 +14,7 @@ https://github.com/QwenLM/Qwen3-VL
 
 The upstream Apache-2.0 license is included in licenses/QWEN_LICENSE.txt.
 
-The evaluation sample identities and temporal MOS labels in test_videos.csv
-originate from the LGVQ dataset. Original videos are available from its authors.
+The normalized RGB frames, sample identities and temporal MOS labels in
+data/test_rgb.npz originate from the LGVQ dataset and retain the dataset
+authors' attribution and applicable dataset terms.
 https://github.com/zczhang-sjtu/UGVQ

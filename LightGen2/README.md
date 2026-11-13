@@ -1,11 +1,11 @@
 # LightGen2 temporal video quality inference
 
-LightGen2 predicts a mean opinion score (MOS) for each video. The numerical
-inference graph combines a frozen Qwen-derived visual frontend, electronic
-routers and linear experts, vision and language optical propagation, and a
-two-layer quality readout. Each optical field contains 16 videos.
+LightGen2 predicts a mean opinion score (MOS) for each video. The inference
+graph combines a frozen Qwen-derived visual frontend, electronic routers and
+linear experts, vision and language optical propagation, and a two-layer quality
+readout. Each coherent optical field contains 16 videos.
 
-The editable user guide is supplied as `README.docx` in the distribution.
+The editable detailed guide is supplied as `README.docx`.
 
 ## Installation
 
@@ -19,71 +19,61 @@ PyTorch 2.6 or later supports the checkpoint loader. For GPU inference, install
 a CUDA-enabled PyTorch build compatible with your driver. Figure export uses
 Arial, with 7 pt labels and 8 pt titles.
 
-## Sixteen video demo
+## Run the complete evaluation
 
-The distribution includes the first 16 TEST videos from `test_videos.csv` in
-`demo_videos`, with their original relative paths. One forward processes their
-64 sampled frames in a shared optical field.
-
-```bash
-python demo.py --device cpu
-```
-
-For a CUDA device, use the following command.
+The input archive `data/test_rgb.npz` contains preprocessed RGB frames for all
+558 original TEST videos, their ordered sample IDs and human temporal MOS labels.
+Start the complete evaluation from this directory.
 
 ```bash
-python demo.py --device cuda
+python infer.py
 ```
 
-The demo writes predictions, complete phase masks, and input/output optical
-fields to `outputs/demo`. Numerical arrays use NPZ and figures use PNG.
-The bundled `results` directory contains reference outputs from the same demo.
-Video identities and temporal MOS labels are recorded in `test_videos.csv`.
+The command selects CUDA when available and otherwise uses CPU. Select a device
+explicitly with `python infer.py --device cuda` or `python infer.py --device cpu`.
+Predictions, metrics and figures are written to `results`.
 
-## Your own videos
+The 558 distinct videos are processed in 35 ordered optical fields. Fields 1–34
+contain 544 distinct videos. Field 35 contains the remaining 14 videos and two
+padding entries copied from videos 1 and 2. SRCC uses exactly the 558 actual
+video predictions and labels. The normalized-RGB reference SRCC is 0.798898.
+The evaluation split was used in checkpoint selection.
+
+The complete reference program took 23.216 seconds on an NVIDIA GeForce RTX
+4070 Laptop GPU. This covers imports, model loading, all 558 inputs, prediction,
+metrics and result/figure export. The measured total is saved after inference
+as `total_runtime_seconds` in `02_metrics.json`. Runtime varies with hardware
+and filesystem performance.
+
+The same run captures field 1 while computing its predictions and exports its
+input frames, complete masks, and optical input/output fields. Choose another
+field with the following command. Field numbers range from 1 to 35.
 
 ```bash
-python infer.py --video-dir path/to/videos --device cuda --output outputs/predictions.json
+python infer.py --visualize-field 12
 ```
 
-Videos in a directory are sorted by filename. Supply an explicit list to control
-their order.
+Every invocation evaluates all samples in the input NPZ. The selected field's slots
+are linked to video IDs, predictions and padding flags in `05_visualized_field.csv`.
+Expert-share statistics cover all 558 actual videos. Whole-canvas coherent
+propagation couples the slots, so preserve sample order and field composition.
+
+Before packaging, each video contributes four RGB frames sampled at 10% to 90%
+of its frame range. Frames are center-cropped to 65% of their shorter side,
+resized to 448 × 448, and normalized by `(RGB / 255 - 0.5) / 0.5`.
+The archive stores these normalized frames in float16 at the bfloat16 precision
+used by the frozen patch projection. This preserves its original inputs exactly.
+Patch projection, position addition, fixed pooling and the remaining network
+are executed by the inference code. Higher MOS indicates better predicted quality.
+
+Select another compatible normalized RGB archive or result directory with
+the following arguments.
 
 ```bash
-python infer.py --videos video_a.mp4 video_b.mp4 --device cpu --output outputs/predictions.json
+python infer.py --input path/to/test_rgb.npz --output path/to/results
 ```
-
-Inputs are grouped into 16-video fields in order. The last field is padded
-cyclically from the beginning of the supplied list. Predictions are returned
-only for the supplied videos. Optical propagation couples the field, so keep
-video order, grouping and padding fixed when comparing results.
-
-Each video is sampled at four positions from 10% to 90% of its frame range.
-Each frame is center-cropped to 65% of its shorter side and resized to 448 × 448.
-The model returns one MOS per video. Higher values indicate better predicted
-temporal quality. The bundled checkpoint includes the prompt and grade-score
-tensors needed for this task.
-
-## Full evaluation
-
-The supplied `test_videos.csv` records the order, relative video paths and
-temporal MOS labels of the 558-video evaluation. Obtain the original videos
-from the dataset authors and point `--video-root` to the directory containing
-their generator subdirectories. [LGVQ dataset](https://github.com/zczhang-sjtu/UGVQ)
-
-```bash
-python infer.py --evaluation-csv test_videos.csv --video-root path/to/LGVQ/videos --device cpu --output outputs/test.json
-```
-
-The same forward processes 35 fields of 16 videos. The final field contains 14
-actual videos and two cyclic padding entries. The JSON contains 558 predictions
-and the overall SRCC calculated against their temporal MOS labels. The reference
-pixel-input result is approximately 0.7989. The evaluation split was used in
-checkpoint selection. Keep the CSV order to reproduce this field composition.
 
 ## Vision and language branches
-
-The names in the code follow the two branches.
 
 | Component | Processing |
 | --- | --- |
@@ -98,68 +88,69 @@ The names in the code follow the two branches.
 | `readout` | 42 × 96 features to five grade probabilities and their MOS expectation |
 
 Both optical branches use a 518 × 518 canvas with a 478 × 478 active area.
-Sixteen videos occupy a 4 × 4 arrangement. Within each vision slot, the four
-frames occupy a 2 × 2 arrangement. The language branch uses one patch per video.
+Sixteen videos occupy a 4 × 4 arrangement. Within each vision slot, four frames
+occupy a 2 × 2 arrangement. Language uses one patch per video.
 
-`LightGen2.forward(pixels)` accepts uint8 RGB data of shape
-`[batch, 16, 4, 3, 448, 448]`. The separate
-`predict_from_embeddings(visual_embeddings)` method accepts saved frontend
-outputs of shape `[batch, 16, 4, 49, 1024]`.
+`LightGen2.forward(normalized_rgb)` accepts floating-point normalized RGB with shape
+`[batch, 16, 4, 3, 448, 448]`. `predict_from_embeddings(visual_embeddings)`
+accepts saved frontend outputs with shape `[batch, 16, 4, 49, 1024]`.
 
-## Optical arrays and figures
+## Read the results in numbered order
 
-To export one 16-video field from a directory, run the following command.
-
-```bash
-python visualize.py --video-dir path/to/16_videos --device cuda --output outputs/fields
-```
-
-| Files in each branch | Contents |
+| Result files | Contents |
 | --- | --- |
-| `vision_mask.npz`, `language_mask.npz` | Complete phase map, all 16 phase tiles and actual complex modulation |
-| `vision_input_field.npz`, `language_input_field.npz` | Incident complex field, amplitude, intensity and modulated input to propagation |
-| `vision_output_field.npz`, `language_output_field.npz` | Propagated complex field, detected intensity and propagation transfer function |
-| Same stems with `.png` | Matching full-canvas visualizations |
-| `input_frames.png` | The four sampled frames from all 16 videos |
-| `optical_expert_share.npz`, `optical_expert_share.png` | Top2 selections and shares for this demonstration batch |
-| `predictions.json` | Video filename, field index, zero-based slot and MOS |
+| `01_predictions.csv` | All 558 video IDs, field/slot numbers, human MOS and predicted MOS |
+| `02_metrics.json` | SRCC, distinct input counts, field/padding counts and complete program runtime |
+| `03_prediction_vs_mos.png` | Predicted versus human MOS for all 558 videos |
+| `04_prediction_overview.png` | All predictions ordered by human MOS for display |
+| `05_visualized_field.csv` | Sixteen captured slots, IDs, predictions and padding flags |
+| `06_input_frames.png` | Four sampled frames from each captured slot |
+| `07_optical_expert_share.npz` and `.png` | Expert selections, probabilities and shares over 558 actual videos |
+| `08_vision_mask.npz` and `.png` | Complete phase map, sixteen phase tiles and complex modulation |
+| `09_vision_input_field.npz` and `.png` | Incident field, amplitude, intensity and modulated field |
+| `10_vision_output_field.npz` and `.png` | Propagated field, intensity and propagation transfer |
+| `11_language_mask.npz` and `.png` | Complete language phase map and modulation |
+| `12_language_input_field.npz` and `.png` | Language incident field and modulated field |
+| `13_language_output_field.npz` and `.png` | Language propagated field, intensity and transfer |
 
-Complex fields are stored as `complex64`. Phase and intensity arrays are
-`float32`. NPZ files load with `numpy.load(path, allow_pickle=False)`.
-Phase plots use a linear scale from −π to π. Input plots show field amplitude
-with peak normalization. Output plots show native-pixel detector intensity,
-scaled linearly using its 99.8th percentile as the display upper limit. The
-brightest 0.2% of output pixels saturate in the displayed color scale. Cyan
-outlines mark the 478 × 478 active area.
+CSV field and slot numbers start at 1. Each optical NPZ includes its
+`field_number`, sixteen `video_names` and a `valid` mask. Expert-share arrays
+contain 558 sample IDs and exclude padding. The overview figure sorts values
+for display after inference. Evaluation follows the original NPZ sample order.
 
-Input archives include `display_amplitude` and its `display_scale`. Output
-archives include `display_intensity`, `display_scale` and `display_percentile`.
-Display arrays have shape 518 × 518 and use a linear [0, 1] color scale.
-The `field`, `amplitude` and `intensity` keys store the original numerical arrays.
+Complex fields use `complex64`. Phase and intensity use `float32`. Load NPZ
+files with `numpy.load(path, allow_pickle=False)`. Phase plots use a linear
+−π to π scale. Input amplitude is peak-normalized for display. Output detector
+intensity is scaled linearly by its 99.8th percentile. The brightest 0.2% of
+output pixels saturate in the displayed color scale. Cyan outlines mark the
+478 × 478 active area.
+
+Input NPZ files store `display_amplitude` and `display_scale`. Output NPZ files
+store `display_intensity`, `display_scale` and `display_percentile`. Display
+arrays use a linear [0, 1] scale. The `field`, `amplitude` and `intensity` keys
+retain the original numerical arrays at 518 × 518 resolution.
 
 ## Files
 
 | Path | Purpose |
 | --- | --- |
-| `model.py` | Network layers, wave propagation and checkpoint loader |
-| `infer.py` | Video decoding, input grouping and prediction |
-| `demo.py` | Sixteen-video demonstration using the first evaluation batch |
-| `visualize.py` | Actual-forward field capture and NPZ/PNG export |
-| `weights/LightGen2.pt` | Standalone weights, configuration and frozen frontend tensors |
-| `demo_videos` | First sixteen TEST videos with their dataset-relative paths |
-| `test_videos.csv` | Ordered 558-video evaluation list and temporal MOS labels |
-| `results` | Reference predictions, optical arrays and figures |
+| `model.py` | Network layers, optical propagation and checkpoint loader |
+| `infer.py` | Complete NPZ evaluation entry point, grouping and metrics |
+| `visualize.py` | Plotting and actual-forward field capture called by `infer.py` |
+| `weights/LightGen2.pt` | Weights, configuration and frozen frontend tensors |
+| `data/test_rgb.npz` | Normalized RGB for all 558 videos, sample IDs and temporal MOS labels |
+| `results` | Full predictions, evaluation plots and selected-field NPZ/PNG files |
 | `README.docx` | Editable installation, architecture and file-format guide |
-| `requirements.txt` | Inference and visualization dependencies |
+| `requirements.txt` | Combined inference and visualization dependencies |
 | `LICENSE`, `NOTICE`, `licenses` | Apache-2.0 terms and Qwen attribution |
 
 ## License
 
-The source and LightGen2 weights are distributed under Apache-2.0. The frozen
-Qwen components retain their upstream attribution. The demo videos and
-evaluation labels originate from LGVQ and retain attribution to their authors.
-See `NOTICE` and `licenses/QWEN_LICENSE.txt`.
+The source and LightGen2 weights are distributed under Apache-2.0. Qwen
+components retain their upstream attribution. LGVQ videos and evaluation labels
+retain their authors' attribution and applicable dataset terms. See `NOTICE`
+and `licenses/QWEN_LICENSE.txt`. [LGVQ dataset](https://github.com/zczhang-sjtu/UGVQ)
 
-The upstream visual components originate from Qwen3-VL-2B-Instruct.
+Upstream components originate from Qwen3-VL-2B-Instruct.
 [Qwen model](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct),
 [Qwen source](https://github.com/QwenLM/Qwen3-VL).
