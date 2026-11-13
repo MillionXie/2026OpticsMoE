@@ -39,6 +39,18 @@ def save_figure(figure, path):
     plt.close(figure)
 
 
+def normalize_display(array):
+    """Normalize one complete display array by its own peak."""
+    scale = np.float32(max(float(array.max()), 1e-12))
+    return (array / scale).astype(np.float32), scale
+
+
+def average_display_pixels(array):
+    """Average non-overlapping 2 by 2 pixels for the labeled display view."""
+    height, width = array.shape
+    return array.reshape(height // 2, 2, width // 2, 2).mean((1, 3))
+
+
 def plot_field(array, path, title, *, phase=False, quantity='Intensity'):
     figure, axis = plt.subplots(figsize=(3.2, 3.0), layout='constrained')
     if phase:
@@ -47,16 +59,41 @@ def plot_field(array, path, title, *, phase=False, quantity='Intensity'):
         colorbar.set_ticks([-np.pi, 0, np.pi], labels=['−π', '0', 'π'])
         colorbar.set_label('Phase (rad)')
     else:
-        norm = Normalize(vmin=0, vmax=max(float(array.max()), 1e-12))
-        image = axis.imshow(array, cmap='inferno', norm=norm)
+        image = axis.imshow(array, cmap='inferno', norm=Normalize(0, 1),
+                            interpolation='nearest', resample=False,
+                            extent=(-.5, 517.5, 517.5, -.5))
         colorbar = figure.colorbar(image, ax=axis, shrink=.68, pad=.035, fraction=.045)
-        colorbar.set_label(quantity + ' (a.u.)')
+        colorbar.set_label('Normalized ' + quantity.lower())
     axis.set_title(title)
     axis.set_xlabel('x (pixel)')
     axis.set_ylabel('y (pixel)')
     axis.set_xticks([0, 259, 517])
     axis.set_yticks([0, 259, 517])
     save_figure(figure, path)
+
+
+def plot_vision_detail(intensity, origin, path):
+    """Show native pixels beside the explicitly labeled display average."""
+    row, column = origin
+    region = intensity[row:row + 56, column:column + 56]
+    native, native_scale = normalize_display(region)
+    averaged, averaged_scale = normalize_display(average_display_pixels(region))
+    figure, axes = plt.subplots(1, 2, figsize=(5.2, 2.7), layout='constrained')
+    for axis, array, title in zip(axes, (native, averaged), ('Native pixels', '2 × 2 display average')):
+        image = axis.imshow(array, cmap='inferno', vmin=0, vmax=1,
+                            interpolation='nearest', resample=False,
+                            extent=(-.5, 55.5, 55.5, -.5))
+        axis.set_title(title)
+        axis.set_xlabel('x within region (pixel)')
+        axis.set_ylabel('y within region (pixel)')
+        axis.set_xticks([0, 28, 55])
+        axis.set_yticks([0, 28, 55])
+    colorbar = figure.colorbar(image, ax=axes, shrink=.65, fraction=.035, pad=.025)
+    colorbar.set_label('Normalized intensity')
+    figure.suptitle('Vision output detail · slot 0, frame 0')
+    save_figure(figure, path)
+    return {'detail_region': np.asarray([row, column, 56, 56]),
+            'detail_scales': np.asarray([native_scale, averaged_scale])}
 
 
 def capture_optical_fields(model, pixels):
@@ -156,17 +193,32 @@ def export_visualizations(model, video_paths, pixels, directory):
         input_field = incident[0].cpu().numpy()
         input_amplitude = np.abs(input_field)
         input_intensity = input_amplitude ** 2
+        display_amplitude, input_scale = normalize_display(input_amplitude)
         np.savez_compressed(str(prefix) + '_input_field.npz',
                             field=input_field, amplitude=input_amplitude, intensity=input_intensity,
+                            display_amplitude=display_amplitude, display_scale=input_scale,
                             modulated_field=record['modulated'][0].cpu().numpy(), video_names=names)
-        plot_field(input_amplitude, str(prefix) + '_input_field.png',
+        plot_field(display_amplitude, str(prefix) + '_input_field.png',
                    branch.capitalize() + ' input field', quantity='Amplitude')
         output_field = record['propagated'][0].cpu().numpy()
         output_intensity = record['propagated'].abs().square().float()[0].cpu().numpy()
+        display_source = output_intensity
+        title = branch.capitalize() + ' output field'
+        detail = {}
+        bin_size = 1
+        if branch == 'vision':
+            display_source = average_display_pixels(output_intensity)
+            title += ' · 2 × 2 display average'
+            bin_size = 2
+            detail = plot_vision_detail(output_intensity, stage.origins[0],
+                                        directory / 'vision_output_detail.png')
+        display_intensity, output_scale = normalize_display(display_source)
         np.savez_compressed(str(prefix) + '_output_field.npz',
                             field=output_field, intensity=output_intensity,
+                            display_intensity=display_intensity, display_scale=output_scale,
+                            display_bin_size=bin_size, **detail,
                             transfer=stage.propagation.transfer.cpu().numpy(), video_names=names)
-        plot_field(output_intensity, str(prefix) + '_output_field.png', branch.capitalize() + ' output field')
+        plot_field(display_intensity, str(prefix) + '_output_field.png', title)
     plot_input_frames(pixels, directory / 'input_frames.png')
     export_routing(result, directory)
     predictions = result['prediction'][0].cpu().tolist()

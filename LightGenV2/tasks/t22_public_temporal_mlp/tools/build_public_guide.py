@@ -244,6 +244,7 @@ def build_guide():
         ('input_frames.png', 'All sixteen videos and the four sampled frames from each'),
         ('optical_expert_share.npz and .png', 'Selections, softmax probabilities, counts and selection shares for this sixteen-video demo'),
         ('predictions.json', 'One filename, field index, zero-based slot and MOS per video'),
+        ('vision_output_detail.png', 'Native pixels and a labeled 2 × 2 display average of the first vision detector region'),
     ], [2.5, 4.25])
     paragraph(document, 'Numerical optical files and their figures share the same stem. The masks '
               'use the complete 518 × 518 canvas. NPZ filenames and embedded video_names arrays '
@@ -268,10 +269,24 @@ def build_guide():
               'detector normalization. Its intensity is the squared field magnitude.')
     code(document, "import numpy as np\nmask = np.load('results/vision_mask.npz', allow_pickle=False)\nsource = np.load('results/vision_input_field.npz', allow_pickle=False)\ntarget = np.load('results/vision_output_field.npz', allow_pickle=False)\nmodulated = source['field'] * mask['modulation']\nnp.testing.assert_allclose(modulated, source['modulated_field'], rtol=1e-6)\nreplayed = np.fft.ifft2(np.fft.fft2(modulated) * target['transfer'])")
     paragraph(document, 'Phase figures use a linear −π to π color scale. Input figures show '
-              'field amplitude and output figures show detected intensity, both on linear '
-              'color scales from zero to the maximum value in each field. '
+              'field amplitude and output figures show detected intensity. Each complete input '
+              'and output view is independently peak-normalized to [0, 1] on a linear color scale. '
               'Expert share is the fraction of '
               'Top2 selection events assigned to each expert in the displayed demo batch.')
+    paragraph(document, 'The vision output figure uses a labeled 2 × 2 display average to reduce '
+              'fine-scale rendering artifacts. It averages adjacent intensity pixels before '
+              'peak normalization. The detail figure compares native pixels with this display '
+              'average, with each panel normalized by its own peak. Its region is the first '
+              '56 × 56 detector window at slot 0, frame 0.')
+    paragraph(document, 'Input archives also contain display_amplitude [518,518] and display_scale. '
+              'Output archives contain display_intensity, display_scale and display_bin_size. '
+              'The vision display array has shape [259,259] and bin size 2. The language display '
+              'array has shape [518,518] and bin size 1. The original field and intensity arrays '
+              'retain shape [518,518]. Multiplying a display array by its scale recovers the '
+              'corresponding amplitude or averaged intensity. The vision archive records '
+              'detail_region as [y, x, height, width] and the native/averaged detail_scales.')
+
+    page(document, 'Custom inference and full evaluation')
     code(document, 'python infer.py --video-dir path/to/videos --device cuda\npython visualize.py --video-dir path/to/16_videos --device cuda')
     paragraph(document, 'Directory inputs are sorted by filename and include MP4, MOV, AVI and MKV. '
               'For an explicit order, use --videos followed by the paths with infer.py. '
@@ -291,8 +306,12 @@ def build_guide():
               'provided in NOTICE and licenses/QWEN_LICENSE.txt.')
     paragraph(document, 'The evaluation identities and temporal MOS labels originate from LGVQ. '
               'Original videos are available through github.com/zczhang-sjtu/UGVQ.')
+    item = document.add_paragraph()
+    item.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    picture = item.add_run().add_picture(str(PUBLIC / 'results/vision_output_detail.png'), width=Inches(6.1))
+    picture._inline.docPr.set('descr', 'Native and display-averaged vision detector pixels')
 
-    page(document, 'Complete phase and optical field examples')
+    page(document, 'Complete phase and normalized optical fields')
     paragraph(document, 'These panels show all sixteen video slots from the bundled demonstration. '
               'Their paired NPZ files contain the exact numerical arrays used for the figures.')
     for kind in ('mask', 'input_field', 'output_field'):

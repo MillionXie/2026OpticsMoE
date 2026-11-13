@@ -123,12 +123,21 @@ python visualize.py --video-dir path/to/16_videos --device cuda --output outputs
 | `input_frames.png` | The four sampled frames from all 16 videos |
 | `optical_expert_share.npz`, `optical_expert_share.png` | Top2 selections and shares for this demonstration batch |
 | `predictions.json` | Video filename, field index, zero-based slot and MOS |
+| `vision_output_detail.png` | Native detector pixels and a labeled 2 × 2 display average of the first region |
 
 Complex fields are stored as `complex64`. Phase and intensity arrays are
 `float32`. NPZ files load with `numpy.load(path, allow_pickle=False)`.
 Phase plots use a linear scale from −π to π. Input plots show field amplitude
-and output plots show detected intensity. Both use a linear color scale from
-zero to the maximum value in each field.
+and output plots show detected intensity, independently peak-normalized to
+[0, 1]. The vision output display averages adjacent 2 × 2 intensity pixels to
+reduce fine-scale rendering artifacts. Its title identifies this display
+average. The detail figure shows native pixels beside the averaged view.
+
+Input archives include `display_amplitude` and its `display_scale`. Output
+archives include `display_intensity`, `display_scale` and `display_bin_size`.
+The vision display array is 259 × 259 and the language display array is
+518 × 518. The `field`, `amplitude` and `intensity` keys store the original
+518 × 518 arrays used to derive these views.
 
 ## Files
 
