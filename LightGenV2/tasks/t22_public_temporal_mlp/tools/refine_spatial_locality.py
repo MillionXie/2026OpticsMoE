@@ -182,7 +182,7 @@ def train(args):
     np.savez_compressed(args.out / 'source_to_detector_test.npz', **arrays)
     write(args.out / 'phase_statistics.json', {name: phase_statistics(getattr(selected, name))
           for name in ('frame_global', 'video_global')})
-    save_checkpoint(args.out / 'LightGen.pt', selected.checkpoint(**metadata,
+    save_checkpoint(args.out / 'best_checkpoint.pt', selected.checkpoint(**metadata,
                     epoch=selected_metadata['epoch'], metrics=final, spatial_test=spatial))
     write(args.out / 'status.json', {'state': 'completed', 'best_epoch': selected_metadata['epoch'],
           'SRCC': final['srcc'], 'spatial': spatial, 'elapsed_seconds': time.monotonic() - started})
