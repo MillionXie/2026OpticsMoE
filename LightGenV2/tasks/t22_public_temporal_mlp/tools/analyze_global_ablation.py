@@ -77,7 +77,7 @@ def main():
     parser.add_argument('--paths',type=Path,required=True)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--seeds',type=int,nargs='+',default=list(range(7100,7110)))
-    parser.add_argument('--kinds',nargs='+',choices=['bypass','random_phase','random_raw_phase','random_global','random_global_default'],
+    parser.add_argument('--kinds',nargs='+',choices=['bypass','identity_propagation','random_phase','random_raw_phase','random_global','random_global_default'],
                         default=None)
     parser.add_argument('--device',default='cpu')
     parser.add_argument('--allow-shared-gpu',action='store_true')
@@ -108,13 +108,16 @@ def main():
         raise ValueError('Reference differs from the selected checkpoint')
     for kind in kinds:
         for stage_label,names in STAGES.items():
-            for seed in ([None] if kind=='bypass' else args.seeds):
+            for seed in ([None] if kind in ('bypass','identity_propagation') else args.seeds):
                 identities={}
                 with ExitStack() as stack:
                     for name in names:
                         stage=getattr(model,name)
                         if kind=='bypass':
                             stack.enter_context(patch.object(stage,'forward',identity_global))
+                            continue
+                        if kind=='identity_propagation':
+                            stack.enter_context(patch.object(stage.propagation,'forward',lambda field:field))
                             continue
                         stage_index=('frame_global','video_global').index(name)
                         generator=torch.Generator().manual_seed(seed+1000*stage_index)
@@ -164,6 +167,7 @@ def main():
         'checkpoint_sha256':sha256(args.weights),'model_state_sha256':original,
         'trained_parameters_modified':False,'retraining':False,'seeds':args.seeds,
         'bypass':'identity on the entire GlobalStage input/output token tensor',
+        'identity_propagation':'identity complex-field propagation with modulation, encoding, detection and readout retained',
         'random_phase':'independent uniform physical phase in [0,2*pi), all learned mappings retained',
         'random_raw_phase':'raw phase N(0,0.25^2), followed by the original 2*pi*sigmoid(raw)',
         'random_global':'default constructor initialization of GlobalStage mappings/readout plus uniform physical phase',
