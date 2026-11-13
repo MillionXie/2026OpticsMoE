@@ -100,9 +100,8 @@ def audit_spatial_locality(model, payload, device, *, split='test', field_count=
     chosen = np.unique(np.linspace(0, len(indices) - 1, min(field_count, len(indices))).astype(int))
     matrices = {name: torch.zeros(16, 16, dtype=torch.float64) for name in STAGES}
     counts = torch.zeros(16, dtype=torch.float64)
-    totals = {name: {key: 0. for key in ('foreign_fraction', 'own_fraction', 'guard_fraction', 'filter_transmission', 'dark_source_fraction')}
-              for name in STAGES}
-    per_video = {name: {key: [] for key in ('fractions', *totals[name])} for name in STAGES}
+    measures = ('foreign_fraction', 'own_fraction', 'guard_fraction', 'filter_transmission', 'dark_source_fraction')
+    per_video = {name: {key: [] for key in ('fractions', *measures)} for name in STAGES}
     sample_ids = []
     model.eval()
     with capture_modulated_fields(model) as captured:
@@ -119,8 +118,6 @@ def audit_spatial_locality(model, payload, device, *, split='test', field_count=
                     matrices[name][slots] += response['fractions'][0].cpu().double() * keep[slots, None]
                     for key in per_video[name]:
                         per_video[name][key].append(response[key][0].cpu().double()[keep[slots]])
-                    for key in totals[name]:
-                        totals[name][key] += float(response[key][0][keep[slots].to(device)].sum())
     summary = {'split': split, 'fields': chosen.tolist(), 'videos': len(sample_ids),
                'definition': 'Single-video illumination across the full canvas with the trained modulation and propagation'}
     arrays = {'sample_ids': np.asarray(sample_ids)}
@@ -129,7 +126,7 @@ def audit_spatial_locality(model, payload, device, *, split='test', field_count=
         arrays[name + '_source_to_detector_fraction'] = matrix.numpy()
         for key, values in per_video[name].items():
             arrays[name + '_per_video_' + key] = torch.cat(values).numpy()
-        summary[name] = {key: float(arrays[name + '_per_video_' + key].mean()) for key in totals[name]}
+        summary[name] = {key: float(arrays[name + '_per_video_' + key].mean()) for key in measures}
         summary[name]['maximum_source_foreign_fraction'] = float((matrix.sum(-1) - matrix.diagonal()).max())
         summary[name]['maximum_video_foreign_fraction'] = float(arrays[name + '_per_video_foreign_fraction'].max())
     return summary, arrays
@@ -145,10 +142,13 @@ def main():
     parser.add_argument('--fields', type=int, default=8)
     args = parser.parse_args()
     torch.set_num_threads(4)
+    checkpoint_hash = sha256(args.weights)
     model, _ = load_lightgen(args.weights, args.device)
     payload = load_inputs(json.loads(args.paths.read_text('utf-8')))
     summary, arrays = audit_spatial_locality(model, payload, args.device, split=args.split, field_count=args.fields)
-    summary['checkpoint_sha256'] = sha256(args.weights)
+    if sha256(args.weights) != checkpoint_hash:
+        raise ValueError('Checkpoint changed during the spatial audit')
+    summary['checkpoint_sha256'] = checkpoint_hash
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=_paths.ROOT, text=True).strip()
     summary['source_commit'] = os.environ.get('LIGHTGEN_SOURCE_COMMIT', head)
     summary['checkout_HEAD'] = head

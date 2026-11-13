@@ -4,7 +4,7 @@ import unittest
 import torch
 
 from ..model import ModelConfig, Propagation
-from ..tools.spatial_locality import isolated_video_response
+from ..tools.spatial_locality import isolated_video_response, audit_spatial_locality
 
 
 class SpatialLocalityTests(unittest.TestCase):
@@ -38,6 +38,29 @@ class SpatialLocalityTests(unittest.TestCase):
         self.assertEqual(float(response['dark_source_fraction'].item()), 1.)
         self.assertEqual(float(response['guard_fraction'].item()), 0.)
         self.assertEqual(float(response['filter_transmission'].item()), 0.)
+
+    def test_per_video_audit_arrays_keep_ids_and_exclude_padding(self):
+        stage = self.make_stage(torch.nn.Identity())
+
+        class PointModel(torch.nn.Module):
+            frame_global = stage
+            video_global = stage
+
+            def forward(self, tokens):
+                field = torch.zeros(len(tokens), 518, 518, dtype=torch.complex64)
+                for row, column in stage.origins:
+                    field[:, row + 30, column + 30] = 1
+                self.frame_global.propagation(field)
+                self.video_global.propagation(field)
+
+        payload = {'ids': [str(index) for index in range(18)], 'splits': ['test'] * 18,
+                   'vision': torch.zeros(18, 1), 'target': torch.zeros(18)}
+        summary, arrays = audit_spatial_locality(PointModel(), payload, 'cpu', field_count=2)
+        self.assertEqual(summary['videos'], 18)
+        self.assertEqual(arrays['sample_ids'].tolist(), payload['ids'])
+        self.assertEqual(arrays['vision_per_video_fractions'].shape, (18, 16))
+        self.assertEqual(arrays['language_per_video_foreign_fraction'].shape, (18,))
+        self.assertEqual(summary['vision']['foreign_fraction'], 0.)
 
 
 if __name__ == '__main__':
