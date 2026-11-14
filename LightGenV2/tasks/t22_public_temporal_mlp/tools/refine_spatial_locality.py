@@ -23,6 +23,7 @@ if __package__:
     from .run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from .spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from .training_policy import restrict_training_to
+    from .optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from ..model import load_lightgen
 else:
     import _paths
@@ -31,6 +32,7 @@ else:
     from run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from training_policy import restrict_training_to
+    from optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from model import load_lightgen
 
 
@@ -162,12 +164,15 @@ def train(args):
         model.eval()
         indices, valid = groups(payload, 'train', config['seed'] + epoch)
         losses, spatial_values = [], []
-        with capture_modulated_fields(model) as captured:
+        illumination_weight = config.get('illumination_weight', 0.)
+        with capture_modulated_fields(model, include_incident=illumination_weight > 0) as captured:
             for step, start in enumerate(range(0, len(indices), config['batch_fields'])):
                 item = batch(payload, indices[start:start + config['batch_fields']],
                              valid[start:start + config['batch_fields']], args.device)
                 optimizer.zero_grad(set_to_none=True)
-                result = model(item['vision'])
+                condition = registration_condition(config.get('registration_shift_pixels', 0))
+                with registered_optics(model, condition):
+                    result = model(item['vision'])
                 keep = item['valid']
                 target = ((item['target'] - model.target_mean) / model.target_std)[keep]
                 prediction = result['normalized_prediction'][keep]
@@ -182,10 +187,14 @@ def train(args):
                                               guard_weight=config.get('spatial_guard_weight', 0.),
                                               foreign_threshold=config.get('spatial_foreign_threshold', 0.))
                 loss = loss + config['spatial_weight'] * local
+                if illumination_weight:
+                    coverage = illumination_coverage_loss(captured, keep, config['minimum_illumination_fractions'])
+                    loss = loss + illumination_weight * coverage
                 regularization, _ = router_regularization(result['routing'], keep)
                 loss = loss + config['router_importance_weight'] * regularization['importance']
                 phase_terms = model_phase_penalties(model)
                 loss = loss + config['phase_curvature_weight'] * phase_terms['curvature']
+                loss = loss + config.get('phase_slope_weight', 0.) * phase_terms['slope']
                 anchor = torch.stack([(1 - (stage.phase() - initial).cos()).mean()
                                       for stage, initial in zip((model.frame_global, model.video_global), anchors)]).mean()
                 loss = loss + config['phase_anchor_weight'] * anchor

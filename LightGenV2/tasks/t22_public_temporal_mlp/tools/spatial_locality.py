@@ -27,7 +27,7 @@ STAGES = {'vision': 'frame_global', 'language': 'video_global'}
 
 
 @contextmanager
-def capture_modulated_fields(model):
+def capture_modulated_fields(model, *, include_incident=False):
     """Retain the two actual full-field propagation inputs, including gradients."""
     captured = {}
     handles = []
@@ -40,6 +40,10 @@ def capture_modulated_fields(model):
     for name, attribute in STAGES.items():
         stage = getattr(model, attribute)
         handles.append(stage.propagation.register_forward_pre_hook(hook(name)))
+        if include_incident:
+            def incident_hook(module, arguments, branch=name):
+                captured[branch + '_incident'] = module.fields(arguments[0])
+            handles.append(stage.register_forward_pre_hook(incident_hook))
     try:
         yield captured
     finally:

@@ -1,0 +1,78 @@
+{
+  "experiment": "phase_coverage_20261114",
+  "description": "Additional raw-zero mask candidate using existing geometry, a 1% cross-video target and registration augmentation",
+  "base": {
+    "seed": 815,
+    "batch_fields": 2,
+    "eval_batch_fields": 2,
+    "eval_interval": 5,
+    "audit_train_fields": 8,
+    "source_slots_per_step": 8,
+    "correlation_weight": 0.2,
+    "teacher_weight": 5.0,
+    "router_importance_weight": 0.2,
+    "phase_curvature_weight": 0.002,
+    "phase_slope_weight": 0.03,
+    "phase_anchor_weight": 0.0,
+    "phase_gradient_smoothing_sigma": 0.0,
+    "phase_parameter_smoothing_sigma": 0.0,
+    "spatial_guard_weight": 0.0,
+    "spatial_foreign_threshold": 0.01,
+    "registration_shift_pixels": 1,
+    "minimum_illumination_fractions": {
+      "vision": 0.08,
+      "language": 0.05
+    },
+    "minimum_srcc": 0.790,
+    "maximum_srcc": 0.799,
+    "maximum_slot_share_deviation": 0.10,
+    "maximum_global_share_deviation": 0.05
+  },
+  "stages": [
+    {
+      "name": "optical",
+      "epochs": 70,
+      "raw_phase_initialization": "zeros",
+      "train_readout": false,
+      "train_phases": true,
+      "train_field_encoders": false,
+      "phase_learning_rate": 0.010,
+      "readout_learning_rate": 0.0,
+      "spatial_weight": 20.0,
+      "illumination_weight": 0.0
+    },
+    {
+      "name": "joint",
+      "epochs": 160,
+      "raw_phase_initialization": "inherit",
+      "train_readout": true,
+      "train_phases": true,
+      "train_field_encoders": true,
+      "train_language_router_bias": true,
+      "phase_learning_rate": 0.004,
+      "encoder_learning_rate": 0.0001,
+      "readout_learning_rate": 0.00005,
+      "router_learning_rate": 0.0003,
+      "language_router_bias_update_rate": 0.0004,
+      "spatial_weight": 20.0,
+      "illumination_weight": 0.15
+    },
+    {
+      "name": "calibration",
+      "epochs": 50,
+      "raw_phase_initialization": "inherit",
+      "train_readout": true,
+      "train_phases": false,
+      "train_field_encoders": false,
+      "train_language_router_bias": true,
+      "phase_learning_rate": 0.0,
+      "readout_learning_rate": 0.00008,
+      "router_learning_rate": 0.0004,
+      "language_router_bias_update_rate": 0.0004,
+      "router_importance_weight": 1.0,
+      "registration_shift_pixels": 0,
+      "spatial_weight": 1.0,
+      "illumination_weight": 0.0
+    }
+  ]
+}
