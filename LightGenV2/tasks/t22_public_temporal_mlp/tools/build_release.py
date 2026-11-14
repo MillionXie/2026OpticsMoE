@@ -29,7 +29,7 @@ ROOT = _paths.ROOT
 PUBLIC = ROOT.parents[2] / 'LightGen2'
 SOURCE_FILES = (
     '.gitignore', '.gitattributes', 'model.py', 'infer.py', 'visualize.py',
-    'README.md', 'requirements.txt', 'LICENSE', 'NOTICE', 'licenses/QWEN_LICENSE.txt',
+    'requirements.txt', 'LICENSE', 'NOTICE', 'licenses/QWEN_LICENSE.txt',
 )
 RESULT_FILES = (
     '01_predictions.csv', '02_metrics.json', '03_prediction_vs_mos.png',
@@ -38,7 +38,7 @@ RESULT_FILES = (
           for branch, first in (('vision', 5), ('language', 8))
           for number, kind in enumerate(('input_field', 'mask', 'output_field'), first)
           for suffix in ('npz', 'png'))
-ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.docx', 'data/input_for_review.npz',
+ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.pdf', 'data/input_for_review.npz',
                   'data/reference_mos.csv') + tuple(
     'results/' + name for name in RESULT_FILES)
 
@@ -171,8 +171,13 @@ def build_release():
     replay = verify_optical_arrays(result_dir, predictions, shared_phase=shared_phase)
     names = SOURCE_FILES + ARTIFACT_FILES
     actual = {path.relative_to(PUBLIC).as_posix() for path in PUBLIC.rglob('*') if path.is_file()}
-    if actual != set(names):
-        raise ValueError('Unexpected or missing public files: ' + repr(actual.symmetric_difference(names)))
+    author_files = {'README.docx'}
+    unexpected = actual - set(names) - author_files
+    missing = set(names) - actual
+    if unexpected or missing:
+        raise ValueError('Unexpected or missing public files: ' + repr(unexpected | missing))
+    if not (PUBLIC / 'README.pdf').read_bytes().startswith(b'%PDF-'):
+        raise ValueError('The release guide is not a PDF')
     for name in names:
         path = PUBLIC / name
         if path.suffix in ('.py', '.md', '.json', '.txt'):
@@ -215,6 +220,7 @@ def build_release():
     (release_root / 'LightGen2.zip.sha256').write_text(digest + '  LightGen2.zip\n', encoding='utf-8')
     verification = {'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                     'canonical_directory': 'LightGen2', 'files': checksums,
+                    'guide_format': 'PDF', 'project_code_license': 'GPL-3.0-only',
                     'retained_model_tensors_bitwise_equal': True,
                     'shared_global_phase': shared_phase,
                     'inference_state_fingerprint': tensor_fingerprint(public['model']),

@@ -1,279 +1,153 @@
-"""Build the public README and editable guide from the same concise content."""
+"""Apply release formatting to the author's current editable Word guide."""
 from pathlib import Path
+import argparse
 import hashlib
-import json
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
+from docx.text.paragraph import Paragraph
 
 
 PUBLIC = Path(__file__).resolve().parents[4] / 'LightGen2'
-TITLE = 'Codes for temporal video quality assessment with LightGen2'
-INTRODUCTION = (
-    'This is the code to assess temporal video quality with LightGen2 in Python '
-    'using PyTorch. We provide pretrained weights and video frames from the LGVQ '
-    'dataset to evaluate 558 videos, with 16 videos processed in parallel. '
-    'The code predicts a mean opinion score (MOS) for each video and provides '
-    'examples of the optical wave propagation for reference.'
+CAPTIONS = (
+    'Predicted versus human temporal MOS for the 558 LGVQ videos (03_prediction_vs_mos.png).',
+    'Vision input field, phase mask and output field, from left to right.',
+    'Language input field, phase mask and output field, from left to right.',
 )
-ENVIRONMENT = (
-    'We have tested the code with Python 3.11.15 and PyTorch 2.6.0 on an NVIDIA '
-    'A100 GPU. For the required Python packages, please refer to requirements.txt.'
-)
-INSTALLATION = (
-    'Please follow the PyTorch installation guide to install a build compatible '
-    'with your system. Then install the dependent packages from this directory.'
-)
-EXECUTION = (
-    'The code first reads '
-    'the video frames from data/input_for_review.npz and loads the model weights '
-    'from weights/LightGen2.pt. It extracts visual features with the Qwen-derived '
-    'frontend and processes them with routed experts and optical propagation '
-    'in the vision branch. The language branch combines these features with '
-    'the prompt features and applies its routed experts and optical propagation. '
-    'The two-layer readout predicts '
-    'one MOS for each video. Higher MOS indicates better temporal video quality. '
-    'We then use the human MOS in data/reference_mos.csv to calculate SRCC.'
-)
-OPTICAL_EXAMPLE = (
-    'The same execution saves the input video frames and captures the input '
-    'field, learned mask and output field for one group of 16 videos. '
-    'The examples below show the vision branch in the top row and the language '
-    'branch in the bottom row, ordered from input to mask to output. '
-    'Each optical result is saved as numerical data in an NPZ file and as a PNG image.'
-)
-FILES = (
-    ('data/input_for_review.npz', 'The input video frames from 558 LGVQ videos.'),
-    ('data/reference_mos.csv', 'The human temporal MOS labels used to calculate SRCC from the predictions.'),
-    ('weights/LightGen2.pt', 'Model weights, including the frozen Qwen frontend and prompt features.'),
-    ('model.py', 'The network definition and optical propagation based on the angular spectrum method.'),
-    ('infer.py', 'The script to run the complete video quality assessment.'),
-    ('visualize.py', 'The functions to save predictions and visualize the input frames and optical fields.'),
-    ('requirements.txt', 'The required Python packages.'),
-    ('README.md and README.docx', 'Instructions for installing and running the code. The Word version is editable.'),
-    ('LICENSE, NOTICE and licenses/', 'The Apache-2.0 license and attribution for upstream components and data.'),
-)
-RESULT_FILES = (
-    ('01_predictions.csv', 'The video ID, human MOS and predicted MOS for each of the 558 videos.'),
-    ('02_metrics.json', 'SRCC, number of videos, complete program runtime and computing device.'),
-    ('03_prediction_vs_mos.png', 'The predicted MOS compared with the human MOS for all videos.'),
-    ('04_input_frames.png', 'The input frames for the 16 videos used in the optical example.'),
-    ('05_vision_input_field.npz and .png', 'The input optical field of the vision branch.'),
-    ('06_vision_mask.npz and .png', 'The complete learned phase mask of the vision branch.'),
-    ('07_vision_output_field.npz and .png', 'The output optical field of the vision branch.'),
-    ('08_language_input_field.npz and .png', 'The input optical field of the language branch.'),
-    ('09_language_mask.npz and .png', 'The complete learned phase mask of the language branch.'),
-    ('10_language_output_field.npz and .png', 'The output optical field of the language branch.'),
-)
-OPTICAL_IMAGES = tuple(
-    f'results/{number:02d}_{branch}_{kind}.png'
-    for branch, first in (('vision', 5), ('language', 8))
-    for number, kind in enumerate(('input_field', 'mask', 'output_field'), first)
-)
+LICENSE_STATEMENT = 'This project is covered under the GNU General Public License v3.0.'
 
 
-def runtime_reference(reference):
-    task = Path(__file__).resolve().parents[1]
-    profile = json.loads((task / 'configs/selected.json').read_text('utf-8'))
-    record = profile['runtime_benchmark']
-    directory = task / record['directory']
-    summary = json.loads((directory / 'summary.json').read_text('utf-8'))
-    protocol = json.loads((directory / 'protocol.json').read_text('utf-8'))
-    timing = summary['projects'][record['project']]['program_seconds']
-    for name, expected in protocol['input_and_source_sha256'].items():
-        with (PUBLIC / name).open('rb') as stream:
-            if hashlib.file_digest(stream, 'sha256').hexdigest() != expected:
-                raise ValueError('Runtime measurement identity differs: ' + name)
-    if (reference['total_runtime_seconds'] != timing['median']
-            or reference['device_name'] != summary['hardware']['device']
-            or reference['videos'] != summary['videos_per_process']):
-        raise ValueError('Reference results differ from the selected runtime measurement')
-    return summary['measured_processes']
+def replace_text(paragraph, text):
+    if paragraph.runs:
+        paragraph.runs[0].text = text
+        for run in paragraph.runs[1:]:
+            run.text = ''
+    else:
+        paragraph.add_run(text)
 
 
-def results_description(reference, repeats):
-    return (
-        'Predictions and figures are saved in results/. For the supplied 558 videos, '
-        f"we obtained a Spearman rank correlation coefficient (SRCC) of {reference['SRCC']:.6f} "
-        'between the predicted and human MOS. '
-        f"The median complete program runtime was {reference['total_runtime_seconds']:.3f} seconds "
-        f"over {repeats} runs on a shared {reference['device_name']}. "
-        'Each execution records its own runtime in 02_metrics.json.'
-    )
+def replace_cell(cell, text):
+    replace_text(cell.paragraphs[0], text)
+    for paragraph in cell.paragraphs[1:]:
+        paragraph._p.getparent().remove(paragraph._p)
 
 
-def markdown_table(rows):
-    lines = ['| File | Description |', '| --- | --- |']
-    return '\n'.join(lines + [f'| `{name}` | {description} |' for name, description in rows])
+def format_command(paragraph):
+    properties = paragraph._p.get_or_add_pPr()
+    shading = properties.find(qn('w:shd'))
+    if shading is None:
+        shading = OxmlElement('w:shd')
+        properties.append(shading)
+    shading.set(qn('w:val'), 'clear')
+    shading.set(qn('w:color'), 'auto')
+    shading.set(qn('w:fill'), 'F2F2F2')
+    paragraph.paragraph_format.space_before = Pt(2)
+    paragraph.paragraph_format.space_after = Pt(6)
 
 
-def build_readme(reference, repeats):
-    images = [f'![{Path(name).stem[3:].replace("_", " ")}]({name})' for name in OPTICAL_IMAGES]
-    text = f'''# {TITLE}
-
-## Introduction
-
-{INTRODUCTION}
-
-## Environment
-
-{ENVIRONMENT}
-
-## Installation guide
-
-{INSTALLATION} [PyTorch installation guide](https://pytorch.org/get-started/locally/)
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-## Files
-
-{markdown_table(FILES)}
-
-The following files are generated in `results/`.
-
-{markdown_table(RESULT_FILES)}
-
-## How to execute
-
-Run the following command in the LightGen2 directory.
-
-```bash
-python infer.py
-```
-
-{EXECUTION}
-
-{results_description(reference, repeats)}
-
-![Predicted and human temporal MOS](results/03_prediction_vs_mos.png)
-
-{OPTICAL_EXAMPLE}
-
-| Input | Mask | Output |
-| --- | --- | --- |
-| {images[0]} | {images[1]} | {images[2]} |
-| {images[3]} | {images[4]} | {images[5]} |
-
-The Qwen components and LGVQ data retain their upstream attribution. See `NOTICE`
-and `licenses/QWEN_LICENSE.txt`. [Qwen](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct), [LGVQ](https://github.com/zczhang-sjtu/UGVQ)
-'''
-    (PUBLIC / 'README.md').write_text(text, encoding='utf-8', newline='\n')
+def add_caption(paragraph, text, *, keep_with_next=False):
+    following = paragraph._p.getnext()
+    if following is not None and following.tag == qn('w:p'):
+        existing = Paragraph(following, paragraph._parent)
+        if existing.style.name == 'Caption':
+            caption = existing
+        else:
+            caption = None
+    else:
+        caption = None
+    if caption is None:
+        element = OxmlElement('w:p')
+        paragraph._p.addnext(element)
+        caption = Paragraph(element, paragraph._parent)
+        caption.style = 'Caption'
+        caption.add_run(text)
+    paragraph.paragraph_format.keep_with_next = True
+    caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    caption.paragraph_format.keep_together = True
+    caption.paragraph_format.keep_with_next = keep_with_next
+    caption.paragraph_format.space_before = Pt(3)
+    caption.paragraph_format.space_after = Pt(8)
+    for run in caption.runs:
+        run.font.name = 'Times New Roman'
+        run.font.size = Pt(10.5)
+        run.font.italic = False
+        run.font.bold = False
+        run.font.color.rgb = RGBColor(0, 0, 0)
 
 
-def file_table(document, rows):
-    table = document.add_table(rows=0, cols=2)
-    table.autofit = False
-    widths = (2.65, 4.35)
-    for column, width in zip(table.columns, widths):
-        column.width = Inches(width)
-    for name, description in rows:
-        cells = table.add_row().cells
-        for cell, width, text in zip(cells, widths, (name, description)):
-            cell.width = Inches(width)
-            cell.text = text
-            properties = cell._tc.get_or_add_tcPr()
-            borders = OxmlElement('w:tcBorders')
-            for edge in ('top', 'left', 'bottom', 'right'):
-                border = OxmlElement('w:' + edge)
-                for key, value in (('val', 'single'), ('sz', '4'), ('color', 'D9D9D9')):
-                    border.set(qn('w:' + key), value)
-                borders.append(border)
-            properties.append(borders)
-            margins = OxmlElement('w:tcMar')
-            for edge in ('top', 'left', 'bottom', 'right'):
-                margin = OxmlElement('w:' + edge)
-                margin.set(qn('w:w'), '70')
-                margin.set(qn('w:type'), 'dxa')
-                margins.append(margin)
-            properties.append(margins)
-            for paragraph in cell.paragraphs:
-                paragraph.paragraph_format.space_after = Pt(1)
-                paragraph.paragraph_format.line_spacing = 1.05
-                for run in paragraph.runs:
-                    run.font.size = Pt(10.5)
-        table.rows[-1]._tr.get_or_add_trPr().append(OxmlElement('w:cantSplit'))
-    return table
-
-
-def command(document, text):
-    paragraph = document.add_paragraph()
-    paragraph.paragraph_format.left_indent = Inches(.15)
-    run = paragraph.add_run(text)
-    run.font.name = 'Consolas'
-    run.font.size = Pt(10.5)
-
-
-def build_guide():
-    reference = json.loads((PUBLIC / 'results/02_metrics.json').read_text('utf-8'))
-    repeats = runtime_reference(reference)
-    build_readme(reference, repeats)
-    document = Document()
-    section = document.sections[0]
-    section.page_width, section.page_height = Inches(8.5), Inches(11)
-    section.top_margin = section.bottom_margin = Inches(.65)
-    section.left_margin = section.right_margin = Inches(.75)
-    normal = document.styles['Normal']
-    normal.font.name, normal.font.size = 'Times New Roman', Pt(11.5)
-    normal.paragraph_format.line_spacing = 1.08
-    normal.paragraph_format.space_after = Pt(6)
-    for name, size in (('Title', 17), ('Heading 1', 14)):
-        style = document.styles[name]
-        style.font.name, style.font.size = 'Times New Roman', Pt(size)
-        style.font.color.rgb = RGBColor(0, 0, 0)
-        style.paragraph_format.space_before = Pt(12)
-        style.paragraph_format.space_after = Pt(6)
-    document.styles['Title'].font.bold = True
-    for name in ('Normal', 'Title', 'Heading 1'):
-        fonts = document.styles[name].element.get_or_add_rPr().get_or_add_rFonts()
-        for attribute in tuple(fonts.attrib):
-            if attribute.endswith('Theme'):
-                del fonts.attrib[attribute]
-        for attribute in ('ascii', 'hAnsi', 'eastAsia', 'cs'):
-            fonts.set(qn('w:' + attribute), 'Times New Roman')
-    document.core_properties.title = TITLE
-    document.core_properties.subject = 'Installation and execution of LightGen2 video quality assessment'
-    document.core_properties.author = 'LightGen2 contributors'
-    document.add_heading(TITLE, 0)
-    document.add_heading('Introduction', 1)
-    document.add_paragraph(INTRODUCTION)
-    document.add_heading('Environment', 1)
-    document.add_paragraph(ENVIRONMENT)
-    document.add_heading('Installation guide', 1)
-    document.add_paragraph(INSTALLATION + ' https://pytorch.org/get-started/locally/')
-    command(document, 'python -m pip install -r requirements.txt')
-    document.add_heading('Files', 1)
-    file_table(document, FILES)
-    results_heading = document.add_paragraph('The following files are generated in results/.')
-    results_heading.paragraph_format.page_break_before = True
-    file_table(document, RESULT_FILES)
-    document.add_heading('How to execute', 1)
-    document.add_paragraph('Run the following command in the LightGen2 directory.')
-    command(document, 'python infer.py')
-    document.add_paragraph(EXECUTION)
-    document.add_paragraph(results_description(reference, repeats))
-    paragraph = document.add_paragraph()
-    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    paragraph.add_run().add_picture(str(PUBLIC / 'results/03_prediction_vs_mos.png'), width=Inches(2.75))
-    optical_description = document.add_paragraph(OPTICAL_EXAMPLE)
-    optical_description.paragraph_format.keep_with_next = True
-    optical_description.paragraph_format.keep_together = True
-    for start in (0, 3):
-        paragraph = document.add_paragraph()
+def add_page_numbers(document):
+    for section in document.sections:
+        section.footer_distance = Inches(.3)
+        footer = section.footer
+        fields = footer._element.xpath('.//w:fldSimple')
+        if any(field.get(qn('w:instr'), '').strip().upper() == 'PAGE' for field in fields):
+            continue
+        paragraph = footer.paragraphs[0] if not any(p.text for p in footer.paragraphs) else footer.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        paragraph.paragraph_format.keep_with_next = start == 0
-        for name in OPTICAL_IMAGES[start:start + 3]:
-            paragraph.add_run().add_picture(str(PUBLIC / name), width=Inches(2.3))
-    for root in (document.styles.element, document.element):
-        for border in list(root.iter(qn('w:pBdr'))):
-            border.getparent().remove(border)
-    document.save(PUBLIC / 'README.docx')
-    print(json.dumps({'guide': str(PUBLIC / 'README.docx'), 'SRCC': reference['SRCC']}))
+        paragraph.paragraph_format.space_before = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(0)
+        field = OxmlElement('w:fldSimple')
+        field.set(qn('w:instr'), 'PAGE')
+        field.set(qn('w:dirty'), 'true')
+        run = OxmlElement('w:r')
+        properties = OxmlElement('w:rPr')
+        fonts = OxmlElement('w:rFonts')
+        fonts.set(qn('w:ascii'), 'Times New Roman')
+        fonts.set(qn('w:hAnsi'), 'Times New Roman')
+        size = OxmlElement('w:sz')
+        size.set(qn('w:val'), '18')
+        properties.extend((fonts, size))
+        run.append(properties)
+        text = OxmlElement('w:t')
+        text.text = '1'
+        run.append(text)
+        field.append(run)
+        paragraph._p.append(field)
+
+
+def build_guide(path):
+    original = path.read_bytes()
+    document = Document(path)
+    for table in document.tables:
+        for row in list(table.rows):
+            name = row.cells[0].text
+            if name == 'weights/LightGen2.pt':
+                replace_cell(row.cells[1], 'Model weights.')
+            elif name in ('README.md and README.docx', 'README.pdf'):
+                replace_cell(row.cells[0], 'README.pdf')
+                replace_cell(row.cells[1], 'Instructions for installing and running the code.')
+            elif name == 'LICENSE, NOTICE and licenses/':
+                table._tbl.remove(row._tr)
+    commands = [paragraph for paragraph in document.paragraphs
+                if paragraph.text.strip() in ('python -m pip install -r requirements.txt', 'python infer.py')]
+    if len(commands) != 2:
+        raise ValueError('The current guide requires the installation and inference commands')
+    for paragraph in commands:
+        format_command(paragraph)
+    figures = [paragraph for paragraph in document.paragraphs if paragraph._p.xpath('.//w:drawing')]
+    if len(figures) != len(CAPTIONS):
+        raise ValueError('The current guide has an unexpected number of image groups')
+    for number, (paragraph, caption) in enumerate(zip(figures, CAPTIONS)):
+        add_caption(paragraph, caption, keep_with_next=number == 1)
+    if not any(paragraph.text == 'License' and paragraph.style.name == 'Heading 1'
+               for paragraph in document.paragraphs):
+        document.add_heading('License', 1)
+        document.add_paragraph(LICENSE_STATEMENT)
+    add_page_numbers(document)
+    temporary = path.with_name('.' + path.name + '.editing')
+    document.save(temporary)
+    if path.read_bytes() != original:
+        temporary.unlink()
+        raise RuntimeError('The editable guide changed during formatting')
+    temporary.replace(path)
+    print('Updated ' + str(path))
+    print('SHA256 ' + hashlib.sha256(path.read_bytes()).hexdigest())
 
 
 if __name__ == '__main__':
-    build_guide()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--document', type=Path, default=PUBLIC / 'README.docx')
+    build_guide(parser.parse_args().document)

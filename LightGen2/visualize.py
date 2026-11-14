@@ -18,7 +18,6 @@ PREDICTION_COLOR = '#6486a3'
 
 
 def configure_figures():
-    """Use Arial 7 pt, with 8 pt titles, for every exported figure."""
     font_manager.findfont(font_manager.FontProperties(family='Arial'), fallback_to_default=False)
     plt.rcParams.update({
         'font.family': 'Arial', 'font.size': 7, 'axes.labelsize': 7,
@@ -33,7 +32,6 @@ def save_figure(figure, path):
 
 
 def normalize_display(array, percentile=100):
-    """Set an explicitly recorded upper limit for a native-pixel linear view."""
     scale = np.float32(max(float(np.percentile(array, percentile)), 1e-12))
     return np.clip(array / scale, 0, 1).astype(np.float32), scale
 
@@ -62,7 +60,6 @@ def plot_field(array, path, title, *, phase=False, quantity='Intensity'):
 
 
 def capture_optical_fields(model, normalized_rgb):
-    """Observe the actual forward without changing its tensors or operators."""
     captured = {branch: {} for branch in BRANCHES}
     handles = []
 
@@ -112,7 +109,6 @@ def write_records(path, records):
 
 
 def export_evaluation(records, metrics, directory):
-    """Save every actual video prediction and the quality comparison figure."""
     configure_figures()
     directory.mkdir(parents=True, exist_ok=True)
     write_records(directory / '01_predictions.csv', records)
@@ -132,7 +128,6 @@ def export_evaluation(records, metrics, directory):
 
 @torch.inference_mode()
 def export_visualizations(model, records, normalized_rgb, captured, directory, *, field_number):
-    """Export the field already captured during the complete evaluation."""
     if len(records) != 16 or tuple(normalized_rgb.shape[:3]) != (1, 16, 4):
         raise ValueError('Visualizations require exactly 16 videos in one optical field')
     configure_figures()

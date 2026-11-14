@@ -24,7 +24,6 @@ PROJECT = Path(__file__).resolve().parent
 
 
 def read_input_metadata(archive):
-    """Read the identities used to preserve the video-frame order."""
     if int(archive['format_version']) not in (1, 2):
         raise ValueError('Unsupported video-frame archive version')
     sample_ids = archive['sample_ids'].tolist()
@@ -38,7 +37,6 @@ def read_input_metadata(archive):
 
 
 def read_reference_scores(path, sample_ids):
-    """Match human MOS labels to video IDs for metric calculation."""
     with Path(path).open(encoding='utf-8-sig', newline='') as stream:
         reader = csv.DictReader(stream)
         if reader.fieldnames != ['sample_id', 'target_MOS']:
@@ -56,7 +54,6 @@ def read_reference_scores(path, sample_ids):
 
 
 def iter_rgb_fields(archive, sample_ids):
-    """Read preprocessed fields and cyclically pad the last one to 16 slots."""
     first_frames = None
     for field, start in enumerate(range(0, len(sample_ids), 16), 1):
         count = min(16, len(sample_ids) - start)
@@ -75,7 +72,6 @@ def iter_rgb_fields(archive, sample_ids):
 
 @torch.inference_mode()
 def evaluate(model, archive, sample_ids, targets, device, directory, *, visualize_field=1):
-    """Run each field once and retain that same forward for optical export."""
     if __package__:
         from .visualize import capture_optical_fields, export_evaluation, export_visualizations
     else:

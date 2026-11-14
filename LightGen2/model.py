@@ -50,11 +50,6 @@ class ModelConfig:
 
 
 class FrozenVisionFront(nn.Module):
-    """Saved Qwen patch and position tensors followed by fixed mean pooling.
-
-    The constructor allocates buffers. The LightGen2 checkpoint supplies their
-    frozen values through load_state_dict before inference.
-    """
 
     def __init__(self):
         super().__init__()
@@ -81,7 +76,6 @@ class FrozenVisionFront(nn.Module):
 
 
 class Router(nn.Module):
-    """One shared Top2 decision for all tokens in each input item."""
 
     def __init__(self, config, token_count):
         super().__init__()
@@ -102,7 +96,6 @@ class Router(nn.Module):
 
 
 class Experts(nn.Module):
-    """Four tokenwise linear matrices shared across items in one branch."""
 
     def __init__(self, config):
         super().__init__()
@@ -118,7 +111,6 @@ class Experts(nn.Module):
 
 
 class Propagation(nn.Module):
-    """Whole-canvas coherent angular-spectrum propagation."""
 
     def __init__(self, config):
         super().__init__()
@@ -142,7 +134,6 @@ class Propagation(nn.Module):
 
 
 class OpticalGlobal(nn.Module):
-    """Amplitude encoding, phase modulation, propagation and detector readout."""
 
     def __init__(self, config, branch):
         super().__init__()
@@ -189,7 +180,6 @@ class OpticalGlobal(nn.Module):
         return patches / patches.mean((-2, -1), keepdim=True).clamp_min(1e-6)
 
     def input_field(self, tokens):
-        """Pack all 16 videos into the incident 518 by 518 amplitude field."""
         fields = self.fields(tokens)
         canvas = fields.new_zeros(len(fields), 518, 518)
         frame_offsets = [(0, 0), (0, 59), (59, 0), (59, 59)]
@@ -202,7 +192,6 @@ class OpticalGlobal(nn.Module):
         return canvas
 
     def modulation_field(self, canvas):
-        """Embed all 16 learned modulation tiles at their physical positions."""
         mask = torch.ones_like(canvas, dtype=torch.complex64)
         modulation = self.modulation()
         for slot, (row, column) in enumerate(self.origins):
@@ -231,11 +220,6 @@ class OpticalGlobal(nn.Module):
 
 
 class LightGen2(nn.Module):
-    """Vision processing followed by language-conditioned quality readout.
-
-    The language branch combines four visual summary tokens with 38 prompt
-    tokens. Its router and experts process the complete 42-token sequence.
-    """
 
     def __init__(self, config):
         super().__init__()
@@ -292,13 +276,11 @@ class LightGen2(nn.Module):
 
     @torch.inference_mode()
     def forward(self, normalized_rgb):
-        """Predict from normalized RGB shaped [batch,16,4,3,448,448]."""
         visual_embeddings = self.vision_frontend(normalized_rgb)
         return self.predict_from_embeddings(visual_embeddings)
 
     @torch.inference_mode()
     def predict_from_embeddings(self, visual_embeddings):
-        """Predict from saved frontend outputs shaped [batch,16,4,49,1024]."""
         if not bool(self.language_prompt_ready) or not bool(self.readout_ready):
             raise RuntimeError('Prompt or grade-score tensors have not been loaded')
         visual_summary, vision_routing = self.encode_vision(visual_embeddings)

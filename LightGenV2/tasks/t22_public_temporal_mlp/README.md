@@ -1,7 +1,7 @@
 # LightGen2 temporal video quality reference
 
 本目录保存作者侧研究、核验与打包工具。独立推理工程位于仓库根目录
-[`LightGen2`](../../../LightGen2/README.md)，可编辑说明为该目录的`README.docx`。
+[`LightGen2`](../../../LightGen2/README.pdf)，可编辑说明为该目录的`README.docx`。
 正式推理权重采用每支global共享一块相位的结构。
 
 ## 唯一推理流程
@@ -155,12 +155,16 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 | `runs/simulation/current/validation/shared_phase` | 完整噪声、物理、路由和mask一致性核验 |
 | `runs/simulation/current/validation/public_inference` | 独立发行包核验及SHA |
 | `assets/manifest.csv` | 2250 TRAIN和558 TEST身份与标签 |
-| `tools/build_public_guide.py` | 可编辑Word说明生成 |
+| `tools/build_public_guide.py` | 在作者当前Word上应用发布格式，保留手工修改 |
 | `tools/build_release.py` | 张量、身份、指标、mask一致性和光场复算后打包 |
 | `tests` | 共享梯度、检查点兼容、前向和导出回归检查 |
 
 根目录`LightGen2`维护独立推理源码，`releases/current`为生成镜像，
 `releases/LightGen2.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
+正式包使用`README.pdf`，作者编辑用的`README.docx`单独保留在根目录工程中。
+主项目代码沿用ACCEL官方README声明的GPL v3.0，Qwen上游Apache-2.0许可与署名文件随包附带。
+本轮用户对三个推理源码文件仅删除文档字符串。去除文档字符串后的AST与原计时源码一致，
+原5次A100计时的源码SHA保留在原协议中。当前发布源码另做完整推理回归。
 上一轮完整ZIP、PT、配置和作者current快照保存在
 `E:/2026LightGen2Data/_internal_archives/t22_shared_global_phase_20261114/before`。
 当前训练和核验数据同步归档在其同级目录中。
