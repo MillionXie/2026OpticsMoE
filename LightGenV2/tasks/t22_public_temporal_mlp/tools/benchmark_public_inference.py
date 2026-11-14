@@ -25,9 +25,34 @@ def write_json(path, value):
     temporary.replace(path)
 
 
+def execution_plan(projects, warmups, repeats):
+    for phase, count in (('warmup', warmups), ('measured', repeats)):
+        for index in range(count):
+            ordered = list(projects.items())
+            if index % 2:
+                ordered.reverse()
+            for label, project in ordered:
+                yield label, project, phase, index + 1
+
+
+def summarize(rows):
+    result = {}
+    for column in ('program_seconds', 'process_seconds'):
+        values = [row[column] for row in rows]
+        result[column] = {'median': statistics.median(values), 'mean': statistics.mean(values),
+                          'sample_standard_deviation': statistics.stdev(values),
+                          'minimum': min(values), 'maximum': max(values)}
+    median = result['program_seconds']['median']
+    result['representative_result_directory'] = min(
+        rows, key=lambda row: abs(row['program_seconds'] - median))['result_directory']
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', type=Path, required=True)
+    parser.add_argument('--comparison-project', type=Path,
+                        help='Optional identical extracted project for alternating paired measurements')
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--gpu-uuid', required=True)
     parser.add_argument('--cpu-ids', help='Optional comma-separated Linux CPU affinity')
@@ -53,6 +78,12 @@ def main():
                                                   env=environment, text=True))
     names = ('infer.py', 'model.py', 'visualize.py', 'weights/LightGen2.pt', 'data/test_rgb.npz')
     identities = {name: sha256(args.project / name) for name in names}
+    projects = {'reference': args.project}
+    if args.comparison_project:
+        projects['extracted'] = args.comparison_project.resolve()
+        comparison = {name: sha256(projects['extracted'] / name) for name in names}
+        if comparison != identities:
+            raise ValueError('Comparison source, checkpoint or input differs')
     expected_predictions = sha256(args.project / 'results/01_predictions.csv')
     protocol = {
         'source_commit': environment.get('LIGHTGEN_SOURCE_COMMIT'),
@@ -67,15 +98,17 @@ def main():
         'visualized_field': 1,
         'zip_extraction_during_measurements': False,
         'parent_python': platform.python_version(),
+        'projects': {label: str(project) for label, project in projects.items()},
+        'comparison_order': 'Alternate project order between repeated pairs',
     }
     write_json(args.out / 'protocol.json', protocol)
     rows = []
-    for index in range(args.warmups + args.repeats):
-        phase = 'warmup' if index < args.warmups else 'measured'
-        number = index + 1 if phase == 'warmup' else index - args.warmups + 1
+    for label, project, phase, number in execution_plan(projects, args.warmups, args.repeats):
         name = f'{phase}_{number:02d}'
+        if len(projects) > 1:
+            name = label + '_' + name
         output = args.out / name
-        command = [sys.executable, '-u', str(args.project / 'infer.py'), '--device', 'cuda',
+        command = [sys.executable, '-u', str(project / 'infer.py'), '--device', 'cuda',
                    '--visualize-field', '1', '--output', str(output)]
         telemetry = (args.out / (name + '_gpu.csv')).open('w')
         monitor = subprocess.Popen([
@@ -87,7 +120,7 @@ def main():
         try:
             with (args.out / (name + '.log')).open('w') as log:
                 started = time.perf_counter()
-                subprocess.run(command, cwd=args.project, env=environment,
+                subprocess.run(command, cwd=project, env=environment,
                                stdout=log, stderr=subprocess.STDOUT, check=True, timeout=600)
                 process_seconds = time.perf_counter() - started
         finally:
@@ -99,7 +132,7 @@ def main():
             raise ValueError('Runtime sample or device identity differs')
         if sha256(output / '01_predictions.csv') != expected_predictions:
             raise ValueError('Repeated full evaluation predictions differ')
-        row = {'phase': phase, 'repeat': number,
+        row = {'project': label, 'phase': phase, 'repeat': number,
                'program_seconds': metrics['total_runtime_seconds'], 'process_seconds': process_seconds,
                'SRCC': metrics['SRCC'], 'load_average_before': list(load),
                'result_directory': name}
@@ -107,20 +140,18 @@ def main():
         write_json(args.out / 'measurements.json', rows)
         write_json(args.out / 'status.json', {'state': 'running', 'completed_processes': len(rows)})
         print(json.dumps(row), flush=True)
-    for name, expected in identities.items():
-        if sha256(args.project / name) != expected:
-            raise ValueError('Source or input changed during repeated measurements')
+    for project in projects.values():
+        for name, expected in identities.items():
+            if sha256(project / name) != expected:
+                raise ValueError('Source or input changed during repeated measurements')
     measured = [row for row in rows if row['phase'] == 'measured']
-    summary = {'hardware': hardware, 'measured_processes': len(measured),
+    per_project = {label: summarize([row for row in measured if row['project'] == label])
+                   for label in projects}
+    summary = {'hardware': hardware, 'measured_processes': args.repeats,
+               'total_measured_processes': len(measured),
                'videos_per_process': 558, 'predictions_bitwise_equal': True}
-    for column in ('program_seconds', 'process_seconds'):
-        values = [row[column] for row in measured]
-        summary[column] = {'median': statistics.median(values), 'mean': statistics.mean(values),
-                           'sample_standard_deviation': statistics.stdev(values),
-                           'minimum': min(values), 'maximum': max(values)}
-    median = summary['program_seconds']['median']
-    summary['representative_result_directory'] = min(
-        measured, key=lambda row: abs(row['program_seconds'] - median))['result_directory']
+    summary.update(per_project['reference'])
+    summary['projects'] = per_project
     write_json(args.out / 'summary.json', summary)
     with (args.out / 'measurements.csv').open('w', newline='', encoding='utf-8') as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]))

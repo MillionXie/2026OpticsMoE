@@ -19,11 +19,23 @@ from ..tools.prepare_joint_router import expand_router
 from ..tools.phase_plotting import phase_display_norm, phase_display_values
 from ..tools.analyze_phase_effect import constant_modulation
 from ..tools.analyze_global_ablation import identity_global, ablation_metrics
+from ..tools.benchmark_public_inference import execution_plan
 
 
 class Contracts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):torch.set_num_threads(4)
+
+    def test_paired_runtime_plan_warms_both_projects_and_alternates_order(self):
+        projects = {'reference': Path('source'), 'extracted': Path('zip')}
+        plan = list(execution_plan(projects, 1, 5))
+        self.assertEqual(len(plan), 12)
+        self.assertEqual([row[2] for row in plan[:2]], ['warmup', 'warmup'])
+        measured = [row for row in plan if row[2] == 'measured']
+        self.assertEqual([row[0] for row in measured[:4]],
+                         ['reference', 'extracted', 'extracted', 'reference'])
+        for label in projects:
+            self.assertEqual([row[3] for row in measured if row[0] == label], list(range(1, 6)))
 
     def test_reset_starts_physical_phase_at_pi_and_preserves_other_parameters(self):
         model = LightGenTemporal(ModelConfig(width=8, router_hidden=8, readout_hidden=8))
