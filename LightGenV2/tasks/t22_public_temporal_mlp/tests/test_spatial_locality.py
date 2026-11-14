@@ -4,11 +4,25 @@ import unittest
 import torch
 
 from ..model import ModelConfig, Propagation
-from ..tools.spatial_locality import isolated_video_response, audit_spatial_locality
+from ..tools.spatial_locality import isolated_video_response, audit_spatial_locality, spatial_locality_loss
 from ..tools.analyze_spatial_coupling import own_video_propagation
+from ..tools.audit_mask_illumination import field_statistics
 
 
 class SpatialLocalityTests(unittest.TestCase):
+    def test_illumination_area_counts_pixels_and_detects_power_concentration(self):
+        fields = torch.ones(1, 16, 4, 27, 27)
+        uniform = field_statistics(fields)
+        expected = 100 * 4 * 27 * 27 / (111 * 111)
+        self.assertAlmostEqual(float(uniform[0, 0, 0]), expected)
+        self.assertAlmostEqual(float(uniform[0, 0, 1]), expected)
+        fields.zero_()
+        fields[:, :, 0, 0, 0] = 1
+        concentrated = field_statistics(fields)
+        self.assertAlmostEqual(float(concentrated[0, 0, 0]), 100 / (111 * 111))
+        fields.zero_()
+        self.assertTrue(torch.equal(field_statistics(fields), torch.zeros(1, 16, 3, dtype=torch.float64)))
+
     def make_stage(self, propagation):
         return SimpleNamespace(origins=[(23 + 119 * row, 23 + 119 * column)
                                         for row in range(4) for column in range(4)],
@@ -30,6 +44,34 @@ class SpatialLocalityTests(unittest.TestCase):
         self.assertEqual(float(translate(field).abs().sum()), 1.)
         isolated = own_video_propagation(stage, translate, field)
         self.assertEqual(float(isolated.abs().sum()), 0.)
+
+    def test_cross_video_loss_stops_below_the_requested_energy_threshold(self):
+        class Mixing(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.amount = torch.nn.Parameter(torch.tensor(.1))
+
+            def forward(self, value):
+                return value + self.amount * torch.roll(value, 119, dims=-1)
+
+        propagation = Mixing()
+        stage = self.make_stage(propagation)
+        model = SimpleNamespace(frame_global=stage, video_global=stage)
+        field = torch.zeros(1, 518, 518, dtype=torch.complex64)
+        field[:, 60, 60] = 1
+        captured = {'vision': field, 'language': field}
+        valid = torch.ones(1, 16, dtype=torch.bool)
+        loss = spatial_locality_loss(model, captured, valid, [0], foreign_threshold=.01)
+        loss.backward()
+        self.assertEqual(float(loss.detach()), 0.)
+        self.assertEqual(float(propagation.amount.grad), 0.)
+        with torch.no_grad():
+            propagation.amount.fill_(.2)
+        propagation.zero_grad(set_to_none=True)
+        loss = spatial_locality_loss(model, captured, valid, [0], foreign_threshold=.01)
+        loss.backward()
+        self.assertGreater(float(loss.detach()), 0.)
+        self.assertGreater(float(propagation.amount.grad), 0.)
 
     def test_identity_propagation_keeps_each_source_in_its_own_region(self):
         stage = self.make_stage(torch.nn.Identity())

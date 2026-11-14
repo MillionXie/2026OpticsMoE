@@ -32,6 +32,17 @@ class SpatialSelectionTests(unittest.TestCase):
         self.spatial['vision']['guard_fraction'] = .04
         self.assertLess(candidate_score(self.metrics, self.spatial, self.config), first)
 
+    def test_accuracy_selects_candidates_once_both_cross_video_targets_are_met(self):
+        self.config['spatial_foreign_threshold'] = .01
+        for values in self.spatial.values():
+            values['foreign_fraction'] = .005
+        first = candidate_score(self.metrics, self.spatial, self.config)
+        self.metrics['srcc'] = .798
+        self.spatial['vision']['foreign_fraction'] = .009
+        self.assertGreater(candidate_score(self.metrics, self.spatial, self.config), first)
+        self.spatial['vision']['foreign_fraction'] = .02
+        self.assertLess(candidate_score(self.metrics, self.spatial, self.config), first)
+
 
 if __name__ == '__main__':
     unittest.main()

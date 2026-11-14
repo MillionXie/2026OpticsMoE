@@ -46,6 +46,13 @@ def candidate_score(metrics, spatial, config):
                            for value in metrics[name + '_routing']['selection_share'])
     if global_deviation > config['maximum_global_share_deviation']:
         return None
+    threshold = config.get('spatial_foreign_threshold')
+    if threshold is not None:
+        excess = [max(spatial[name]['foreign_fraction'] - threshold, 0.)
+                  + spatial[name]['dark_source_fraction'] for name in ('vision', 'language')]
+        if max(excess) > 0:
+            return -1. - sum(excess) / len(excess)
+        return metrics['srcc']
     return -sum(spatial[name]['foreign_fraction'] + spatial[name]['dark_source_fraction']
                 + config.get('spatial_guard_weight', 0.) * spatial[name]['guard_fraction']
                 for name in ('vision', 'language')) / 2
@@ -172,7 +179,8 @@ def train(args):
                 slots = [(step * config['source_slots_per_step'] + offset) % 16
                          for offset in range(config['source_slots_per_step'])]
                 local = spatial_locality_loss(model, captured, keep, slots,
-                                              guard_weight=config.get('spatial_guard_weight', 0.))
+                                              guard_weight=config.get('spatial_guard_weight', 0.),
+                                              foreign_threshold=config.get('spatial_foreign_threshold', 0.))
                 loss = loss + config['spatial_weight'] * local
                 regularization, _ = router_regularization(result['routing'], keep)
                 loss = loss + config['router_importance_weight'] * regularization['importance']
