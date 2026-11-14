@@ -26,7 +26,7 @@ python -m pip install -r requirements.txt
 | `infer.py` | The script to run the complete video quality assessment. |
 | `visualize.py` | The functions to save predictions and visualize the input frames and optical fields. |
 | `requirements.txt` | The required Python packages. |
-| `README.docx` | The editable version of this guide. |
+| `README.md and README.docx` | Instructions for installing and running the code. The Word version is editable. |
 | `LICENSE, NOTICE and licenses/` | The Apache-2.0 license and attribution for upstream components and data. |
 
 The following files are generated in `results/`.
@@ -46,13 +46,15 @@ The following files are generated in `results/`.
 
 ## How to execute
 
-Run the following command in the LightGen2 directory. The code first reads the video frames from data/input_for_review.npz and loads the model weights from weights/LightGen2.pt. It extracts visual features with the Qwen-derived frontend, processes them through the vision branch, and combines them with the prompt features in the language branch. The two-layer readout predicts one MOS for each video. Higher MOS indicates better temporal video quality.
+Run the following command in the LightGen2 directory.
 
 ```bash
 python infer.py
 ```
 
-Predictions and figures are saved in results/. For the supplied 558 videos, we obtained a Spearman rank correlation coefficient (SRCC) of 0.797065 between the predicted and human MOS. The median complete program runtime was 68.150 seconds over 5 runs on a shared NVIDIA A100-PCIE-40GB. Each execution records its own runtime in 02_metrics.json.
+The code first reads the video frames from data/input_for_review.npz and loads the model weights from weights/LightGen2.pt. It extracts visual features with the Qwen-derived frontend and processes them with routed experts and optical propagation in the vision branch. The language branch combines these features with the prompt features and applies its routed experts and optical propagation. The two-layer readout predicts one MOS for each video. Higher MOS indicates better temporal video quality.
+
+Predictions and figures are saved in results/. For the supplied 558 videos, we obtained a Spearman rank correlation coefficient (SRCC) of 0.797065 between the predicted and human MOS. The median complete program runtime was 56.216 seconds over 5 runs on a shared NVIDIA A100-PCIE-40GB. Each execution records its own runtime in 02_metrics.json.
 
 ![Predicted and human temporal MOS](results/03_prediction_vs_mos.png)
 

@@ -187,7 +187,7 @@
     "shared_global_phase_20261114/noise_refinement"
   ],
   "runtime_benchmark": {
-    "directory": "runs/smoke/runtime_shared_global_phase_20261114",
+    "directory": "runs/smoke/runtime_release_readme_20261114",
     "project": "reference"
   },
   "shared_global_phase": true

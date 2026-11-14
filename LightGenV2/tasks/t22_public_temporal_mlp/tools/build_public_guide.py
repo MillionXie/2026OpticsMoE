@@ -28,11 +28,13 @@ INSTALLATION = (
     'with your system. Then install the dependent packages from this directory.'
 )
 EXECUTION = (
-    'Run the following command in the LightGen2 directory. The code first reads '
+    'The code first reads '
     'the video frames from data/input_for_review.npz and loads the model weights '
     'from weights/LightGen2.pt. It extracts visual features with the Qwen-derived '
-    'frontend, processes them through the vision branch, and combines them with '
-    'the prompt features in the language branch. The two-layer readout predicts '
+    'frontend and processes them with routed experts and optical propagation '
+    'in the vision branch. The language branch combines these features with '
+    'the prompt features and applies its routed experts and optical propagation. '
+    'The two-layer readout predicts '
     'one MOS for each video. Higher MOS indicates better temporal video quality.'
 )
 OPTICAL_EXAMPLE = (
@@ -49,7 +51,7 @@ FILES = (
     ('infer.py', 'The script to run the complete video quality assessment.'),
     ('visualize.py', 'The functions to save predictions and visualize the input frames and optical fields.'),
     ('requirements.txt', 'The required Python packages.'),
-    ('README.docx', 'The editable version of this guide.'),
+    ('README.md and README.docx', 'Instructions for installing and running the code. The Word version is editable.'),
     ('LICENSE, NOTICE and licenses/', 'The Apache-2.0 license and attribution for upstream components and data.'),
 )
 RESULT_FILES = (
@@ -136,11 +138,13 @@ The following files are generated in `results/`.
 
 ## How to execute
 
-{EXECUTION}
+Run the following command in the LightGen2 directory.
 
 ```bash
 python infer.py
 ```
+
+{EXECUTION}
 
 {results_description(reference, repeats)}
 
@@ -221,6 +225,14 @@ def build_guide():
         style.font.color.rgb = RGBColor(0, 0, 0)
         style.paragraph_format.space_before = Pt(12)
         style.paragraph_format.space_after = Pt(6)
+    document.styles['Title'].font.bold = True
+    for name in ('Normal', 'Title', 'Heading 1'):
+        fonts = document.styles[name].element.get_or_add_rPr().get_or_add_rFonts()
+        for attribute in tuple(fonts.attrib):
+            if attribute.endswith('Theme'):
+                del fonts.attrib[attribute]
+        for attribute in ('ascii', 'hAnsi', 'eastAsia', 'cs'):
+            fonts.set(qn('w:' + attribute), 'Times New Roman')
     document.core_properties.title = TITLE
     document.core_properties.subject = 'Installation and execution of LightGen2 video quality assessment'
     document.core_properties.author = 'LightGen2 contributors'
@@ -234,22 +246,29 @@ def build_guide():
     command(document, 'python -m pip install -r requirements.txt')
     document.add_heading('Files', 1)
     file_table(document, FILES)
-    document.add_paragraph('The following files are generated in results/.')
+    results_heading = document.add_paragraph('The following files are generated in results/.')
+    results_heading.paragraph_format.page_break_before = True
     file_table(document, RESULT_FILES)
     document.add_heading('How to execute', 1)
+    document.add_paragraph('Run the following command in the LightGen2 directory.')
     command(document, 'python infer.py')
     document.add_paragraph(EXECUTION)
     document.add_paragraph(results_description(reference, repeats))
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     paragraph.add_run().add_picture(str(PUBLIC / 'results/03_prediction_vs_mos.png'), width=Inches(2.75))
-    document.add_paragraph(OPTICAL_EXAMPLE)
+    optical_description = document.add_paragraph(OPTICAL_EXAMPLE)
+    optical_description.paragraph_format.keep_with_next = True
+    optical_description.paragraph_format.keep_together = True
     for start in (0, 3):
         paragraph = document.add_paragraph()
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         paragraph.paragraph_format.keep_with_next = start == 0
         for name in OPTICAL_IMAGES[start:start + 3]:
             paragraph.add_run().add_picture(str(PUBLIC / name), width=Inches(2.3))
+    for root in (document.styles.element, document.element):
+        for border in list(root.iter(qn('w:pBdr'))):
+            border.getparent().remove(border)
     document.save(PUBLIC / 'README.docx')
     print(json.dumps({'guide': str(PUBLIC / 'README.docx'), 'SRCC': reference['SRCC']}))
 
