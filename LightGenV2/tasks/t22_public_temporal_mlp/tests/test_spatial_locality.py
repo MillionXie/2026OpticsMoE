@@ -5,6 +5,7 @@ import torch
 
 from ..model import ModelConfig, Propagation
 from ..tools.spatial_locality import isolated_video_response, audit_spatial_locality
+from ..tools.analyze_spatial_coupling import own_video_propagation
 
 
 class SpatialLocalityTests(unittest.TestCase):
@@ -12,6 +13,23 @@ class SpatialLocalityTests(unittest.TestCase):
         return SimpleNamespace(origins=[(23 + 119 * row, 23 + 119 * column)
                                         for row in range(4) for column in range(4)],
                                propagation=propagation)
+
+    def test_coupling_diagnostic_preserves_identity_inside_video_regions(self):
+        stage = self.make_stage(torch.nn.Identity())
+        field = torch.zeros(1, 518, 518, dtype=torch.complex64)
+        for row, column in stage.origins:
+            field[:, row + 30, column + 30] = 1 + 1j
+        actual = own_video_propagation(stage, stage.propagation.forward, field)
+        self.assertTrue(torch.equal(actual, field))
+
+    def test_coupling_diagnostic_removes_a_source_arriving_in_another_video(self):
+        stage = self.make_stage(torch.nn.Identity())
+        field = torch.zeros(1, 518, 518, dtype=torch.complex64)
+        field[:, 60, 60] = 1
+        translate = lambda value: torch.roll(value, 119, dims=-1)
+        self.assertEqual(float(translate(field).abs().sum()), 1.)
+        isolated = own_video_propagation(stage, translate, field)
+        self.assertEqual(float(isolated.abs().sum()), 0.)
 
     def test_identity_propagation_keeps_each_source_in_its_own_region(self):
         stage = self.make_stage(torch.nn.Identity())
