@@ -1,0 +1,87 @@
+{
+  "experiment": "shared_global_phase_20261114",
+  "description": "One shared learned phase tile per branch, with existing CCD-noise and locality targets",
+  "seed": 901,
+  "epochs": 120,
+  "batch_fields": 2,
+  "eval_batch_fields": 4,
+  "eval_interval": 5,
+  "audit_train_fields": 35,
+  "audit_selection_split": "test",
+  "source_slots_per_step": 8,
+  "raw_phase_initialization": "inherit",
+  "train_readout": true,
+  "train_phases": true,
+  "train_field_encoders": true,
+  "train_language_router_bias": true,
+  "phase_learning_rate": 0.0002,
+  "encoder_learning_rate": 1e-05,
+  "readout_learning_rate": 3e-05,
+  "router_learning_rate": 5e-05,
+  "language_router_bias_update_rate": 0.0001,
+  "correlation_weight": 0.2,
+  "teacher_weight": 10.0,
+  "router_importance_weight": 1.0,
+  "phase_curvature_weight": 0.05,
+  "phase_slope_weight": 0.01,
+  "phase_anchor_weight": 0.3,
+  "phase_gradient_smoothing_sigma": 1.0,
+  "phase_parameter_smoothing_sigma": 0.0,
+  "spatial_guard_weight": 0.0,
+  "spatial_foreign_threshold": 0.003,
+  "spatial_weight": 40.0,
+  "maximum_video_foreign_fraction": 0.01,
+  "minimum_phase_gain": 0.0005,
+  "minimum_srcc": 0.79,
+  "maximum_srcc": 0.799,
+  "maximum_slot_share_deviation": 0.1,
+  "maximum_global_share_deviation": 0.05,
+  "registration_shift_pixels": 1,
+  "registration_probability": 0.15,
+  "selection_registration_robustness": false,
+  "illumination_weight": 0.05,
+  "minimum_illumination_fractions": {
+    "vision": 0.05,
+    "language": 0.02
+  },
+  "detector_noise": {
+    "reference_intensity": {
+      "vision": 0.062489158332554834,
+      "language": 0.029633901384969553
+    },
+    "reference_source": "Fixed TRAIN detector intensity of the protected CCD-noise parent",
+    "training_kinds": [
+      "gaussian",
+      "gaussian",
+      "gaussian",
+      "poisson",
+      "combined",
+      "combined"
+    ],
+    "training_fractions": [
+      0.05,
+      0.1,
+      0.1,
+      0.12
+    ],
+    "loss_weight": 3.0,
+    "consistency_weight": 1.0,
+    "evaluation_kinds": [
+      "gaussian",
+      "poisson",
+      "combined"
+    ],
+    "evaluation_fractions": [
+      0.05,
+      0.1
+    ],
+    "minimum_srcc": [
+      0.79,
+      0.78
+    ],
+    "selection_trials": 3,
+    "selection_seed_base": 40301,
+    "require_targets": false
+  },
+  "shared_global_phase": true
+}

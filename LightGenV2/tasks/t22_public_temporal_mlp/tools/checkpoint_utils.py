@@ -1,9 +1,28 @@
 """Checkpoint fingerprints and a metadata-minimal public export."""
 from pathlib import Path
+from dataclasses import replace
 import hashlib
+import math
 import tempfile
 
 import torch
+
+
+def share_global_phases(model):
+    """Initialize one learnable phase tile per branch from the parent tiles."""
+    if model.cfg.shared_global_phase:
+        return model
+    state = model.state_dict()
+    for name in ('frame_global.raw_global_phase', 'video_global.raw_global_phase'):
+        phase = 2 * math.pi * state[name].double().sigmoid()
+        shared = torch.atan2(phase.sin().mean(0, keepdim=True),
+                             phase.cos().mean(0, keepdim=True)).remainder(2 * math.pi)
+        probability = (shared / (2 * math.pi)).clamp(1e-7, 1 - 1e-7)
+        state[name] = torch.logit(probability).to(state[name].dtype)
+    shared_model = type(model)(replace(model.cfg, shared_global_phase=True))
+    shared_model.to(next(model.parameters()).device)
+    shared_model.load_state_dict(state, strict=True)
+    return shared_model.eval()
 
 
 def file_sha256(path):

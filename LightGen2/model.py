@@ -9,7 +9,8 @@ from torch import nn
 from torch.nn import functional as F
 
 
-ARCHITECTURE = 'lightgen2_temporal_inference_v2'
+ARCHITECTURE = 'lightgen2_temporal_inference_v3_shared_phase'
+LEGACY_ARCHITECTURE = 'lightgen2_temporal_inference_v2'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -30,8 +31,11 @@ class ModelConfig:
     cutoff_deg: float = 0.5
     canvas: int = 518
     active: int = 478
+    shared_global_phase: bool = True
 
     def __post_init__(self):
+        if not isinstance(self.shared_global_phase, bool):
+            raise ValueError('Global phase sharing must be a boolean')
         geometry = (self.width, self.router_hidden, self.readout_hidden,
                     self.prompt_length, self.videos, self.frames,
                     self.tokens, self.canvas, self.active)
@@ -151,7 +155,8 @@ class OpticalGlobal(nn.Module):
         self.width_to_field = nn.Linear(config.width, side)
         if self.is_vision:
             self.tokens_to_field = nn.Linear(config.tokens, side)
-        self.raw_phase = nn.Parameter(torch.empty(16, 111, 111))
+        phase_count = 1 if config.shared_global_phase else config.videos
+        self.raw_phase = nn.Parameter(torch.empty(phase_count, 111, 111))
         self.propagation = Propagation(config)
         self.norm = nn.LayerNorm(96)
         self.output = nn.Linear(96, config.width) if self.is_vision else nn.Identity()
@@ -172,6 +177,7 @@ class OpticalGlobal(nn.Module):
 
     def phase(self, *, wrapped=False):
         value = 2 * math.pi * torch.sigmoid(self.raw_phase)
+        value = value.expand(self.cfg.videos, -1, -1)
         return value.remainder(2 * math.pi) if wrapped else value
 
     def modulation(self):
@@ -307,8 +313,12 @@ class LightGen2(nn.Module):
 
 def load_lightgen2(path, device='cpu'):
     payload = torch.load(path, map_location='cpu', weights_only=True)
-    if payload['schema'] != 2 or payload['architecture'] != ARCHITECTURE:
+    if payload['schema'] != 2 or payload['architecture'] not in (ARCHITECTURE, LEGACY_ARCHITECTURE):
         raise ValueError('Expected the LightGen2 inference checkpoint')
-    model = LightGen2(ModelConfig(**payload['config']))
+    config = dict(payload['config'])
+    config.setdefault('shared_global_phase', False)
+    if config['shared_global_phase'] != (payload['architecture'] == ARCHITECTURE):
+        raise ValueError('Global phase sharing conflicts with the checkpoint architecture')
+    model = LightGen2(ModelConfig(**config))
     model.load_state_dict(payload['model'], strict=True)
     return model.to(device).eval(), payload['metadata']

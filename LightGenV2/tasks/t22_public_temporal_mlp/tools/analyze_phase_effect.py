@@ -57,7 +57,7 @@ def constant_modulation(stage,centers,zero=False):
     phase = torch.zeros_like(centers) if zero else centers
     coefficient = centers.new_tensor(stage.cfg.alpha_eval)
     values = coefficient*torch.exp(1j*phase)+(1-coefficient)
-    return values[:,None,None].expand_as(stage.raw_global_phase)
+    return values[:,None,None].expand_as(stage.phase())
 
 
 def plot_phases(records,arrays,path):

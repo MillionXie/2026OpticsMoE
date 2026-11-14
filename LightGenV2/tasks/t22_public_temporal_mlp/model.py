@@ -40,6 +40,7 @@ class ModelConfig:
     readout_mode: str = 'five_levels'
     visual_output_norm: bool = False
     fused_readout: bool = False
+    shared_global_phase: bool = False
     detector_processing: str = 'legacy_log_clip'
     prompt_length: int = 38
     videos: int = 16
@@ -64,6 +65,10 @@ class ModelConfig:
     active: int = 478
 
     def __post_init__(self):
+        if not isinstance(self.shared_global_phase, bool):
+            raise ValueError('Global phase sharing must be a boolean')
+        if self.shared_global_phase and not self.fused_readout:
+            raise ValueError('Shared global phases require the fused readout architecture')
         if self.detector_processing not in ('legacy_log_clip', 'relative_intensity'):
             raise ValueError('Unsupported detector processing')
         if self.fused_readout and (self.orm_mode != 'amplitude' or self.readout_mode != 'five_levels'
@@ -216,7 +221,8 @@ class GlobalStage(nn.Module):
         self.width_to_field=nn.Linear(cfg.width,side)
         if frame_level:
             self.tokens_to_field=nn.Linear(cfg.tokens,side)
-        self.raw_global_phase=nn.Parameter(torch.empty(16,111,111))
+        phase_count = 1 if cfg.shared_global_phase else cfg.videos
+        self.raw_global_phase = nn.Parameter(torch.empty(phase_count, 111, 111))
         nn.init.normal_(self.raw_global_phase,0,0.25)
         self.propagation=Propagation(cfg)
         self.norm = nn.LayerNorm(96)
@@ -243,6 +249,7 @@ class GlobalStage(nn.Module):
 
     def phase(self, *, wrapped=False):
         value = 2 * math.pi * torch.sigmoid(self.raw_global_phase)
+        value = value.expand(self.cfg.videos, -1, -1)
         return value.remainder(2 * math.pi) if wrapped else value
 
     def process_detector(self, patches):
@@ -413,6 +420,9 @@ class LightGenTemporal(nn.Module):
             architecture = (FUSED_READOUT_ARCHITECTURE + '_' + self.cfg.detector_processing
                             + '_' + self.cfg.expert_mode + suffix)
             schema = 8
+        if self.cfg.shared_global_phase:
+            architecture += '_shared_phase'
+            schema = 9
         return {'schema':schema, 'architecture':architecture,
                 'config':asdict(self.cfg),'model':self.state_dict(),'metadata':metadata}
 
@@ -422,7 +432,8 @@ def load_lightgen(path,device='cpu'):
     architecture = payload['architecture']
     if architecture.startswith(FUSED_READOUT_ARCHITECTURE + '_'):
         model = LightGenTemporal(ModelConfig(**payload['config']))
-        if payload['schema'] != 8 or model.checkpoint()['architecture'] != architecture:
+        expected_schema = 9 if model.cfg.shared_global_phase else 8
+        if payload['schema'] != expected_schema or model.checkpoint()['architecture'] != architecture:
             raise ValueError('Fused architecture conflicts with its configuration')
         model.load_state_dict(payload['model'], strict=True)
         return model.to(device).eval(), payload['metadata']

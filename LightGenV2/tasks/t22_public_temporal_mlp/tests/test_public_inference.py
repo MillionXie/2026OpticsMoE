@@ -24,7 +24,7 @@ class PublicInferenceTests(unittest.TestCase):
         config = research.ModelConfig(
             readout_hidden=32, expert_mode='linear', orm_mode='amplitude',
             fusion_router_input='all_tokens', fused_readout=True,
-            detector_processing='relative_intensity')
+            detector_processing='relative_intensity', shared_global_phase=True)
         cls.original = research.LightGenTemporal(config).eval()
         cls.original.prompt_ready.fill_(True)
         cls.original.quality_ready.fill_(True)
@@ -81,7 +81,7 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertFalse(hasattr(self.inference, 'set_quality_levels'))
         self.assertFalse(hasattr(self.inference, 'checkpoint'))
         self.assertFalse(self.omitted.intersection(self.inference.state_dict()))
-        self.assertEqual(sum(parameter.numel() for parameter in self.inference.parameters()), 3777350)
+        self.assertEqual(sum(parameter.numel() for parameter in self.inference.parameters()), 3407720)
 
     def test_normalized_rgb_groups_preserve_order_and_tail_padding(self):
         first = np.empty((16, 4, 3, 448, 448), dtype=np.float16)

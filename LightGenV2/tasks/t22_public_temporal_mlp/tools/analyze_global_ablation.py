@@ -122,10 +122,12 @@ def main():
                             continue
                         stage_index=('frame_global','video_global').index(name)
                         generator=torch.Generator().manual_seed(seed+1000*stage_index)
+                        shape = tuple(stage.raw_global_phase.shape)
                         if kind=='random_raw_phase':
-                            phase=2*math.pi*torch.sigmoid(.25*torch.randn(16,111,111,generator=generator))
+                            phase=2*math.pi*torch.sigmoid(.25*torch.randn(shape,generator=generator))
                         else:
-                            phase=2*math.pi*torch.rand(16,111,111,generator=generator)
+                            phase=2*math.pi*torch.rand(shape,generator=generator)
+                        phase = phase.expand(model.cfg.videos, -1, -1)
                         phase=phase.to(args.device)
                         identities[name]={}
                         if kind in ('random_global','random_global_default'):

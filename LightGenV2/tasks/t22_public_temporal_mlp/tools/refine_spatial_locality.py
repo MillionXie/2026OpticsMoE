@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from dataclasses import replace
 from unittest.mock import patch
 import json
 import math
@@ -24,6 +25,7 @@ if __package__:
     from .run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from .spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from .training_policy import restrict_training_to
+    from .checkpoint_utils import share_global_phases
     from .optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from .analyze_phase_effect import constant_modulation, phase_information
     from .evaluate_phase_robustness import evaluate_condition as evaluate_perturbation
@@ -36,6 +38,7 @@ else:
     from run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from training_policy import restrict_training_to
+    from checkpoint_utils import share_global_phases
     from optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from analyze_phase_effect import constant_modulation, phase_information
     from evaluate_phase_robustness import evaluate_condition as evaluate_perturbation
@@ -151,11 +154,14 @@ def train(args):
         raise ValueError('Frozen prompt identity differs')
     if args.teacher_weights is not None:
         teacher, teacher_metadata = load_lightgen(args.teacher_weights, args.device)
-        if teacher.cfg != model.cfg or teacher_metadata['dataset'] != parent_metadata['dataset']:
+        compatible_teacher = replace(teacher.cfg, shared_global_phase=model.cfg.shared_global_phase)
+        if compatible_teacher != model.cfg or teacher_metadata['dataset'] != parent_metadata['dataset']:
             raise ValueError('Teacher architecture or dataset differs')
     else:
         teacher = copy.deepcopy(model)
     teacher.requires_grad_(False).eval()
+    if config.get('shared_global_phase', False):
+        model = share_global_phases(model)
     phase_initialization = config.get('raw_phase_initialization', 'inherit')
     if phase_initialization not in ('inherit', 'zeros'):
         raise ValueError('Expected inherited or zero-initialized raw phase parameters')
@@ -195,10 +201,12 @@ def train(args):
                 'source_commit': os.environ.get('LIGHTGEN_SOURCE_COMMIT', head), 'checkout_HEAD': head,
                 'source_sha256': {name: sha256(_paths.source_path(name))
                                   for name in ('model.py', 'refine_spatial_locality.py', 'spatial_locality.py',
-                                               'optical_training.py', 'evaluate_detector_noise.py')},
+                                               'optical_training.py', 'evaluate_detector_noise.py',
+                                               'checkpoint_utils.py')},
                 'command': sys.argv, 'pid': os.getpid(), 'config': config,
                 'initialization': {'checkpoint_sha256': sha256(args.weights), 'parent_epoch': parent_metadata.get('epoch')},
                 'raw_phase_initialization': phase_initialization,
+                'shared_global_phase': model.cfg.shared_global_phase,
                 'initial_phase_statistics': initial_phase_statistics,
                 'teacher_checkpoint_sha256': sha256(args.teacher_weights or args.weights),
                 'dataset': payload['identity'], 'front_source': front['source'],
