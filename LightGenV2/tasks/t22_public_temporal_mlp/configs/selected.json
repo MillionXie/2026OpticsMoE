@@ -1,56 +1,171 @@
 {
   "schema": 3,
-  "selection": "legacy_phase_independent_gain_leakage_under_one_percent_readout32",
+  "selection": "ccd_noise_read_shot_validated_epoch75_readout32",
   "checkpoint": "runs/simulation/current/LightGen.pt",
-  "checkpoint_sha256": "efbd6a12c0b579e2cc897a4417de9c7eabf2a9a52749026571734d7a65537812",
+  "checkpoint_sha256": "c303ce9e7ab3df5b5d9f11c900c0c264adddef09aeee5594bb3142f06afb4f02",
   "architecture": "t22_serial_top2_global2_fused_readout_v8_relative_intensity_linear_no_ln192",
   "model_parameters": 3777350,
-  "selected_epoch": 25,
-  "completed_epochs": 100,
+  "selected_epoch": 75,
+  "completed_epochs": 160,
   "evaluation": {
     "role": "original_TEST_development",
     "videos": 558,
-    "srcc": 0.7923711164547217,
+    "srcc": 0.7962891201778162,
     "selection_interval": [
       0.79,
       0.799
     ],
-    "slot_cycle_mean_srcc": 0.7911904112761917,
-    "slot_cycle_minimum_srcc": 0.7823838192655007,
+    "slot_cycle_mean_srcc": 0.7937901825833449,
+    "slot_cycle_minimum_srcc": 0.7886420853048103,
     "phase_gain": {
-      "vision": 0.5066845421737437,
-      "language": 0.018061730557423106
+      "vision": 0.19234457664194826,
+      "language": 0.004943642694396733
     },
     "constant_phase_srcc": {
       "vision": {
-        "flat": 0.28434680984811256,
-        "zero": 0.285686574280978,
-        "pi": 0.285686574280978
+        "flat": 0.6027308885279172,
+        "pi": 0.6039445435358679,
+        "zero": 0.6039445435358679
       },
       "language": {
-        "flat": 0.7732456899494525,
-        "zero": 0.7743093858972986,
-        "pi": 0.7743093858972986
+        "flat": 0.7910841552134492,
+        "pi": 0.7913454774834194,
+        "zero": 0.7913454774834194
       }
     },
     "mean_cross_video_energy_percent": {
-      "vision": 0.23974250721675092,
-      "language": 0.20959432834365463
+      "vision": 0.30496083066454927,
+      "language": 0.23265773677484108
     },
     "maximum_cross_video_energy_percent": {
-      "vision": 0.6743967533111572,
-      "language": 0.49840211868286133
+      "vision": 0.9129643440246582,
+      "language": 0.6371974945068359
+    },
+    "detector_noise_validation": {
+      "trials_per_condition": 10,
+      "seed_base": 29301,
+      "candidate_TRAIN_reference": [
+        {
+          "kind": "gaussian",
+          "level": 0.05,
+          "trials": 10,
+          "mean_srcc": 0.7940844881473371,
+          "minimum_srcc": 0.7920096097120168,
+          "maximum_srcc": 0.7991834533939126,
+          "mean_delta_srcc": -0.002204632030479048
+        },
+        {
+          "kind": "gaussian",
+          "level": 0.1,
+          "trials": 10,
+          "mean_srcc": 0.7892961020316084,
+          "minimum_srcc": 0.7861529794596444,
+          "maximum_srcc": 0.7975955243208982,
+          "mean_delta_srcc": -0.006993018146207786
+        },
+        {
+          "kind": "poisson",
+          "level": 99.99999999999999,
+          "trials": 10,
+          "mean_srcc": 0.7949965125520928,
+          "minimum_srcc": 0.7912012270378445,
+          "maximum_srcc": 0.7975121581309013,
+          "mean_delta_srcc": -0.0012926076257233632
+        },
+        {
+          "kind": "poisson",
+          "level": 399.99999999999994,
+          "trials": 10,
+          "mean_srcc": 0.7955336891934213,
+          "minimum_srcc": 0.7942448181964292,
+          "maximum_srcc": 0.7972733523298117,
+          "mean_delta_srcc": -0.0007554309843949003
+        },
+        {
+          "kind": "combined",
+          "level": 0.05,
+          "trials": 10,
+          "mean_srcc": 0.7939170827035995,
+          "minimum_srcc": 0.7904863982198039,
+          "maximum_srcc": 0.7965075851810979,
+          "mean_delta_srcc": -0.0023720374742166594
+        },
+        {
+          "kind": "combined",
+          "level": 0.1,
+          "trials": 10,
+          "mean_srcc": 0.7905545036312759,
+          "minimum_srcc": 0.784230584127259,
+          "maximum_srcc": 0.79431561384245,
+          "mean_delta_srcc": -0.005734616546540283
+        }
+      ],
+      "fixed_parent_TRAIN_reference": [
+        {
+          "kind": "gaussian",
+          "level": 0.05,
+          "trials": 10,
+          "mean_srcc": 0.7940184275342397,
+          "minimum_srcc": 0.7918219839828312,
+          "maximum_srcc": 0.799165253732716,
+          "mean_delta_srcc": -0.0022706926435764885
+        },
+        {
+          "kind": "gaussian",
+          "level": 0.1,
+          "trials": 10,
+          "mean_srcc": 0.789167478787884,
+          "minimum_srcc": 0.785772547832052,
+          "maximum_srcc": 0.7976761968229004,
+          "mean_delta_srcc": -0.0071216413899322095
+        },
+        {
+          "kind": "poisson",
+          "level": 99.99999999999999,
+          "trials": 10,
+          "mean_srcc": 0.7948735905899239,
+          "minimum_srcc": 0.7915129350871045,
+          "maximum_srcc": 0.7977380825778609,
+          "mean_delta_srcc": -0.0014155295878922614
+        },
+        {
+          "kind": "poisson",
+          "level": 399.99999999999994,
+          "trials": 10,
+          "mean_srcc": 0.7955182661029272,
+          "minimum_srcc": 0.7943240057165882,
+          "maximum_srcc": 0.7974173264996949,
+          "mean_delta_srcc": -0.0007708540748889714
+        },
+        {
+          "kind": "combined",
+          "level": 0.05,
+          "trials": 10,
+          "mean_srcc": 0.7938497315156338,
+          "minimum_srcc": 0.7906374864887507,
+          "maximum_srcc": 0.7964933915174321,
+          "mean_delta_srcc": -0.002439388662182407
+        },
+        {
+          "kind": "combined",
+          "level": 0.1,
+          "trials": 10,
+          "mean_srcc": 0.7903853845583566,
+          "minimum_srcc": 0.7840518682891336,
+          "maximum_srcc": 0.7942124939404901,
+          "mean_delta_srcc": -0.00590373561945956
+        }
+      ],
+      "targets_met": true
     }
   },
   "run_id": "current",
-  "training_run_id": "phase_legacy_registration_20261114",
+  "training_run_id": "ccd_noise_20261114/distillation",
   "refinement_stages": [
-    "phase_legacy_leakage_20261114/optical",
-    "phase_legacy_tail_20261114/joint",
-    "phase_legacy_registration_20261114"
+    "ccd_noise_20261114/distillation"
   ],
   "runtime_benchmark": {
-    "directory": "runs/smoke/runtime_legacy_registration_20261114",
+    "directory": "runs/smoke/runtime_ccd_noise_20261114",
     "project": "reference"
   }
 }
