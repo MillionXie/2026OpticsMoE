@@ -165,7 +165,7 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 主项目代码沿用ACCEL官方README声明的GPL v3.0，Qwen上游Apache-2.0许可与署名文件随包附带。
 上一轮用户对三个推理源码文件仅删除文档字符串。原5次A100计时的源码SHA保留在原协议中。
 本轮修复Python 3.8不支持`Path.write_text(newline=...)`的兼容问题，指标经临时文件原子替换保存。
-已在RFL的Python 3.8.0、PyTorch 2.4.1、RTX 4070 Laptop环境核验完整558条推理。
+已在RFL的Python 3.8.0、PyTorch 2.4.1环境核验完整558条推理的兼容性。
 新增主入口回归覆盖旧版Pathlib及重复写入已有指标文件。
 兼容回归记录位于`runs/smoke/python38_final_20261115`。
 根目录`LICENSE`为本项目GPL v3.0文本，`licenses/NOTICE.txt`与`licenses/QWEN_LICENSE.txt`
