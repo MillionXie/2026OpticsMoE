@@ -76,7 +76,7 @@ def main():
     probe = "import json,platform,torch; print(json.dumps({'python':platform.python_version(),'torch':str(torch.__version__),'cuda':torch.version.cuda,'device':torch.cuda.get_device_name(0)}))"
     hardware = json.loads(subprocess.check_output([sys.executable, '-c', probe],
                                                   env=environment, text=True))
-    names = ('infer.py', 'model.py', 'visualize.py', 'weights/LightGen2.pt', 'data/test_rgb.npz')
+    names = ('infer.py', 'model.py', 'visualize.py', 'weights/LightGen2.pt', 'data/input_for_review.npz')
     identities = {name: sha256(args.project / name) for name in names}
     projects = {'reference': args.project}
     if args.comparison_project:
@@ -128,7 +128,7 @@ def main():
             monitor.wait(timeout=10)
             telemetry.close()
         metrics = json.loads((output / '02_metrics.json').read_text('utf-8'))
-        if metrics['videos'] != 558 or metrics['fields'] != 35 or metrics['device_name'] != hardware['device']:
+        if metrics['videos'] != 558 or metrics['device_name'] != hardware['device']:
             raise ValueError('Runtime sample or device identity differs')
         if sha256(output / '01_predictions.csv') != expected_predictions:
             raise ValueError('Repeated full evaluation predictions differ')

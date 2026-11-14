@@ -70,8 +70,6 @@ def evaluate(model, archive, sample_ids, targets, device, directory, *, visualiz
     if not 1 <= visualize_field <= field_count:
         raise ValueError(f'--visualize-field must be between 1 and {field_count}')
     records = []
-    routing = {branch: {'selected': [], 'probabilities': []}
-               for branch in ('vision', 'language')}
     optical_capture = None
     for field_number, (start, count, normalized_rgb) in enumerate(iter_rgb_fields(archive, sample_ids), 1):
         normalized_rgb = normalized_rgb.to(device)
@@ -83,23 +81,16 @@ def evaluate(model, archive, sample_ids, targets, device, directory, *, visualiz
         prediction = result['prediction'][0, :count].cpu().tolist()
         for slot, value in enumerate(prediction, 1):
             records.append({'sample_id': sample_ids[start + slot - 1],
-                            'field': field_number, 'slot': slot,
                             'target_MOS': float(targets[start + slot - 1]), 'predicted_MOS': value})
-        for branch in routing:
-            for key in routing[branch]:
-                routing[branch][key].append(result['routing'][branch][key][0, :count].cpu().numpy())
         print(f'Field {field_number}/{field_count}  videos {len(records)}/{len(sample_ids)}', flush=True)
 
     predictions = np.asarray([record['predicted_MOS'] for record in records])
     correlation = None
     if np.ptp(targets) > 0 and np.ptp(predictions) > 0:
         correlation = float(spearmanr(predictions, targets).statistic)
-    metrics = {'videos': len(records), 'fields': field_count, 'SRCC': correlation,
-               'visualized_field': visualize_field}
-    full_routing = {branch: {key: np.concatenate(values) for key, values in data.items()}
-                    for branch, data in routing.items()}
+    metrics = {'videos': len(records), 'SRCC': correlation}
     directory = Path(directory)
-    export_evaluation(records, metrics, full_routing, directory)
+    export_evaluation(records, metrics, directory)
     normalized_rgb, captured = optical_capture
     start = (visualize_field - 1) * 16
     real_count = min(16, len(sample_ids) - start)
@@ -108,15 +99,15 @@ def evaluate(model, archive, sample_ids, targets, device, directory, *, visualiz
     field_records = [{'sample_id': sample_id, 'is_padding': slot >= real_count}
                      for slot, sample_id in enumerate(field_ids)]
     export_visualizations(model, field_records, normalized_rgb, captured, directory,
-                          field_number=visualize_field, field_count=field_count)
+                          field_number=visualize_field)
     return records, metrics
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--weights', type=Path, default=PROJECT / 'weights/LightGen2.pt')
-    parser.add_argument('--input', type=Path, default=PROJECT / 'data/test_rgb.npz',
-                        help='Normalized RGB frames, ordered sample IDs and human MOS labels')
+    parser.add_argument('--input', type=Path, default=PROJECT / 'data/input_for_review.npz',
+                        help='LGVQ video frames, ordered sample IDs and human MOS labels')
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--output', type=Path, default=PROJECT / 'results', help='Result directory')
     parser.add_argument('--visualize-field', type=int, default=1,

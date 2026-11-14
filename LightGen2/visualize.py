@@ -14,7 +14,7 @@ import numpy as np
 import torch
 
 BRANCHES = ('vision', 'language')
-EXPERT_COLORS = ('#6486a3', '#d4a478', '#8eaa93', '#b495b5')
+PREDICTION_COLOR = '#6486a3'
 
 
 def configure_figures():
@@ -89,7 +89,7 @@ def capture_optical_fields(model, normalized_rgb):
     return output, captured
 
 
-def plot_input_frames(normalized_rgb, output, field_number, field_count):
+def plot_input_frames(normalized_rgb, output):
     images = ((normalized_rgb[0].float() + 1) * 127.5).round().clamp(0, 255).to(torch.uint8)
     images = images.permute(0, 1, 3, 4, 2).cpu().numpy()
     figure, axes = plt.subplots(4, 4, figsize=(6.6, 7.0), layout='constrained')
@@ -98,34 +98,10 @@ def plot_input_frames(normalized_rgb, output, field_number, field_count):
         mosaic = np.concatenate((np.concatenate(frames[:2], 1),
                                  np.concatenate(frames[2:], 1)), 0)
         axis.imshow(mosaic)
-        axis.set_title(f'Slot {slot + 1}')
+        axis.set_title(f'Video {slot + 1}')
         axis.set_axis_off()
-    figure.suptitle(f'Field {field_number} of {field_count} with four frames per video')
+    figure.suptitle('Input video frames')
     save_figure(figure, output)
-
-
-def export_routing(routing, records, directory):
-    arrays = {'sample_ids': np.asarray([record['sample_id'] for record in records])}
-    figure, axes = plt.subplots(1, 2, figsize=(5.0, 2.1), layout='constrained')
-    for branch, axis in zip(BRANCHES, axes):
-        selected = routing[branch]['selected']
-        probabilities = routing[branch]['probabilities']
-        counts = selected.reshape(-1, 4).sum(0)
-        share = 100 * counts / counts.sum()
-        arrays[branch + '_selected'] = selected
-        arrays[branch + '_probabilities'] = probabilities
-        arrays[branch + '_selection_count'] = counts
-        arrays[branch + '_share_percent'] = share
-        axis.bar(range(4), share, color=EXPERT_COLORS, width=.65)
-        axis.set_xticks(range(4), ['E1', 'E2', 'E3', 'E4'])
-        axis.set_ylim(0, 60)
-        axis.set_ylabel('Optical expert share (%)')
-        axis.set_title(branch.capitalize() + f' branch over {len(records)} videos')
-        axis.spines[['top', 'right']].set_visible(False)
-        for index, value in enumerate(share):
-            axis.text(index, value + 1, f'{value:.1f}', ha='center')
-    np.savez_compressed(directory / '05_optical_expert_share.npz', **arrays)
-    save_figure(figure, directory / '05_optical_expert_share.png')
 
 
 def write_records(path, records):
@@ -135,15 +111,15 @@ def write_records(path, records):
         writer.writerows(records)
 
 
-def export_evaluation(records, metrics, routing, directory):
-    """Save every actual video prediction and two whole-evaluation figures."""
+def export_evaluation(records, metrics, directory):
+    """Save every actual video prediction and the quality comparison figure."""
     configure_figures()
     directory.mkdir(parents=True, exist_ok=True)
     write_records(directory / '01_predictions.csv', records)
     target = np.asarray([record['target_MOS'] for record in records])
     prediction = np.asarray([record['predicted_MOS'] for record in records])
     figure, axis = plt.subplots(figsize=(3.3, 3.1), layout='constrained')
-    axis.scatter(target, prediction, s=9, alpha=.6, color=EXPERT_COLORS[0], linewidths=0)
+    axis.scatter(target, prediction, s=9, alpha=.6, color=PREDICTION_COLOR, linewidths=0)
     lower, upper = min(target.min(), prediction.min()), max(target.max(), prediction.max())
     axis.plot([lower, upper], [lower, upper], color='#888888', linewidth=.7)
     axis.set_xlabel('Human temporal MOS')
@@ -152,11 +128,10 @@ def export_evaluation(records, metrics, routing, directory):
     axis.set_title(f"{len(records)} videos with SRCC {score}")
     axis.spines[['top', 'right']].set_visible(False)
     save_figure(figure, directory / '03_prediction_vs_mos.png')
-    export_routing(routing, records, directory)
 
 
 @torch.inference_mode()
-def export_visualizations(model, records, normalized_rgb, captured, directory, *, field_number, field_count):
+def export_visualizations(model, records, normalized_rgb, captured, directory, *, field_number):
     """Export the field already captured during the complete evaluation."""
     if len(records) != 16 or tuple(normalized_rgb.shape[:3]) != (1, 16, 4):
         raise ValueError('Visualizations require exactly 16 videos in one optical field')
@@ -176,9 +151,9 @@ def export_visualizations(model, records, normalized_rgb, captured, directory, *
         phase_map = np.zeros((518, 518), dtype=np.float32)
         for slot, (row, column) in enumerate(stage.origins):
             phase_map[row + 2:row + 113, column + 2:column + 113] = phase_tiles[slot]
-        first_number = 6 if branch == 'vision' else 9
-        mask_prefix = directory / f'{first_number:02d}_{branch}_mask'
-        input_prefix = directory / f'{first_number + 1:02d}_{branch}_input_field'
+        first_number = 5 if branch == 'vision' else 8
+        input_prefix = directory / f'{first_number:02d}_{branch}_input_field'
+        mask_prefix = directory / f'{first_number + 1:02d}_{branch}_mask'
         output_prefix = directory / f'{first_number + 2:02d}_{branch}_output_field'
         np.savez_compressed(str(mask_prefix) + '.npz',
                             phase=phase_map, phase_tiles=phase_tiles,
@@ -196,7 +171,7 @@ def export_visualizations(model, records, normalized_rgb, captured, directory, *
                             modulated_field=record['modulated'][0].cpu().numpy(), video_names=names,
                             valid=valid, field_number=field_number)
         plot_field(display_amplitude, str(input_prefix) + '.png',
-                   branch.capitalize() + f' input field {field_number}', quantity='Amplitude')
+                   branch.capitalize() + ' input field', quantity='Amplitude')
         output_field = record['propagated'][0].cpu().numpy()
         output_intensity = record['propagated'].abs().square().float()[0].cpu().numpy()
         display_intensity, output_scale = normalize_display(output_intensity, percentile=99.8)
@@ -207,5 +182,5 @@ def export_visualizations(model, records, normalized_rgb, captured, directory, *
                             transfer=stage.propagation.transfer.cpu().numpy(), video_names=names,
                             valid=valid, field_number=field_number)
         plot_field(display_intensity, str(output_prefix) + '.png',
-                   branch.capitalize() + f' output field {field_number}')
-    plot_input_frames(normalized_rgb, directory / '04_input_frames.png', field_number, field_count)
+                   branch.capitalize() + ' output field')
+    plot_input_frames(normalized_rgb, directory / '04_input_frames.png')

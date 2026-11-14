@@ -1,161 +1,67 @@
-# LightGen2 temporal video quality inference
+# Codes for temporal video quality assessment with LightGen2
 
-LightGen2 predicts a mean opinion score (MOS) for each video. The inference
-graph combines a frozen Qwen-derived visual frontend, electronic routers and
-linear experts, vision and language optical propagation, and a two-layer quality
-readout. Each coherent optical field contains 16 videos.
+## Introduction
 
-The editable detailed guide is supplied as `README.docx`.
+This is the code to assess temporal video quality with LightGen2 in Python using PyTorch. We provide pretrained weights and video frames from the LGVQ dataset to evaluate 558 videos, with 16 videos processed in parallel. The code predicts a mean opinion score (MOS) for each video and provides examples of the optical wave propagation for reference.
 
-## Installation
+## Environment
 
-Use Python 3.11 and install the dependencies from this directory.
+We have tested the code with Python 3.11.15 and PyTorch 2.6.0 on an NVIDIA A100 GPU. For the required Python packages, please refer to requirements.txt.
+
+## Installation guide
+
+Please follow the PyTorch installation guide to install a build compatible with your system. Then install the dependent packages from this directory. [PyTorch installation guide](https://pytorch.org/get-started/locally/)
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-PyTorch 2.6 or later supports the checkpoint loader. For GPU inference, install
-a CUDA-enabled PyTorch build compatible with your driver. Figure export uses
-Arial, with 7 pt labels and 8 pt titles.
+## Files
 
-## Run the complete evaluation
+| File | Description |
+| --- | --- |
+| `data/input_for_review.npz` | Video frames from 558 LGVQ videos, video IDs and human temporal MOS labels. |
+| `weights/LightGen2.pt` | Model weights, including the frozen Qwen frontend and prompt features. |
+| `model.py` | The network definition and optical propagation based on the angular spectrum method. |
+| `infer.py` | The script to run the complete video quality assessment. |
+| `visualize.py` | The functions to save predictions and visualize the input frames and optical fields. |
+| `requirements.txt` | The required Python packages. |
+| `README.docx` | The editable version of this guide. |
+| `LICENSE, NOTICE and licenses/` | The Apache-2.0 license and attribution for upstream components and data. |
 
-The input archive `data/test_rgb.npz` contains preprocessed RGB frames for all
-558 original TEST videos, their ordered sample IDs and human temporal MOS labels.
-Start the complete evaluation from this directory.
+The following files are generated in `results/`.
+
+| File | Description |
+| --- | --- |
+| `01_predictions.csv` | The video ID, human MOS and predicted MOS for each of the 558 videos. |
+| `02_metrics.json` | SRCC, number of videos, complete program runtime and computing device. |
+| `03_prediction_vs_mos.png` | The predicted MOS compared with the human MOS for all videos. |
+| `04_input_frames.png` | The input frames for the 16 videos used in the optical example. |
+| `05_vision_input_field.npz and .png` | The input optical field of the vision branch. |
+| `06_vision_mask.npz and .png` | The complete learned phase mask of the vision branch. |
+| `07_vision_output_field.npz and .png` | The output optical field of the vision branch. |
+| `08_language_input_field.npz and .png` | The input optical field of the language branch. |
+| `09_language_mask.npz and .png` | The complete learned phase mask of the language branch. |
+| `10_language_output_field.npz and .png` | The output optical field of the language branch. |
+
+## How to execute
+
+Run the following command in the LightGen2 directory. The code first reads the video frames from data/input_for_review.npz and loads the model weights from weights/LightGen2.pt. It extracts visual features with the Qwen-derived frontend, processes them through the vision branch, and combines them with the prompt features in the language branch. The two-layer readout predicts one MOS for each video. Higher MOS indicates better temporal video quality.
 
 ```bash
 python infer.py
 ```
 
-The command selects CUDA when available and otherwise uses CPU. Select a device
-explicitly with `python infer.py --device cuda` or `python infer.py --device cpu`.
-Predictions, metrics and figures are written to `results`.
+Predictions and figures are saved in results/. For the supplied 558 videos, we obtained a Spearman rank correlation coefficient (SRCC) of 0.797065 between the predicted and human MOS. The median complete program runtime was 68.150 seconds over 5 runs on a shared NVIDIA A100-PCIE-40GB. Each execution records its own runtime in 02_metrics.json.
 
-The 558 distinct videos are processed in 35 ordered optical fields. Fields 1–34
-contain 544 distinct videos. Field 35 contains the remaining 14 videos and two
-padding entries copied from videos 1 and 2. SRCC uses exactly the 558 actual
-video predictions and labels. The normalized-RGB reference SRCC is 0.797065.
-The evaluation split was used in checkpoint selection.
+![Predicted and human temporal MOS](results/03_prediction_vs_mos.png)
 
-Five complete runs had a median runtime of 68.150 seconds, ranging from 62.216
-to 77.563 seconds, on a shared NVIDIA A100-PCIE-40GB.
-One complete warm-up preceded five fresh Python processes. Timing covers imports,
-model and NPZ loading, all 558 predictions, metrics and result/figure export,
-with CUDA synchronized before completion. Outer ZIP extraction precedes timing.
-The supplied results come from the median run. Each invocation saves its own
-`total_runtime_seconds` in `02_metrics.json`. Runtime varies with shared load,
-hardware and storage performance.
+The same execution saves the input video frames and captures the input field, learned mask and output field for one group of 16 videos. The examples below show the vision branch in the top row and the language branch in the bottom row, ordered from input to mask to output. Each optical result is saved as numerical data in an NPZ file and as a PNG image.
 
-The same run captures field 1 while computing its predictions and exports its
-input frames, complete masks, and optical input/output fields. Choose another
-field with the following command. Field numbers range from 1 to 35.
+| Input | Mask | Output |
+| --- | --- | --- |
+| ![vision input field](results/05_vision_input_field.png) | ![vision mask](results/06_vision_mask.png) | ![vision output field](results/07_vision_output_field.png) |
+| ![language input field](results/08_language_input_field.png) | ![language mask](results/09_language_mask.png) | ![language output field](results/10_language_output_field.png) |
 
-```bash
-python infer.py --visualize-field 12
-```
-
-Every invocation evaluates all samples in the input NPZ. The selected field's slots
-can be looked up by field and slot in `01_predictions.csv`. Optical NPZ files
-also record the selected field's video IDs and padding flags.
-Expert-share statistics cover all 558 actual videos. Whole-canvas coherent
-propagation couples the slots, so preserve sample order and field composition.
-
-Before packaging, each video contributes four RGB frames sampled at 10% to 90%
-of its frame range. Frames are center-cropped to 65% of their shorter side,
-resized to 448 × 448, and normalized by `(RGB / 255 - 0.5) / 0.5`.
-Frames are normalized on CPU and rounded to the frozen patch kernel's bfloat16
-precision. Float16 storage preserves these prepared values exactly.
-Patch projection, position addition, fixed pooling and the remaining network
-are executed by the inference code. Higher MOS indicates better predicted quality.
-
-Select another compatible normalized RGB archive or result directory with
-the following arguments.
-
-```bash
-python infer.py --input path/to/test_rgb.npz --output path/to/results
-```
-
-## Vision and language branches
-
-| Component | Processing |
-| --- | --- |
-| `vision_frontend` | Saved Qwen patch projection and position tensors, followed by fixed mean pooling |
-| `vision_adapter` | 49 × 1024 visual embeddings to 49 × 192 per frame |
-| `vision_router`, `vision_experts` | Top2 routing and four tokenwise linear experts |
-| `vision_global` | 27 × 27 input patches, phase modulation and wave propagation |
-| `vision_merger` | One 192-dimensional summary per frame |
-| `language_adapter` | 38 × 2048 prompt embeddings to 38 × 192 |
-| `language_router`, `language_experts` | Process four visual summaries plus 38 language tokens |
-| `language_global` | 56 × 56 input patch per video, phase modulation and wave propagation |
-| `readout` | 42 × 96 features to five grade probabilities and their MOS expectation |
-
-Both optical branches use a 518 × 518 canvas with a 478 × 478 active area.
-Sixteen videos occupy a 4 × 4 arrangement. Within each vision slot, four frames
-occupy a 2 × 2 arrangement. Language uses one patch per video.
-
-Each branch learns one 111 × 111 phase mask. Its same values are broadcast
-to all sixteen video slots. Vision and language have separate learned masks.
-
-`LightGen2.forward(normalized_rgb)` accepts floating-point normalized RGB with shape
-`[batch, 16, 4, 3, 448, 448]`. `predict_from_embeddings(visual_embeddings)`
-accepts saved frontend outputs with shape `[batch, 16, 4, 49, 1024]`.
-
-## Read the results in numbered order
-
-| Result files | Contents |
-| --- | --- |
-| `01_predictions.csv` | All 558 video IDs, field/slot numbers, human MOS and predicted MOS |
-| `02_metrics.json` | SRCC, video/field counts, complete program runtime and device |
-| `03_prediction_vs_mos.png` | Predicted versus human MOS for all 558 videos |
-| `04_input_frames.png` | Four sampled frames from each captured slot |
-| `05_optical_expert_share.npz` and `.png` | Expert selections, probabilities and shares over 558 actual videos |
-| `06_vision_mask.npz` and `.png` | Complete phase map, sixteen phase tiles and complex modulation |
-| `07_vision_input_field.npz` and `.png` | Incident field, amplitude, intensity and modulated field |
-| `08_vision_output_field.npz` and `.png` | Propagated field, intensity and propagation transfer |
-| `09_language_mask.npz` and `.png` | Complete language phase map and modulation |
-| `10_language_input_field.npz` and `.png` | Language incident field and modulated field |
-| `11_language_output_field.npz` and `.png` | Language propagated field, intensity and transfer |
-
-CSV field and slot numbers start at 1. Each optical NPZ includes its
-`field_number`, sixteen `video_names` and a `valid` mask. Expert-share arrays
-contain 558 sample IDs and exclude padding. Evaluation follows the original
-NPZ sample order.
-
-Complex fields use `complex64`. Phase and intensity use `float32`. Load NPZ
-files with `numpy.load(path, allow_pickle=False)`. Phase plots use a linear
-−π to π scale. Input amplitude is peak-normalized for display. Output detector
-intensity is scaled linearly by its 99.8th percentile. The brightest 0.2% of
-output pixels saturate in the displayed color scale. Cyan outlines mark the
-478 × 478 active area.
-
-Input NPZ files store `display_amplitude` and `display_scale`. Output NPZ files
-store `display_intensity`, `display_scale` and `display_percentile`. Display
-arrays use a linear [0, 1] scale. The `field`, `amplitude` and `intensity` keys
-retain the original numerical arrays at 518 × 518 resolution.
-
-## Files
-
-| Path | Purpose |
-| --- | --- |
-| `model.py` | Network layers, optical propagation and checkpoint loader |
-| `infer.py` | Complete NPZ evaluation entry point, grouping and metrics |
-| `visualize.py` | Plotting and actual-forward field capture called by `infer.py` |
-| `weights/LightGen2.pt` | Weights, configuration and frozen frontend tensors |
-| `data/test_rgb.npz` | Normalized RGB for all 558 videos, sample IDs and temporal MOS labels |
-| `results` | Full predictions, evaluation plots and selected-field NPZ/PNG files |
-| `README.docx` | Editable installation, architecture and file-format guide |
-| `requirements.txt` | Combined inference and visualization dependencies |
-| `LICENSE`, `NOTICE`, `licenses` | Apache-2.0 terms and Qwen attribution |
-
-## License
-
-The source and LightGen2 weights are distributed under Apache-2.0. Qwen
-components retain their upstream attribution. LGVQ videos and evaluation labels
-retain their authors' attribution and applicable dataset terms. See `NOTICE`
-and `licenses/QWEN_LICENSE.txt`. [LGVQ dataset](https://github.com/zczhang-sjtu/UGVQ)
-
-Upstream components originate from Qwen3-VL-2B-Instruct.
-[Qwen model](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct),
-[Qwen source](https://github.com/QwenLM/Qwen3-VL).
+The Qwen components and LGVQ data retain their upstream attribution. See `NOTICE`
+and `licenses/QWEN_LICENSE.txt`. [Qwen](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct), [LGVQ](https://github.com/zczhang-sjtu/UGVQ)

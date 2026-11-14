@@ -1,4 +1,4 @@
-"""Package the normalized-RGB inference project with private verification."""
+"""Package the inference project with author-side verification."""
 from __future__ import annotations
 
 import argparse
@@ -33,12 +33,12 @@ SOURCE_FILES = (
 )
 RESULT_FILES = (
     '01_predictions.csv', '02_metrics.json', '03_prediction_vs_mos.png',
-    '04_input_frames.png', '05_optical_expert_share.npz', '05_optical_expert_share.png',
+    '04_input_frames.png',
 ) + tuple(f'{number:02d}_{branch}_{kind}.{suffix}'
-          for branch, first in (('vision', 6), ('language', 9))
-          for number, kind in enumerate(('mask', 'input_field', 'output_field'), first)
+          for branch, first in (('vision', 5), ('language', 8))
+          for number, kind in enumerate(('input_field', 'mask', 'output_field'), first)
           for suffix in ('npz', 'png'))
-ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.docx', 'data/test_rgb.npz') + tuple(
+ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.docx', 'data/input_for_review.npz') + tuple(
     'results/' + name for name in RESULT_FILES)
 
 
@@ -58,17 +58,22 @@ def import_public_module(name):
 
 def verify_optical_arrays(directory, predictions, *, shared_phase=False):
     reports = {}
-    metrics = json.loads((directory / '02_metrics.json').read_text('utf-8'))
-    start = (metrics['visualized_field'] - 1) * 16
+    with np.load(directory / '06_vision_mask.npz', allow_pickle=False) as mask:
+        field_number = int(mask['field_number'])
+    if not 1 <= field_number <= (len(predictions) + 15) // 16:
+        raise ValueError('Captured field number is outside the prediction list')
+    start = (field_number - 1) * 16
     captured = predictions[start:start + 16]
     real_count = len(captured)
     captured = captured + predictions[:16 - real_count]
     expected_valid = (np.arange(16) < real_count).tolist()
-    for branch, first in (('vision', 6), ('language', 9)):
-        with np.load(directory / f'{first:02d}_{branch}_mask.npz', allow_pickle=False) as mask, \
-                np.load(directory / f'{first+1:02d}_{branch}_input_field.npz', allow_pickle=False) as source, \
+    for branch, first in (('vision', 5), ('language', 8)):
+        with np.load(directory / f'{first+1:02d}_{branch}_mask.npz', allow_pickle=False) as mask, \
+                np.load(directory / f'{first:02d}_{branch}_input_field.npz', allow_pickle=False) as source, \
                 np.load(directory / f'{first+2:02d}_{branch}_output_field.npz', allow_pickle=False) as target:
             for archive in (mask, source, target):
+                if int(archive['field_number']) != field_number:
+                    raise ValueError('Optical arrays came from different captured fields')
                 if archive['video_names'].tolist() != [row['sample_id'] for row in captured]:
                     raise ValueError('Optical array video order differs')
                 if archive['valid'].tolist() != expected_valid:
@@ -93,16 +98,6 @@ def verify_optical_arrays(directory, predictions, *, shared_phase=False):
             np.testing.assert_allclose(target['display_intensity'], np.clip(target['intensity'] / target['display_scale'], 0, 1), rtol=1e-6)
             np.testing.assert_allclose(target['display_scale'], np.percentile(target['intensity'], 99.8), rtol=1e-6)
             reports[branch] = {'phase_tiles': 16, 'numpy_propagation_relative_error': error}
-    with np.load(directory / '05_optical_expert_share.npz', allow_pickle=False) as routing:
-        if routing['sample_ids'].tolist() != [row['sample_id'] for row in predictions]:
-            raise ValueError('Full routing identities differ')
-        for branch in ('vision', 'language'):
-            selected = routing[branch + '_selected']
-            if selected.shape[0] != 558 or not np.all(selected.sum(-1) == 2):
-                raise ValueError('Expected exactly two selections for each actual item')
-            counts = selected.reshape(-1, 4).sum(0)
-            np.testing.assert_array_equal(counts, routing[branch + '_selection_count'])
-            np.testing.assert_allclose(100 * counts / counts.sum(), routing[branch + '_share_percent'])
     return reports
 
 
@@ -140,7 +135,7 @@ def build_release():
     with manifest.open(encoding='utf-8-sig', newline='') as stream:
         rows = [row for row in csv.DictReader(stream) if row['split'] == 'test']
     public_infer = import_public_module('infer')
-    with np.load(PUBLIC / 'data/test_rgb.npz', allow_pickle=False) as inputs:
+    with np.load(PUBLIC / 'data/input_for_review.npz', allow_pickle=False) as inputs:
         sample_ids, targets = public_infer.read_input_metadata(inputs)
         if len(sample_ids) != 558 or sample_ids != [row['sample_id'] for row in rows]:
             raise ValueError('Normalized RGB identities differ from the selected 558-video order')
@@ -156,8 +151,12 @@ def build_release():
     from scipy.stats import spearmanr
     score = float(spearmanr([float(row['predicted_MOS']) for row in predictions], targets).statistic)
     metrics = json.loads((result_dir / '02_metrics.json').read_text('utf-8'))
-    if score != metrics['SRCC'] or metrics['videos'] != 558 or metrics['fields'] != 35:
+    if score != metrics['SRCC'] or metrics['videos'] != 558:
         raise ValueError('Published summary differs from per-video scores')
+    if set(predictions[0]) != {'sample_id', 'target_MOS', 'predicted_MOS'}:
+        raise ValueError('Published prediction columns differ')
+    if set(metrics) != {'videos', 'SRCC', 'total_runtime_seconds', 'device_name'}:
+        raise ValueError('Published metrics contain unexpected keys')
     if metrics['total_runtime_seconds'] <= 0:
         raise ValueError('Complete program runtime is missing')
     shared_phase = original['config'].get('shared_global_phase', False)

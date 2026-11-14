@@ -1,4 +1,4 @@
-LightGen2 temporal quality reference implementation
+LightGen2 temporal video quality assessment
 Copyright 2026 LightGen2 contributors
 
 This project is distributed under the Apache License, Version 2.0.
@@ -14,7 +14,7 @@ https://github.com/QwenLM/Qwen3-VL
 
 The upstream Apache-2.0 license is included in licenses/QWEN_LICENSE.txt.
 
-The normalized RGB frames, sample identities and temporal MOS labels in
-data/test_rgb.npz originate from the LGVQ dataset and retain the dataset
+The video frames, sample identities and temporal MOS labels in
+data/input_for_review.npz originate from the LGVQ dataset and retain the dataset
 authors' attribution and applicable dataset terms.
 https://github.com/zczhang-sjtu/UGVQ
