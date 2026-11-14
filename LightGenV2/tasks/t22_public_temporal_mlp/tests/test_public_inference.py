@@ -2,6 +2,7 @@
 from dataclasses import fields
 from pathlib import Path
 import tempfile
+import json
 import unittest
 from unittest.mock import patch
 
@@ -54,6 +55,38 @@ class PublicInferenceTests(unittest.TestCase):
         for old, new in (('frame', 'vision'), ('video', 'language')):
             self.assertTrue(torch.equal(expected['routing'][old]['weights'],
                                         actual['routing'][new]['weights']))
+
+    def test_main_saves_metrics_with_python38_pathlib(self):
+        from LightGen2 import visualize
+
+        original_write_text = Path.write_text
+
+        def legacy_write_text(path, *args, **kwargs):
+            if 'newline' in kwargs:
+                raise TypeError("write_text() got an unexpected keyword argument 'newline'")
+            return original_write_text(path, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            inputs = root / 'input.npz'
+            np.savez(inputs, format_version=2, sample_ids=np.array(['a', 'b']))
+            reference = root / 'reference.csv'
+            reference.write_text('sample_id,target_MOS\na,10\nb,20\n', encoding='utf-8')
+            arguments = ['infer.py', '--input', str(inputs), '--reference-scores', str(reference),
+                         '--device', 'cpu', '--output', str(root)]
+            with patch('sys.argv', arguments), \
+                    patch.object(public_infer, 'load_lightgen2', return_value=(None, None)), \
+                    patch.object(public_infer, 'evaluate', return_value=([], {'videos': 2, 'SRCC': .79})), \
+                    patch.object(visualize, 'configure_figures'), \
+                    patch.object(Path, 'write_text', new=legacy_write_text):
+                public_infer.main()
+                public_infer.main()
+            metrics = json.loads((root / '02_metrics.json').read_text('utf-8'))
+            self.assertEqual(metrics['videos'], 2)
+            self.assertEqual(metrics['SRCC'], .79)
+            self.assertEqual(metrics['device_name'], 'CPU')
+            self.assertGreater(metrics['total_runtime_seconds'], 0)
+            self.assertFalse((root / '02_metrics.json.tmp').exists())
 
     def test_export_runs_in_inference_mode_and_retains_tensors(self):
         with tempfile.TemporaryDirectory() as directory:

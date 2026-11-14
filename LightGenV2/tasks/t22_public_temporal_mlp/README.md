@@ -163,8 +163,13 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 `releases/LightGen2.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
 正式包使用`README.pdf`，作者编辑用的`README.docx`单独保留在根目录工程中。
 主项目代码沿用ACCEL官方README声明的GPL v3.0，Qwen上游Apache-2.0许可与署名文件随包附带。
-本轮用户对三个推理源码文件仅删除文档字符串。去除文档字符串后的AST与原计时源码一致，
-原5次A100计时的源码SHA保留在原协议中。当前发布源码另做完整推理回归。
+上一轮用户对三个推理源码文件仅删除文档字符串。原5次A100计时的源码SHA保留在原协议中。
+本轮修复Python 3.8不支持`Path.write_text(newline=...)`的兼容问题，指标经临时文件原子替换保存。
+已在RFL的Python 3.8.0、PyTorch 2.4.1、RTX 4070 Laptop环境核验完整558条推理。
+新增主入口回归覆盖旧版Pathlib及重复写入已有指标文件。
+兼容回归记录位于`runs/smoke/python38_final_20261115`。
+根目录`LICENSE`为本项目GPL v3.0文本，`licenses/NOTICE.txt`与`licenses/QWEN_LICENSE.txt`
+集中保存第三方署名、数据出处和上游Apache-2.0许可。
 上一轮完整ZIP、PT、配置和作者current快照保存在
 `E:/2026LightGen2Data/_internal_archives/t22_shared_global_phase_20261114/before`。
 当前训练和核验数据同步归档在其同级目录中。

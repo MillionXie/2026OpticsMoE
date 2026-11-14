@@ -146,8 +146,12 @@ def main():
         torch.cuda.synchronize(args.device)
     metrics['total_runtime_seconds'] = time.perf_counter() - PROGRAM_STARTED
     metrics['device_name'] = device_name
-    (args.output / '02_metrics.json').write_text(json.dumps(metrics, indent=2, allow_nan=False)
-                                              + '\n', encoding='utf-8', newline='\n')
+    metrics_path = args.output / '02_metrics.json'
+    temporary = metrics_path.with_suffix('.json.tmp')
+    with temporary.open('w', encoding='utf-8', newline='\n') as stream:
+        json.dump(metrics, stream, indent=2, allow_nan=False)
+        stream.write('\n')
+    temporary.replace(metrics_path)
     print(f"SRCC {metrics['SRCC']} over {metrics['videos']} distinct videos")
     print('Saved predictions and optical fields to ' + str(args.output.resolve()))
     print(f"Complete program runtime {metrics['total_runtime_seconds']:.3f} seconds")

@@ -17,7 +17,10 @@ CAPTIONS = (
     'Vision input field, phase mask and output field, from left to right.',
     'Language input field, phase mask and output field, from left to right.',
 )
-LICENSE_STATEMENT = 'This project is covered under the GNU General Public License v3.0.'
+LICENSE_STATEMENT = (
+    'This project is covered under the GNU General Public License v3.0. '
+    'Third-party notices and licenses are provided in licenses/.'
+)
 
 
 def replace_text(paragraph, text):

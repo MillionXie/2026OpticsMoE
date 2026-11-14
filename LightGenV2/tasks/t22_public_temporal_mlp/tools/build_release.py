@@ -29,7 +29,7 @@ ROOT = _paths.ROOT
 PUBLIC = ROOT.parents[2] / 'LightGen2'
 SOURCE_FILES = (
     '.gitignore', '.gitattributes', 'model.py', 'infer.py', 'visualize.py',
-    'requirements.txt', 'LICENSE', 'NOTICE', 'licenses/QWEN_LICENSE.txt',
+    'requirements.txt', 'LICENSE', 'licenses/NOTICE.txt', 'licenses/QWEN_LICENSE.txt',
 )
 RESULT_FILES = (
     '01_predictions.csv', '02_metrics.json', '03_prediction_vs_mos.png',
