@@ -27,6 +27,7 @@ if __package__:
     from .optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from .analyze_phase_effect import constant_modulation, phase_information
     from .evaluate_phase_robustness import evaluate_condition as evaluate_perturbation
+    from .evaluate_detector_noise import detector_noise, detector_noise_metrics, detector_noise_score, noise_level
     from ..model import load_lightgen
 else:
     import _paths
@@ -38,6 +39,7 @@ else:
     from optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from analyze_phase_effect import constant_modulation, phase_information
     from evaluate_phase_robustness import evaluate_condition as evaluate_perturbation
+    from evaluate_detector_noise import detector_noise, detector_noise_metrics, detector_noise_score, noise_level
     from model import load_lightgen
 
 
@@ -58,6 +60,11 @@ def candidate_score(metrics, spatial, config):
         return None
     score = (min(metrics['registration_srcc'].values())
              if config.get('selection_registration_robustness') else metrics['srcc'])
+    noise_config = config.get('detector_noise')
+    if noise_config:
+        score = detector_noise_score(metrics['detector_noise'], noise_config)
+        if noise_config.get('require_targets', False) and score < 0:
+            return None
     maximum_video = config.get('maximum_video_foreign_fraction')
     if maximum_video is not None:
         if any(spatial[name]['maximum_video_foreign_fraction'] >= maximum_video
@@ -112,6 +119,9 @@ def assess(model, payload, device, config):
                        config['eval_batch_fields'], metrics['srcc']))
     if config.get('selection_registration_robustness'):
         metrics.update(registration_metrics(canonical, payload, device))
+    if config.get('detector_noise'):
+        metrics['detector_noise'] = detector_noise_metrics(
+            canonical, payload, device, config['eval_batch_fields'], config['detector_noise'])
     spatial, _ = audit_spatial_locality(canonical, payload, device,
                                        split=config.get('audit_selection_split', 'train'),
                                        field_count=config['audit_train_fields'])
@@ -183,8 +193,9 @@ def train(args):
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=_paths.ROOT, text=True).strip()
     metadata = {'role': 'spatial_locality_refinement_development',
                 'source_commit': os.environ.get('LIGHTGEN_SOURCE_COMMIT', head), 'checkout_HEAD': head,
-                'source_sha256': {name: sha256(_paths.TOOLS / name)
-                                  for name in ('refine_spatial_locality.py', 'spatial_locality.py')},
+                'source_sha256': {name: sha256(_paths.source_path(name))
+                                  for name in ('model.py', 'refine_spatial_locality.py', 'spatial_locality.py',
+                                               'optical_training.py', 'evaluate_detector_noise.py')},
                 'command': sys.argv, 'pid': os.getpid(), 'config': config,
                 'initialization': {'checkpoint_sha256': sha256(args.weights), 'parent_epoch': parent_metadata.get('epoch')},
                 'raw_phase_initialization': phase_initialization,
@@ -196,7 +207,9 @@ def train(args):
                 'cuda_visible_devices': os.environ.get('CUDA_VISIBLE_DEVICES'),
                 'trainable_parameters': [name for name, value in model.named_parameters() if value.requires_grad],
                 'test_used_for_selection': True, 'test_used_for_gradient': False,
-                'training_forward_mode': 'evaluation mode with gradients enabled, preserving deterministic optics'}
+                'training_forward_mode': 'evaluation mode with gradients enabled, explicit configured perturbations',
+                'detector_noise_gradient': ('Exact Poisson forward with identity straight-through backward'
+                                             if config.get('detector_noise') else None)}
     write(args.out / 'metadata.json', metadata)
     metrics, spatial = assess(model, payload, args.device, config)
     baseline_test, baseline_arrays = audit_spatial_locality(teacher, payload, args.device, split='test', field_count=35)
@@ -218,7 +231,10 @@ def train(args):
                 item = batch(payload, indices[start:start + config['batch_fields']],
                              valid[start:start + config['batch_fields']], args.device)
                 optimizer.zero_grad(set_to_none=True)
-                condition = registration_condition(config.get('registration_shift_pixels', 0))
+                registration_pixels = config.get('registration_shift_pixels', 0)
+                if 'registration_probability' in config and torch.rand(()) >= config['registration_probability']:
+                    registration_pixels = 0
+                condition = registration_condition(registration_pixels)
                 with registered_optics(model, condition):
                     result = model(item['vision'])
                 keep = item['valid']
@@ -238,6 +254,20 @@ def train(args):
                 if illumination_weight:
                     coverage = illumination_coverage_loss(captured, keep, config['minimum_illumination_fractions'])
                     loss = loss + illumination_weight * coverage
+                noise_config = config.get('detector_noise')
+                if noise_config:
+                    kind = noise_config['training_kinds'][int(torch.randint(len(noise_config['training_kinds']), ()))]
+                    fraction = noise_config['training_fractions'][int(torch.randint(len(noise_config['training_fractions']), ()))]
+                    seed = int(torch.randint(2**30, ()))
+                    with registered_optics(model, condition), detector_noise(
+                            model, kind, noise_level(kind, fraction), noise_config['reference_intensity'],
+                            seed, straight_through=True):
+                        noisy = model(item['vision'])['normalized_prediction'][keep]
+                    noisy_loss = F.smooth_l1_loss(noisy, target)
+                    noisy_loss = noisy_loss + config['correlation_weight'] * (1 - correlation(noisy, target))
+                    noisy_loss = noisy_loss + config['teacher_weight'] * F.smooth_l1_loss(noisy, teacher_prediction)
+                    loss = loss + noise_config['loss_weight'] * noisy_loss
+                    loss = loss + noise_config['consistency_weight'] * F.smooth_l1_loss(noisy, prediction.detach())
                 regularization, _ = router_regularization(result['routing'], keep)
                 loss = loss + config['router_importance_weight'] * regularization['importance']
                 phase_terms = model_phase_penalties(model)
@@ -290,6 +320,10 @@ def train(args):
                      config['eval_batch_fields'], final['srcc']))
     if config.get('selection_registration_robustness'):
         final.update(registration_metrics(selected, payload, args.device))
+    if config.get('detector_noise'):
+        final['detector_noise'] = detector_noise_metrics(selected, payload, args.device,
+            config['eval_batch_fields'], config['detector_noise'], args.out / 'detector_noise')
+        final['detector_noise_target_margin'] = detector_noise_score(final['detector_noise'], config['detector_noise'])
     write(args.out / 'metrics.json', final)
     spatial, arrays = audit_spatial_locality(selected, payload, args.device, split='test', field_count=35)
     write(args.out / 'spatial_test_metrics.json', spatial)
@@ -299,7 +333,9 @@ def train(args):
     save_checkpoint(args.out / 'best_checkpoint.pt', selected.checkpoint(**metadata,
                     epoch=selected_metadata['epoch'], metrics=final, spatial_test=spatial))
     write(args.out / 'status.json', {'state': 'completed', 'best_epoch': selected_metadata['epoch'],
-          'SRCC': final['srcc'], 'spatial': spatial, 'elapsed_seconds': time.monotonic() - started})
+          'SRCC': final['srcc'], 'spatial': spatial, 'elapsed_seconds': time.monotonic() - started,
+          'detector_noise_targets_met': (final['detector_noise_target_margin'] >= 0
+                                         if config.get('detector_noise') else None)})
 
 
 def main():

@@ -28,7 +28,7 @@ else:
     from model import load_lightgen
 
 
-def perturb_intensity(intensity, kind, level, reference, generator):
+def perturb_intensity(intensity, kind, level, reference, generator, *, straight_through=False):
     """Add read noise or sample photon counts in the detector intensity domain."""
     if not math.isfinite(reference) or reference <= 0:
         raise ValueError('A positive finite reference intensity is required')
@@ -44,12 +44,23 @@ def perturb_intensity(intensity, kind, level, reference, generator):
         if level == 0:
             raise ValueError('Photon count at the reference intensity must be positive')
         gain = level / reference
-        return torch.poisson(intensity.clamp_min(0) * gain, generator=generator) / gain
+        observed = torch.poisson(intensity.clamp_min(0) * gain, generator=generator) / gain
+        if straight_through:
+            # Exact Poisson samples in forward, identity surrogate gradient in training.
+            return observed.detach() + (intensity - intensity.detach())
+        return observed
+    if kind == 'combined':
+        if level == 0:
+            return intensity
+        # At I_reference, read and shot noise each contribute half the total variance.
+        observed = perturb_intensity(intensity, 'poisson', 2 / level**2, reference,
+                                     generator, straight_through=straight_through)
+        return perturb_intensity(observed, 'gaussian', level / math.sqrt(2), reference, generator)
     raise ValueError('Unsupported detector noise model')
 
 
 @contextmanager
-def detector_noise(model, kind, level, reference, seed):
+def detector_noise(model, kind, level, reference, seed, *, straight_through=False):
     """Perturb both detector stages before their existing mean normalization."""
     with ExitStack() as stack:
         for index, (branch, attribute) in enumerate(STAGES.items()):
@@ -58,11 +69,51 @@ def detector_noise(model, kind, level, reference, seed):
             original = stage.process_detector
 
             def process(intensity, original=original, generator=generator, branch=branch):
-                observed = perturb_intensity(intensity, kind, level, reference[branch], generator)
+                observed = perturb_intensity(intensity, kind, level, reference[branch], generator,
+                                             straight_through=straight_through)
                 return original(observed)
 
             stack.enter_context(patch.object(stage, 'process_detector', process))
         yield
+
+
+def noise_level(kind, fraction):
+    """Express shot noise as the count giving the requested RMS at I_reference."""
+    if not math.isfinite(fraction) or fraction <= 0:
+        raise ValueError('Reference noise fraction must be positive and finite')
+    return 1 / fraction**2 if kind == 'poisson' else fraction
+
+
+def detector_noise_metrics(model, payload, device, batch_fields, config, out=None):
+    records = []
+    for kind in config.get('evaluation_kinds', ('gaussian', 'poisson', 'combined')):
+        for fraction in config['evaluation_fractions']:
+            for trial in range(config['selection_trials']):
+                seed = config['selection_seed_base'] + trial
+                directory = None
+                if out is not None:
+                    directory = Path(out) / f'{kind}_{fraction:g}_trial{trial+1}'
+                    directory.mkdir(parents=True, exist_ok=False)
+                with detector_noise(model, kind, noise_level(kind, fraction), config['reference_intensity'], seed):
+                    metrics = evaluate(model, payload, device, batch_fields, directory, 0)
+                records.append({'kind': kind, 'fraction': fraction, 'trial': trial + 1,
+                                'seed': seed, 'srcc': metrics['srcc']})
+    return records
+
+
+def detector_noise_score(records, config):
+    """Use the least margin over every configured kind, level and random seed."""
+    expected = config.get('evaluation_kinds', ('gaussian', 'poisson', 'combined'))
+    if len(config['evaluation_fractions']) != len(config['minimum_srcc']) or not config['evaluation_fractions']:
+        raise ValueError('Each noise fraction requires one target SRCC')
+    margins = []
+    for kind in expected:
+        for fraction, target in zip(config['evaluation_fractions'], config['minimum_srcc']):
+            scores = [row['srcc'] for row in records if row['kind'] == kind and row['fraction'] == fraction]
+            if len(scores) != config['selection_trials'] or not all(math.isfinite(value) for value in scores):
+                raise ValueError('Incomplete detector noise selection conditions')
+            margins.append(min(scores) - target)
+    return min(margins)
 
 
 @torch.no_grad()
@@ -99,7 +150,7 @@ def reference_intensities(model, payload, device, batch_fields):
 
 def summarize(records, clean):
     rows = []
-    for kind in ('gaussian', 'poisson'):
+    for kind in ('gaussian', 'poisson', 'combined'):
         levels = sorted({row['level'] for row in records if row['kind'] == kind})
         for level in levels:
             values = [row['metrics']['srcc'] for row in records if row['kind'] == kind and row['level'] == level]
@@ -117,6 +168,8 @@ def main():
     parser.add_argument('--trials', type=int, default=5)
     parser.add_argument('--batch-fields', type=int, default=4)
     parser.add_argument('--device', default='cuda')
+    parser.add_argument('--profile', type=Path, help='Use fixed reference intensities and noise fractions from a training profile')
+    parser.add_argument('--seed-base', type=int, default=29301)
     args = parser.parse_args()
     if args.trials < 1 or args.batch_fields < 1:
         raise ValueError('Trials and field batches must be positive')
@@ -129,7 +182,9 @@ def main():
         payload = load_inputs(json.loads(args.paths.read_text('utf-8')))
         if payload['identity']['manifest']['sha256'] != metadata['dataset']['manifest']['sha256']:
             raise ValueError('Checkpoint data identity differs')
-        reference = reference_intensities(model, payload, args.device, args.batch_fields)
+        profile = json.loads(args.profile.read_text('utf-8'))['detector_noise'] if args.profile else None
+        reference = (profile['reference_intensity'] if profile else
+                     reference_intensities(model, payload, args.device, args.batch_fields))
         clean_dir = args.out / 'clean'
         clean_dir.mkdir()
         clean = evaluate(model, payload, args.device, args.batch_fields, clean_dir, 0)
@@ -137,13 +192,15 @@ def main():
             'checkpoint_sha256': checkpoint_hash, 'data_identity': payload['identity'],
             'videos': 558, 'optical_fields': 35, 'padding_excluded': True,
             'reference_intensity': reference,
-            'reference_source': '2250 TRAIN videos with four frames each, without label use',
+            'reference_source': (profile['reference_source'] if profile else
+                                 '2250 TRAIN videos with four frames each, without label use'),
             'injection_location': 'Both detector regions after squared-magnitude detection and before existing mean normalization',
             'gaussian_definition': 'I_observed = max(I + r * I_reference * Normal(0,1), 0)',
             'poisson_definition': 'I_observed = Poisson(I * N / I_reference) * I_reference / N',
             'reference_is_fixed_across_test_images': True,
             'noise_is_resampled_each_observation': True, 'hardware_calibrated': False,
-            'trials': args.trials, 'seed_base': 29301,
+            'combined_definition': 'Independent read and shot noise, each contributing half the variance at I_reference',
+            'trials': args.trials, 'seed_base': args.seed_base,
             'source_commit': os.environ.get('LIGHTGEN_SOURCE_COMMIT', subprocess.check_output(
                 ['git', 'rev-parse', 'HEAD'], cwd=_paths.ROOT, text=True).strip()),
             'source_sha256': {name: sha256(_paths.source_path(name))
@@ -153,10 +210,17 @@ def main():
         }
         write(args.out / 'protocol.json', protocol)
         records = []
-        for kind, levels in (('gaussian', (.01, .05, .10)), ('poisson', (100., 1000., 10000.))):
+        conditions = ([(kind, tuple(noise_level(kind, fraction) for fraction in profile['evaluation_fractions']))
+                       for kind in profile['evaluation_kinds']] if profile else
+                      [('gaussian', (.01, .05, .10)), ('poisson', (100., 1000., 10000.))])
+        if args.profile:
+            protocol['profile_sha256'] = sha256(args.profile)
+            protocol['noise_fractions'] = profile['evaluation_fractions']
+            write(args.out / 'protocol.json', protocol)
+        for kind, levels in conditions:
             for level in levels:
                 for trial in range(args.trials):
-                    seed = 29301 + trial
+                    seed = args.seed_base + trial
                     directory = args.out / f'{kind}_{level:g}_trial{trial+1}'
                     directory.mkdir()
                     with detector_noise(model, kind, level, reference, seed):

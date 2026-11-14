@@ -80,6 +80,23 @@ class SpatialSelectionTests(unittest.TestCase):
         self.metrics['registration_srcc']['ccd_1_0'] = .779
         self.assertLess(candidate_score(self.metrics, self.spatial, self.config), first)
 
+    def test_detector_noise_margin_selects_progress_and_can_require_all_targets(self):
+        noise = {'evaluation_kinds': ['gaussian', 'poisson', 'combined'],
+                 'evaluation_fractions': [.05, .1], 'minimum_srcc': [.79, .78],
+                 'selection_trials': 1, 'require_targets': True}
+        self.config.update(maximum_video_foreign_fraction=.01, detector_noise=noise)
+        for values in self.spatial.values():
+            values.update(foreign_fraction=.005, maximum_video_foreign_fraction=.009)
+        self.metrics['detector_noise'] = [
+            {'kind': kind, 'fraction': fraction, 'srcc': target + .002}
+            for kind in noise['evaluation_kinds'] for fraction, target in zip(
+                noise['evaluation_fractions'], noise['minimum_srcc'])]
+        self.assertAlmostEqual(candidate_score(self.metrics, self.spatial, self.config), .002)
+        self.metrics['detector_noise'][-1]['srcc'] = .779
+        self.assertIsNone(candidate_score(self.metrics, self.spatial, self.config))
+        noise['require_targets'] = False
+        self.assertAlmostEqual(candidate_score(self.metrics, self.spatial, self.config), -.001)
+
 
 if __name__ == '__main__':
     unittest.main()
