@@ -67,7 +67,7 @@ def detector_noise(model, kind, level, reference, seed):
 
 @torch.no_grad()
 def reference_intensities(model, payload, device, batch_fields):
-    """Use only TRAIN images to fix one mean intensity for each detector stage."""
+    """Use 2250 TRAIN videos to fix one mean intensity for each detector stage."""
     totals = {branch: 0. for branch in STAGES}
     counts = {branch: 0 for branch in STAGES}
     current_valid = None
@@ -136,7 +136,8 @@ def main():
         protocol = {
             'checkpoint_sha256': checkpoint_hash, 'data_identity': payload['identity'],
             'videos': 558, 'optical_fields': 35, 'padding_excluded': True,
-            'reference_intensity': reference, 'reference_source': '2250 TRAIN images, without label use',
+            'reference_intensity': reference,
+            'reference_source': '2250 TRAIN videos with four frames each, without label use',
             'injection_location': 'Both detector regions after squared-magnitude detection and before existing mean normalization',
             'gaussian_definition': 'I_observed = max(I + r * I_reference * Normal(0,1), 0)',
             'poisson_definition': 'I_observed = Poisson(I * N / I_reference) * I_reference / N',

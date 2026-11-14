@@ -97,7 +97,8 @@ vision、language整幅相干传播。依次完成旧相位继承优化、逐样
 当前两支global均包含ORM建模及探测区域均值归一化。CCD读出噪声和散粒噪声此前
 没有直接注入训练。本次新增`tools/evaluate_detector_noise.py`对固定选定权重进行数值补测。
 在两支global的探测强度域同时加噪，位置位于平方律探测之后、现有均值归一化之前。
-参考强度仅由2250条TRAIN图像的原始探测区域平均值确定，测试期间保持固定。
+参考强度由2250条TRAIN视频的探测区域平均值确定，每视频包含4帧。
+统计覆盖9000个vision帧区域和2250个language区域，测试期间使用固定参考强度。
 
 读出噪声使用`max(I + r * I_reference * Normal(0,1), 0)`。
 散粒噪声使用`Poisson(I * N / I_reference) * I_reference / N`，N为参考强度对应的平均计数。
