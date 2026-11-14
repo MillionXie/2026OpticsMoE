@@ -26,6 +26,7 @@ if __package__:
     from .training_policy import restrict_training_to
     from .optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from .analyze_phase_effect import constant_modulation, phase_information
+    from .evaluate_phase_robustness import evaluate_condition as evaluate_perturbation
     from ..model import load_lightgen
 else:
     import _paths
@@ -36,6 +37,7 @@ else:
     from training_policy import restrict_training_to
     from optical_training import illumination_coverage_loss, registration_condition, registered_optics
     from analyze_phase_effect import constant_modulation, phase_information
+    from evaluate_phase_robustness import evaluate_condition as evaluate_perturbation
     from model import load_lightgen
 
 
@@ -54,19 +56,21 @@ def candidate_score(metrics, spatial, config):
     minimum_gain = config.get('minimum_phase_gain')
     if minimum_gain is not None and min(metrics['phase_gain'].values()) < minimum_gain:
         return None
+    score = (min(metrics['registration_srcc'].values())
+             if config.get('selection_registration_robustness') else metrics['srcc'])
     maximum_video = config.get('maximum_video_foreign_fraction')
     if maximum_video is not None:
         if any(spatial[name]['maximum_video_foreign_fraction'] >= maximum_video
                or spatial[name]['dark_source_fraction'] > 0 for name in ('vision', 'language')):
             return None
-        return metrics['srcc']
+        return score
     threshold = config.get('spatial_foreign_threshold')
     if threshold is not None:
         excess = [max(spatial[name]['foreign_fraction'] - threshold, 0.)
                   + spatial[name]['dark_source_fraction'] for name in ('vision', 'language')]
         if max(excess) > 0:
             return -1. - sum(excess) / len(excess)
-        return metrics['srcc']
+        return score
     return -sum(spatial[name]['foreign_fraction'] + spatial[name]['dark_source_fraction']
                 + config.get('spatial_guard_weight', 0.) * spatial[name]['guard_fraction']
                 for name in ('vision', 'language')) / 2
@@ -89,6 +93,15 @@ def phase_control_metrics(model, payload, device, batch_fields, learned_srcc):
     return {'constant_phase_srcc': controls, 'phase_gain': gains}
 
 
+def registration_metrics(model, payload, device):
+    scores = {}
+    for kind in ('phase_shift', 'ccd_shift'):
+        for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            condition = {'kind': kind, 'level': 1, 'trial': 0, 'dy': dy, 'dx': dx}
+            scores[f'{kind}_{dy}_{dx}'] = evaluate_perturbation(model, payload, device, condition)['srcc']
+    return {'registration_srcc': scores}
+
+
 def assess(model, payload, device, config):
     # Use a fresh canonical parameter state for evaluation, matching checkpoint
     # loading rather than the optimizer's training-only freezing flags.
@@ -97,6 +110,8 @@ def assess(model, payload, device, config):
     if config.get('minimum_phase_gain') is not None:
         metrics.update(phase_control_metrics(canonical, payload, device,
                        config['eval_batch_fields'], metrics['srcc']))
+    if config.get('selection_registration_robustness'):
+        metrics.update(registration_metrics(canonical, payload, device))
     spatial, _ = audit_spatial_locality(canonical, payload, device,
                                        split=config.get('audit_selection_split', 'train'),
                                        field_count=config['audit_train_fields'])
@@ -273,7 +288,9 @@ def train(args):
     if config.get('minimum_phase_gain') is not None:
         final.update(phase_control_metrics(selected, payload, args.device,
                      config['eval_batch_fields'], final['srcc']))
-        write(args.out / 'metrics.json', final)
+    if config.get('selection_registration_robustness'):
+        final.update(registration_metrics(selected, payload, args.device))
+    write(args.out / 'metrics.json', final)
     spatial, arrays = audit_spatial_locality(selected, payload, args.device, split='test', field_count=35)
     write(args.out / 'spatial_test_metrics.json', spatial)
     np.savez_compressed(args.out / 'source_to_detector_test.npz', **arrays)

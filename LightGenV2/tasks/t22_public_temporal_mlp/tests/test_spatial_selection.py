@@ -69,6 +69,17 @@ class SpatialSelectionTests(unittest.TestCase):
         self.spatial['language']['dark_source_fraction'] = .01
         self.assertIsNone(candidate_score(self.metrics, self.spatial, self.config))
 
+    def test_robustness_selection_prefers_better_worst_registration_after_all_gates(self):
+        self.config.update(maximum_video_foreign_fraction=.01, selection_registration_robustness=True)
+        for values in self.spatial.values():
+            values.update(foreign_fraction=.005, maximum_video_foreign_fraction=.009)
+        self.metrics['registration_srcc'] = {'phase_1_0': .787, 'ccd_1_0': .781}
+        first = candidate_score(self.metrics, self.spatial, self.config)
+        self.assertEqual(first, .781)
+        self.metrics['srcc'] = .798
+        self.metrics['registration_srcc']['ccd_1_0'] = .779
+        self.assertLess(candidate_score(self.metrics, self.spatial, self.config), first)
+
 
 if __name__ == '__main__':
     unittest.main()
