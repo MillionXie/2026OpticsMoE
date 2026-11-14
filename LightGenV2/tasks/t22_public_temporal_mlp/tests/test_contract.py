@@ -19,12 +19,35 @@ from ..tools.prepare_joint_router import expand_router
 from ..tools.phase_plotting import phase_display_norm, phase_display_values
 from ..tools.analyze_phase_effect import constant_modulation
 from ..tools.analyze_global_ablation import identity_global, ablation_metrics
-from ..tools.benchmark_public_inference import execution_plan
+from ..tools.benchmark_public_inference import compare_predictions, execution_plan
 
 
 class Contracts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):torch.set_num_threads(4)
+
+    def test_cross_device_predictions_allow_small_roundoff(self):
+        with tempfile.TemporaryDirectory() as directory:
+            reference, actual = Path(directory) / 'reference.csv', Path(directory) / 'actual.csv'
+            reference.write_text('sample_id,target_MOS,predicted_MOS\nvideo1,50,49.0\n')
+            actual.write_text('sample_id,target_MOS,predicted_MOS\nvideo1,50,49.00005\n')
+            self.assertAlmostEqual(compare_predictions(actual, reference), 0.00005)
+
+    def test_cross_device_predictions_preserve_sample_identities(self):
+        with tempfile.TemporaryDirectory() as directory:
+            reference, actual = Path(directory) / 'reference.csv', Path(directory) / 'actual.csv'
+            reference.write_text('sample_id,target_MOS,predicted_MOS\nvideo1,50,49.0\n')
+            actual.write_text('sample_id,target_MOS,predicted_MOS\nvideo2,50,49.0\n')
+            with self.assertRaisesRegex(ValueError, 'identities'):
+                compare_predictions(actual, reference)
+
+    def test_cross_device_predictions_reject_changed_results(self):
+        with tempfile.TemporaryDirectory() as directory:
+            reference, actual = Path(directory) / 'reference.csv', Path(directory) / 'actual.csv'
+            reference.write_text('sample_id,target_MOS,predicted_MOS\nvideo1,50,49.0\n')
+            actual.write_text('sample_id,target_MOS,predicted_MOS\nvideo1,50,49.001\n')
+            with self.assertRaisesRegex(ValueError, 'tolerance'):
+                compare_predictions(actual, reference)
 
     def test_paired_runtime_plan_warms_both_projects_and_alternates_order(self):
         projects = {'reference': Path('source'), 'extracted': Path('zip')}
