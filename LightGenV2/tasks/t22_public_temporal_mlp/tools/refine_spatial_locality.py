@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+from unittest.mock import patch
 import json
 import math
 import os
@@ -24,6 +25,7 @@ if __package__:
     from .spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from .training_policy import restrict_training_to
     from .optical_training import illumination_coverage_loss, registration_condition, registered_optics
+    from .analyze_phase_effect import constant_modulation, phase_information
     from ..model import load_lightgen
 else:
     import _paths
@@ -33,6 +35,7 @@ else:
     from spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from training_policy import restrict_training_to
     from optical_training import illumination_coverage_loss, registration_condition, registered_optics
+    from analyze_phase_effect import constant_modulation, phase_information
     from model import load_lightgen
 
 
@@ -48,6 +51,15 @@ def candidate_score(metrics, spatial, config):
                            for value in metrics[name + '_routing']['selection_share'])
     if global_deviation > config['maximum_global_share_deviation']:
         return None
+    minimum_gain = config.get('minimum_phase_gain')
+    if minimum_gain is not None and min(metrics['phase_gain'].values()) < minimum_gain:
+        return None
+    maximum_video = config.get('maximum_video_foreign_fraction')
+    if maximum_video is not None:
+        if any(spatial[name]['maximum_video_foreign_fraction'] >= maximum_video
+               or spatial[name]['dark_source_fraction'] > 0 for name in ('vision', 'language')):
+            return None
+        return metrics['srcc']
     threshold = config.get('spatial_foreign_threshold')
     if threshold is not None:
         excess = [max(spatial[name]['foreign_fraction'] - threshold, 0.)
@@ -60,12 +72,33 @@ def candidate_score(metrics, spatial, config):
                 for name in ('vision', 'language')) / 2
 
 
+def phase_control_metrics(model, payload, device, batch_fields, learned_srcc):
+    controls = {}
+    gains = {}
+    for branch, attribute in (('vision', 'frame_global'), ('language', 'video_global')):
+        stage = getattr(model, attribute)
+        _, _, centers, _ = phase_information(stage)
+        scores = {}
+        for condition, phase in (('circular_mean', centers),
+                                 ('pi', torch.full_like(centers, math.pi))):
+            value = constant_modulation(stage, phase)
+            with patch.object(stage, 'modulation', lambda value=value: value):
+                scores[condition] = evaluate(model, payload, device, batch_fields)['srcc']
+        controls[branch] = scores
+        gains[branch] = learned_srcc - max(scores.values())
+    return {'constant_phase_srcc': controls, 'phase_gain': gains}
+
+
 def assess(model, payload, device, config):
     # Use a fresh canonical parameter state for evaluation, matching checkpoint
     # loading rather than the optimizer's training-only freezing flags.
     canonical = copy.deepcopy(model).requires_grad_(True).eval()
     metrics = evaluate(canonical, payload, device, config['eval_batch_fields'])
-    spatial, _ = audit_spatial_locality(canonical, payload, device, split='train',
+    if config.get('minimum_phase_gain') is not None:
+        metrics.update(phase_control_metrics(canonical, payload, device,
+                       config['eval_batch_fields'], metrics['srcc']))
+    spatial, _ = audit_spatial_locality(canonical, payload, device,
+                                       split=config.get('audit_selection_split', 'train'),
                                        field_count=config['audit_train_fields'])
     del canonical
     return metrics, spatial
@@ -237,6 +270,10 @@ def train(args):
     selected, selected_metadata = load_lightgen(args.out / 'best_checkpoint.pt', args.device)
     final = evaluate(selected, payload, args.device, config['eval_batch_fields'], args.out,
                      selected_metadata['epoch'])
+    if config.get('minimum_phase_gain') is not None:
+        final.update(phase_control_metrics(selected, payload, args.device,
+                     config['eval_batch_fields'], final['srcc']))
+        write(args.out / 'metrics.json', final)
     spatial, arrays = audit_spatial_locality(selected, payload, args.device, split='test', field_count=35)
     write(args.out / 'spatial_test_metrics.json', spatial)
     np.savez_compressed(args.out / 'source_to_detector_test.npz', **arrays)

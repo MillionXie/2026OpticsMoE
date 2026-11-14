@@ -43,6 +43,32 @@ class SpatialSelectionTests(unittest.TestCase):
         self.spatial['vision']['foreign_fraction'] = .02
         self.assertLess(candidate_score(self.metrics, self.spatial, self.config), first)
 
+    def test_each_branch_requires_its_own_positive_phase_gain_when_requested(self):
+        self.config['minimum_phase_gain'] = .0005
+        self.metrics['phase_gain'] = {'vision': .02, 'language': .001}
+        self.assertIsNotNone(candidate_score(self.metrics, self.spatial, self.config))
+        for value in (0., -.001, .0004):
+            with self.subTest(language_gain=value):
+                self.metrics['phase_gain']['language'] = value
+                self.assertIsNone(candidate_score(self.metrics, self.spatial, self.config))
+
+    def test_maximum_video_gate_rejects_outliers_despite_small_mean_leakage(self):
+        self.config['maximum_video_foreign_fraction'] = .01
+        for values in self.spatial.values():
+            values.update(foreign_fraction=.005, maximum_video_foreign_fraction=.009)
+        self.assertEqual(candidate_score(self.metrics, self.spatial, self.config), self.metrics['srcc'])
+        for value in (.01, .012):
+            with self.subTest(maximum_foreign=value):
+                self.spatial['vision']['maximum_video_foreign_fraction'] = value
+                self.assertIsNone(candidate_score(self.metrics, self.spatial, self.config))
+
+    def test_maximum_video_gate_rejects_a_dark_source(self):
+        self.config['maximum_video_foreign_fraction'] = .01
+        for values in self.spatial.values():
+            values.update(foreign_fraction=0., maximum_video_foreign_fraction=0.)
+        self.spatial['language']['dark_source_fraction'] = .01
+        self.assertIsNone(candidate_score(self.metrics, self.spatial, self.config))
+
 
 if __name__ == '__main__':
     unittest.main()
