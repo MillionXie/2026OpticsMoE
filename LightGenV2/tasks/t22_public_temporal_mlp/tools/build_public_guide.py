@@ -171,8 +171,8 @@ def build_guide():
               'repeat the first two inputs to fill the coherent field. Exactly 558 actual '
               'predictions and their human temporal MOS labels enter the Spearman rank '
               f"correlation coefficient (SRCC). The reference SRCC is {reference['SRCC']:.6f}.")
-    paragraph(document, f"On a shared {reference['device_name']}, {repeats} complete runs from an "
-              f"extracted package had a median of {timing['median']:.3f} seconds "
+    paragraph(document, f"On a shared {reference['device_name']}, {repeats} complete runs "
+              f"had a median of {timing['median']:.3f} seconds "
               f"and a range of {timing['minimum']:.3f} to {timing['maximum']:.3f} seconds. "
               f"{warmups} complete warm-up preceded fresh Python processes. Timing covers imports, "
               'model and NPZ loading, all 558 predictions, metrics and figure export, with CUDA '

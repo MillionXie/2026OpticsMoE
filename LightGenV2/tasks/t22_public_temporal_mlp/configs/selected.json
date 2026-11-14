@@ -1,32 +1,56 @@
 {
   "schema": 3,
-  "selection": "spatial_concentration_balanced_routing_readout32",
+  "selection": "legacy_phase_independent_gain_leakage_under_one_percent_readout32",
   "checkpoint": "runs/simulation/current/LightGen.pt",
-  "checkpoint_sha256": "0d46a86e7d7dfb22f6310f898d727edebaab2abaf32d77d46ce9e5059fcb7fc4",
+  "checkpoint_sha256": "efbd6a12c0b579e2cc897a4417de9c7eabf2a9a52749026571734d7a65537812",
   "architecture": "t22_serial_top2_global2_fused_readout_v8_relative_intensity_linear_no_ln192",
   "model_parameters": 3777350,
-  "selected_epoch": 28,
-  "completed_epochs": 40,
+  "selected_epoch": 25,
+  "completed_epochs": 100,
   "evaluation": {
     "role": "original_TEST_development",
     "videos": 558,
-    "srcc": 0.7983710301877478,
+    "srcc": 0.7923711164547217,
     "selection_interval": [
       0.79,
       0.799
     ],
-    "slot_cycle_mean_srcc": 0.7944589799638829,
-    "slot_cycle_minimum_srcc": 0.7879181147974115
+    "slot_cycle_mean_srcc": 0.7911904112761917,
+    "slot_cycle_minimum_srcc": 0.7823838192655007,
+    "phase_gain": {
+      "vision": 0.5066845421737437,
+      "language": 0.018061730557423106
+    },
+    "constant_phase_srcc": {
+      "vision": {
+        "flat": 0.28434680984811256,
+        "zero": 0.285686574280978,
+        "pi": 0.285686574280978
+      },
+      "language": {
+        "flat": 0.7732456899494525,
+        "zero": 0.7743093858972986,
+        "pi": 0.7743093858972986
+      }
+    },
+    "mean_cross_video_energy_percent": {
+      "vision": 0.23974250721675092,
+      "language": 0.20959432834365463
+    },
+    "maximum_cross_video_energy_percent": {
+      "vision": 0.6743967533111572,
+      "language": 0.49840211868286133
+    }
   },
   "run_id": "current",
-  "training_run_id": "spatial_router_balance_20261114",
+  "training_run_id": "phase_legacy_registration_20261114",
   "refinement_stages": [
-    "spatial_locality_20261114",
-    "spatial_concentration_20261114",
-    "spatial_router_balance_20261114"
+    "phase_legacy_leakage_20261114/optical",
+    "phase_legacy_tail_20261114/joint",
+    "phase_legacy_registration_20261114"
   ],
   "runtime_benchmark": {
-    "directory": "runs/smoke/runtime_paired_20261114",
-    "project": "extracted"
+    "directory": "runs/smoke/runtime_legacy_registration_20261114",
+    "project": "reference"
   }
 }

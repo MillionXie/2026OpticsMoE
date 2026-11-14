@@ -36,11 +36,11 @@ Predictions, metrics and figures are written to `results`.
 The 558 distinct videos are processed in 35 ordered optical fields. Fields 1–34
 contain 544 distinct videos. Field 35 contains the remaining 14 videos and two
 padding entries copied from videos 1 and 2. SRCC uses exactly the 558 actual
-video predictions and labels. The normalized-RGB reference SRCC is 0.798371.
+video predictions and labels. The normalized-RGB reference SRCC is 0.792371.
 The evaluation split was used in checkpoint selection.
 
-Five complete runs from an extracted package had a median runtime of 71.533
-seconds, ranging from 64.997 to 72.778 seconds, on a shared NVIDIA A100-PCIE-40GB.
+Five complete runs had a median runtime of 68.349 seconds, ranging from 64.419
+to 72.139 seconds, on a shared NVIDIA A100-PCIE-40GB.
 One complete warm-up preceded five fresh Python processes. Timing covers imports,
 model and NPZ loading, all 558 predictions, metrics and result/figure export,
 with CUDA synchronized before completion. Outer ZIP extraction precedes timing.
