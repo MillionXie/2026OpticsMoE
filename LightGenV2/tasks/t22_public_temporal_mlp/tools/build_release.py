@@ -38,7 +38,8 @@ RESULT_FILES = (
           for branch, first in (('vision', 5), ('language', 8))
           for number, kind in enumerate(('input_field', 'mask', 'output_field'), first)
           for suffix in ('npz', 'png'))
-ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.docx', 'data/input_for_review.npz') + tuple(
+ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.docx', 'data/input_for_review.npz',
+                  'data/reference_mos.csv') + tuple(
     'results/' + name for name in RESULT_FILES)
 
 
@@ -136,12 +137,15 @@ def build_release():
         rows = [row for row in csv.DictReader(stream) if row['split'] == 'test']
     public_infer = import_public_module('infer')
     with np.load(PUBLIC / 'data/input_for_review.npz', allow_pickle=False) as inputs:
-        sample_ids, targets = public_infer.read_input_metadata(inputs)
+        sample_ids = public_infer.read_input_metadata(inputs)
+        if 'target_mos' in inputs.files:
+            raise ValueError('The video-frame archive contains evaluation labels')
         if len(sample_ids) != 558 or sample_ids != [row['sample_id'] for row in rows]:
             raise ValueError('Normalized RGB identities differ from the selected 558-video order')
-        np.testing.assert_array_equal(targets, [float(row['temporal']) for row in rows])
         if inputs['rgb_0035'].shape != (14, 4, 3, 448, 448):
             raise ValueError('Tail normalized RGB geometry differs')
+    targets = public_infer.read_reference_scores(PUBLIC / 'data/reference_mos.csv', sample_ids)
+    np.testing.assert_array_equal(targets, [float(row['temporal']) for row in rows])
     result_dir = PUBLIC / 'results'
     with (result_dir / '01_predictions.csv').open(encoding='utf-8', newline='') as stream:
         predictions = list(csv.DictReader(stream))

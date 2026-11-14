@@ -96,14 +96,47 @@ class PublicInferenceTests(unittest.TestCase):
                          [index / 16 for index in range(14)])
 
     def test_npz_metadata_preserves_order_and_rejects_duplicate_ids(self):
-        archive = {'format_version': np.array(1), 'sample_ids': np.array(['b', 'a']),
-                   'target_mos': np.array([20., 10.])}
-        sample_ids, targets = public_infer.read_input_metadata(archive)
+        archive = {'format_version': np.array(2), 'sample_ids': np.array(['b', 'a'])}
+        sample_ids = public_infer.read_input_metadata(archive)
         self.assertEqual(sample_ids, ['b', 'a'])
-        self.assertEqual(targets.tolist(), [20., 10.])
+        archive['format_version'] = np.array(1)
+        archive['target_mos'] = np.array([999., -999.])
+        self.assertEqual(public_infer.read_input_metadata(archive), sample_ids)
         archive['sample_ids'] = np.array(['a', 'a'])
         with self.assertRaises(ValueError):
             public_infer.read_input_metadata(archive)
+
+    def test_reference_scores_align_by_id_and_reject_invalid_labels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'reference_mos.csv'
+            path.write_text('sample_id,target_MOS\na,10\nb,20\n')
+            self.assertEqual(public_infer.read_reference_scores(path, ['b', 'a']).tolist(), [20., 10.])
+            for content in ('sample_id,target_MOS\na,10\na,20\n',
+                            'sample_id,target_MOS\na,10\nc,20\n',
+                            'sample_id,target_MOS\na,nan\nb,20\n'):
+                path.write_text(content)
+                with self.assertRaises(ValueError):
+                    public_infer.read_reference_scores(path, ['b', 'a'])
+
+    def test_reference_labels_affect_only_metrics_and_output_targets(self):
+        from LightGen2 import visualize
+
+        class FixedModel:
+            def __call__(self, *, normalized_rgb):
+                return {'prediction': torch.arange(16, dtype=torch.float32)[None]}
+
+        model = FixedModel()
+        inputs = [(0, 2, torch.zeros(1, 16, 4))]
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(public_infer, 'iter_rgb_fields', return_value=inputs), \
+                patch.object(visualize, 'capture_optical_fields', side_effect=lambda model, pixels: (model(normalized_rgb=pixels), {})), \
+                patch.object(visualize, 'export_evaluation'), \
+                patch.object(visualize, 'export_visualizations'):
+            first, first_metrics = public_infer.evaluate(model, {}, ['a', 'b'], np.array([10., 20.]), 'cpu', directory)
+            second, second_metrics = public_infer.evaluate(model, {}, ['a', 'b'], np.array([20., 10.]), 'cpu', directory)
+        self.assertEqual([row['predicted_MOS'] for row in first], [row['predicted_MOS'] for row in second])
+        self.assertAlmostEqual(first_metrics['SRCC'], 1.)
+        self.assertAlmostEqual(second_metrics['SRCC'], -1.)
 
     def test_normalized_rgb_storage_preserves_patch_projection_precision(self):
         pixels = torch.arange(256).float()

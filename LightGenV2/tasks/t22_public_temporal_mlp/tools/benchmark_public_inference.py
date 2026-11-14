@@ -76,7 +76,8 @@ def main():
     probe = "import json,platform,torch; print(json.dumps({'python':platform.python_version(),'torch':str(torch.__version__),'cuda':torch.version.cuda,'device':torch.cuda.get_device_name(0)}))"
     hardware = json.loads(subprocess.check_output([sys.executable, '-c', probe],
                                                   env=environment, text=True))
-    names = ('infer.py', 'model.py', 'visualize.py', 'weights/LightGen2.pt', 'data/input_for_review.npz')
+    names = ('infer.py', 'model.py', 'visualize.py', 'weights/LightGen2.pt',
+             'data/input_for_review.npz', 'data/reference_mos.csv')
     identities = {name: sha256(args.project / name) for name in names}
     projects = {'reference': args.project}
     if args.comparison_project:

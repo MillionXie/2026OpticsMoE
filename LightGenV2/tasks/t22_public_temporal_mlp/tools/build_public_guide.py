@@ -35,7 +35,8 @@ EXECUTION = (
     'in the vision branch. The language branch combines these features with '
     'the prompt features and applies its routed experts and optical propagation. '
     'The two-layer readout predicts '
-    'one MOS for each video. Higher MOS indicates better temporal video quality.'
+    'one MOS for each video. Higher MOS indicates better temporal video quality. '
+    'We then use the human MOS in data/reference_mos.csv to calculate SRCC.'
 )
 OPTICAL_EXAMPLE = (
     'The same execution saves the input video frames and captures the input '
@@ -45,7 +46,8 @@ OPTICAL_EXAMPLE = (
     'Each optical result is saved as numerical data in an NPZ file and as a PNG image.'
 )
 FILES = (
-    ('data/input_for_review.npz', 'Video frames from 558 LGVQ videos, video IDs and human temporal MOS labels.'),
+    ('data/input_for_review.npz', 'The input video frames from 558 LGVQ videos.'),
+    ('data/reference_mos.csv', 'The human temporal MOS labels used to calculate SRCC from the predictions.'),
     ('weights/LightGen2.pt', 'Model weights, including the frozen Qwen frontend and prompt features.'),
     ('model.py', 'The network definition and optical propagation based on the angular spectrum method.'),
     ('infer.py', 'The script to run the complete video quality assessment.'),

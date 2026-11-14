@@ -20,7 +20,8 @@ python -m pip install -r requirements.txt
 
 | File | Description |
 | --- | --- |
-| `data/input_for_review.npz` | Video frames from 558 LGVQ videos, video IDs and human temporal MOS labels. |
+| `data/input_for_review.npz` | The input video frames from 558 LGVQ videos. |
+| `data/reference_mos.csv` | The human temporal MOS labels used to calculate SRCC from the predictions. |
 | `weights/LightGen2.pt` | Model weights, including the frozen Qwen frontend and prompt features. |
 | `model.py` | The network definition and optical propagation based on the angular spectrum method. |
 | `infer.py` | The script to run the complete video quality assessment. |
@@ -52,7 +53,7 @@ Run the following command in the LightGen2 directory.
 python infer.py
 ```
 
-The code first reads the video frames from data/input_for_review.npz and loads the model weights from weights/LightGen2.pt. It extracts visual features with the Qwen-derived frontend and processes them with routed experts and optical propagation in the vision branch. The language branch combines these features with the prompt features and applies its routed experts and optical propagation. The two-layer readout predicts one MOS for each video. Higher MOS indicates better temporal video quality.
+The code first reads the video frames from data/input_for_review.npz and loads the model weights from weights/LightGen2.pt. It extracts visual features with the Qwen-derived frontend and processes them with routed experts and optical propagation in the vision branch. The language branch combines these features with the prompt features and applies its routed experts and optical propagation. The two-layer readout predicts one MOS for each video. Higher MOS indicates better temporal video quality. We then use the human MOS in data/reference_mos.csv to calculate SRCC.
 
 Predictions and figures are saved in results/. For the supplied 558 videos, we obtained a Spearman rank correlation coefficient (SRCC) of 0.797065 between the predicted and human MOS. The median complete program runtime was 56.216 seconds over 5 runs on a shared NVIDIA A100-PCIE-40GB. Each execution records its own runtime in 02_metrics.json.
 

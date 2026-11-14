@@ -50,8 +50,13 @@ def main():
     parser.add_argument('--evaluation-csv', type=Path, required=True)
     parser.add_argument('--video-root', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--reference-scores', type=Path,
+                        help='Human MOS CSV, defaulting to reference_mos.csv beside the input archive')
     parser.add_argument('--receipt', type=Path, required=True)
     args = parser.parse_args()
+    scores_path = args.reference_scores or args.output.with_name('reference_mos.csv')
+    if scores_path.resolve() == args.output.resolve():
+        raise ValueError('Video frames and reference scores require separate output paths')
     torch.set_num_threads(4)
     with args.evaluation_csv.open(encoding='utf-8-sig', newline='') as stream:
         rows = list(csv.DictReader(stream))
@@ -63,12 +68,11 @@ def main():
     identities = {}
     with zipfile.ZipFile(temporary, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         metadata = {
-            'format_version': 1, 'sample_ids': np.asarray(ids),
-            'target_mos': np.asarray([float(row['mos']) for row in rows], dtype=np.float64),
+            'format_version': 2, 'sample_ids': np.asarray(ids),
             'normalization': '(RGB / 255 - 0.5) / 0.5',
             'storage_precision': 'float16 preserving bfloat16 patch-projection inputs',
             'frame_fractions': np.linspace(.1, .9, 4), 'crop_fraction': .65,
-            'source': 'LGVQ original TEST temporal quality labels',
+            'source': 'LGVQ video frames',
         }
         for name, value in metadata.items():
             write_array(archive, name, value)
@@ -90,12 +94,20 @@ def main():
     with np.load(temporary, allow_pickle=False) as archive:
         assert archive['sample_ids'].tolist() == ids
         assert archive['rgb_0035'].shape == (14, 4, 3, 448, 448)
+    scores_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_scores = scores_path.with_name('.' + scores_path.name + '.building')
+    with temporary_scores.open('w', encoding='utf-8', newline='') as stream:
+        writer = csv.writer(stream)
+        writer.writerow(('sample_id', 'target_MOS'))
+        writer.writerows((row['sample_id'], float(row['mos'])) for row in rows)
+    temporary_scores.replace(scores_path)
     temporary.replace(args.output)
     receipt = {'videos': 558, 'unique_video_hashes': len(set(identities.values())),
                'fields': 35, 'stored_padding_videos': 0,
                'maximum_patch_input_difference': 0.0, 'recovered_preview_pixels_exact': True,
                'source_video_sha256': identities,
                'npz_sha256': hashlib.sha256(args.output.read_bytes()).hexdigest(),
+               'reference_scores_sha256': hashlib.sha256(scores_path.read_bytes()).hexdigest(),
                'npz_bytes': args.output.stat().st_size}
     args.receipt.parent.mkdir(parents=True, exist_ok=True)
     args.receipt.write_text(json.dumps(receipt, indent=2) + '\n', encoding='utf-8')

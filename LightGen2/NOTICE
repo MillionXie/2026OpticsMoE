@@ -14,7 +14,7 @@ https://github.com/QwenLM/Qwen3-VL
 
 The upstream Apache-2.0 license is included in licenses/QWEN_LICENSE.txt.
 
-The video frames, sample identities and temporal MOS labels in
-data/input_for_review.npz originate from the LGVQ dataset and retain the dataset
+The video frames in data/input_for_review.npz and the temporal MOS labels in
+data/reference_mos.csv originate from the LGVQ dataset and retain the dataset
 authors' attribution and applicable dataset terms.
 https://github.com/zczhang-sjtu/UGVQ

@@ -6,6 +6,7 @@ import time
 PROGRAM_STARTED = time.perf_counter()
 
 import argparse
+import csv
 import json
 import math
 from pathlib import Path
@@ -23,20 +24,35 @@ PROJECT = Path(__file__).resolve().parent
 
 
 def read_input_metadata(archive):
-    """Read ordered video identities and human labels from the RGB archive."""
-    if int(archive['format_version']) != 1:
-        raise ValueError('Unsupported normalized RGB archive version')
+    """Read the identities used to preserve the video-frame order."""
+    if int(archive['format_version']) not in (1, 2):
+        raise ValueError('Unsupported video-frame archive version')
     sample_ids = archive['sample_ids'].tolist()
-    targets = archive['target_mos']
     if not isinstance(sample_ids, list) or len(sample_ids) < 2:
-        raise ValueError('The input archive requires at least two labeled videos')
+        raise ValueError('The input archive requires at least two videos')
     if any(not isinstance(value, str) or not value for value in sample_ids):
         raise ValueError('Sample IDs must be nonempty strings')
     if len(set(sample_ids)) != len(sample_ids):
         raise ValueError('Evaluation sample IDs must be unique')
-    if targets.shape != (len(sample_ids),) or not np.isfinite(targets).all():
+    return sample_ids
+
+
+def read_reference_scores(path, sample_ids):
+    """Match human MOS labels to video IDs for metric calculation."""
+    with Path(path).open(encoding='utf-8-sig', newline='') as stream:
+        reader = csv.DictReader(stream)
+        if reader.fieldnames != ['sample_id', 'target_MOS']:
+            raise ValueError('Reference scores require sample_id and target_MOS columns')
+        rows = list(reader)
+    scores = {row['sample_id']: float(row['target_MOS']) for row in rows}
+    if len(scores) != len(rows):
+        raise ValueError('Reference score sample IDs must be unique')
+    if set(scores) != set(sample_ids):
+        raise ValueError('Reference scores must match the input video IDs')
+    targets = np.asarray([scores[sample_id] for sample_id in sample_ids], dtype=np.float64)
+    if not np.isfinite(targets).all():
         raise ValueError('Each sample requires one finite temporal MOS label')
-    return sample_ids, targets
+    return targets
 
 
 def iter_rgb_fields(archive, sample_ids):
@@ -107,7 +123,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--weights', type=Path, default=PROJECT / 'weights/LightGen2.pt')
     parser.add_argument('--input', type=Path, default=PROJECT / 'data/input_for_review.npz',
-                        help='LGVQ video frames, ordered sample IDs and human MOS labels')
+                        help='LGVQ video frames')
+    parser.add_argument('--reference-scores', type=Path, default=PROJECT / 'data/reference_mos.csv',
+                        help='Human MOS labels used to calculate SRCC')
     parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     parser.add_argument('--output', type=Path, default=PROJECT / 'results', help='Result directory')
     parser.add_argument('--visualize-field', type=int, default=1,
@@ -124,7 +142,8 @@ def main():
     print('Running on ' + device_name, flush=True)
     model, _ = load_lightgen2(args.weights, args.device)
     with np.load(args.input, allow_pickle=False) as archive:
-        sample_ids, targets = read_input_metadata(archive)
+        sample_ids = read_input_metadata(archive)
+        targets = read_reference_scores(args.reference_scores, sample_ids)
         _, metrics = evaluate(model, archive, sample_ids, targets, args.device, args.output,
                               visualize_field=args.visualize_field)
     if torch.device(args.device).type == 'cuda':
