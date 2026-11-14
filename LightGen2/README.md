@@ -36,11 +36,11 @@ Predictions, metrics and figures are written to `results`.
 The 558 distinct videos are processed in 35 ordered optical fields. Fields 1–34
 contain 544 distinct videos. Field 35 contains the remaining 14 videos and two
 padding entries copied from videos 1 and 2. SRCC uses exactly the 558 actual
-video predictions and labels. The normalized-RGB reference SRCC is 0.796289.
+video predictions and labels. The normalized-RGB reference SRCC is 0.797065.
 The evaluation split was used in checkpoint selection.
 
-Five complete runs had a median runtime of 59.757 seconds, ranging from 55.669
-to 67.184 seconds, on a shared NVIDIA A100-PCIE-40GB.
+Five complete runs had a median runtime of 68.150 seconds, ranging from 62.216
+to 77.563 seconds, on a shared NVIDIA A100-PCIE-40GB.
 One complete warm-up preceded five fresh Python processes. Timing covers imports,
 model and NPZ loading, all 558 predictions, metrics and result/figure export,
 with CUDA synchronized before completion. Outer ZIP extraction precedes timing.
@@ -94,6 +94,9 @@ python infer.py --input path/to/test_rgb.npz --output path/to/results
 Both optical branches use a 518 × 518 canvas with a 478 × 478 active area.
 Sixteen videos occupy a 4 × 4 arrangement. Within each vision slot, four frames
 occupy a 2 × 2 arrangement. Language uses one patch per video.
+
+Each branch learns one 111 × 111 phase mask. Its same values are broadcast
+to all sixteen video slots. Vision and language have separate learned masks.
 
 `LightGen2.forward(normalized_rgb)` accepts floating-point normalized RGB with shape
 `[batch, 16, 4, 3, 448, 448]`. `predict_from_embeddings(visual_embeddings)`

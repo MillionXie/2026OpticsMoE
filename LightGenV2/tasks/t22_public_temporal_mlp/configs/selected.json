@@ -1,45 +1,45 @@
 {
   "schema": 3,
-  "selection": "ccd_noise_read_shot_validated_epoch75_readout32",
+  "selection": "shared_global_phase_validated_epoch60_readout32",
   "checkpoint": "runs/simulation/current/LightGen.pt",
-  "checkpoint_sha256": "c303ce9e7ab3df5b5d9f11c900c0c264adddef09aeee5594bb3142f06afb4f02",
-  "architecture": "t22_serial_top2_global2_fused_readout_v8_relative_intensity_linear_no_ln192",
-  "model_parameters": 3777350,
-  "selected_epoch": 75,
-  "completed_epochs": 160,
+  "checkpoint_sha256": "df3ad58a1cb22e277bc792902a5af50ed7b0f0c3f427174784e1e2341f3a8a7c",
+  "architecture": "t22_serial_top2_global2_fused_readout_v8_relative_intensity_linear_no_ln192_shared_phase",
+  "model_parameters": 3407720,
+  "selected_epoch": 60,
+  "completed_epochs": 120,
   "evaluation": {
     "role": "original_TEST_development",
     "videos": 558,
-    "srcc": 0.7962891201778162,
+    "srcc": 0.7970645224412813,
     "selection_interval": [
       0.79,
       0.799
     ],
-    "slot_cycle_mean_srcc": 0.7937901825833449,
-    "slot_cycle_minimum_srcc": 0.7886420853048103,
+    "slot_cycle_mean_srcc": 0.797011192599151,
+    "slot_cycle_minimum_srcc": 0.7961938741330722,
     "phase_gain": {
-      "vision": 0.19234457664194826,
-      "language": 0.004943642694396733
+      "vision": 0.10396177109385918,
+      "language": 0.004545529422530059
     },
     "constant_phase_srcc": {
       "vision": {
-        "flat": 0.6027308885279172,
-        "pi": 0.6039445435358679,
-        "zero": 0.6039445435358679
+        "flat": 0.693096115431252,
+        "pi": 0.693096115431252,
+        "zero": 0.6931027513474222
       },
       "language": {
-        "flat": 0.7910841552134492,
-        "pi": 0.7913454774834194,
-        "zero": 0.7913454774834194
+        "flat": 0.7925189930187513,
+        "pi": 0.7925189930187513,
+        "zero": 0.7925189930187513
       }
     },
     "mean_cross_video_energy_percent": {
-      "vision": 0.30496083066454927,
-      "language": 0.23265773677484108
+      "vision": 0.30593640274471706,
+      "language": 0.22378528630861672
     },
     "maximum_cross_video_energy_percent": {
-      "vision": 0.9129643440246582,
-      "language": 0.6371974945068359
+      "vision": 0.9861648082733154,
+      "language": 0.48803091049194336
     },
     "detector_noise_validation": {
       "trials_per_condition": 10,
@@ -49,55 +49,55 @@
           "kind": "gaussian",
           "level": 0.05,
           "trials": 10,
-          "mean_srcc": 0.7940844881473371,
-          "minimum_srcc": 0.7920096097120168,
-          "maximum_srcc": 0.7991834533939126,
-          "mean_delta_srcc": -0.002204632030479048
+          "mean_srcc": 0.7956383075360185,
+          "minimum_srcc": 0.7932671475921138,
+          "maximum_srcc": 0.798002167604749,
+          "mean_delta_srcc": -0.0014262149052628459
         },
         {
           "kind": "gaussian",
           "level": 0.1,
           "trials": 10,
-          "mean_srcc": 0.7892961020316084,
-          "minimum_srcc": 0.7861529794596444,
-          "maximum_srcc": 0.7975955243208982,
-          "mean_delta_srcc": -0.006993018146207786
+          "mean_srcc": 0.7921432373572425,
+          "minimum_srcc": 0.7865010522968361,
+          "maximum_srcc": 0.7968154944395958,
+          "mean_delta_srcc": -0.004921285084038884
         },
         {
           "kind": "poisson",
           "level": 99.99999999999999,
           "trials": 10,
-          "mean_srcc": 0.7949965125520928,
-          "minimum_srcc": 0.7912012270378445,
-          "maximum_srcc": 0.7975121581309013,
-          "mean_delta_srcc": -0.0012926076257233632
+          "mean_srcc": 0.7962010745682895,
+          "minimum_srcc": 0.7936414320855639,
+          "maximum_srcc": 0.7978666889123884,
+          "mean_delta_srcc": -0.0008634478729918627
         },
         {
           "kind": "poisson",
           "level": 399.99999999999994,
           "trials": 10,
-          "mean_srcc": 0.7955336891934213,
-          "minimum_srcc": 0.7942448181964292,
-          "maximum_srcc": 0.7972733523298117,
-          "mean_delta_srcc": -0.0007554309843949003
+          "mean_srcc": 0.7965501419979716,
+          "minimum_srcc": 0.7930569363251245,
+          "maximum_srcc": 0.7983773499941974,
+          "mean_delta_srcc": -0.0005143804433097587
         },
         {
           "kind": "combined",
           "level": 0.05,
           "trials": 10,
-          "mean_srcc": 0.7939170827035995,
-          "minimum_srcc": 0.7904863982198039,
-          "maximum_srcc": 0.7965075851810979,
-          "mean_delta_srcc": -0.0023720374742166594
+          "mean_srcc": 0.7957708787817138,
+          "minimum_srcc": 0.7938097875852475,
+          "maximum_srcc": 0.7983391203453462,
+          "mean_delta_srcc": -0.0012936436595675227
         },
         {
           "kind": "combined",
           "level": 0.1,
           "trials": 10,
-          "mean_srcc": 0.7905545036312759,
-          "minimum_srcc": 0.784230584127259,
-          "maximum_srcc": 0.79431561384245,
-          "mean_delta_srcc": -0.005734616546540283
+          "mean_srcc": 0.7949364170542179,
+          "minimum_srcc": 0.7936122850000802,
+          "maximum_srcc": 0.7978662399643893,
+          "mean_delta_srcc": -0.002128105387063428
         }
       ],
       "fixed_parent_TRAIN_reference": [
@@ -105,67 +105,90 @@
           "kind": "gaussian",
           "level": 0.05,
           "trials": 10,
-          "mean_srcc": 0.7940184275342397,
-          "minimum_srcc": 0.7918219839828312,
-          "maximum_srcc": 0.799165253732716,
-          "mean_delta_srcc": -0.0022706926435764885
+          "mean_srcc": 0.7954314637340135,
+          "minimum_srcc": 0.7928242085892544,
+          "maximum_srcc": 0.7978901723461903,
+          "mean_delta_srcc": -0.0016330587072678204
         },
         {
           "kind": "gaussian",
           "level": 0.1,
           "trials": 10,
-          "mean_srcc": 0.789167478787884,
-          "minimum_srcc": 0.785772547832052,
-          "maximum_srcc": 0.7976761968229004,
-          "mean_delta_srcc": -0.0071216413899322095
+          "mean_srcc": 0.7919104750869109,
+          "minimum_srcc": 0.7856989203601904,
+          "maximum_srcc": 0.7966634392057277,
+          "mean_delta_srcc": -0.005154047354370417
         },
         {
           "kind": "poisson",
           "level": 99.99999999999999,
           "trials": 10,
-          "mean_srcc": 0.7948735905899239,
-          "minimum_srcc": 0.7915129350871045,
-          "maximum_srcc": 0.7977380825778609,
-          "mean_delta_srcc": -0.0014155295878922614
+          "mean_srcc": 0.7963680659567446,
+          "minimum_srcc": 0.7935634532715568,
+          "maximum_srcc": 0.7981722843619676,
+          "mean_delta_srcc": -0.000696456484536756
         },
         {
           "kind": "poisson",
           "level": 399.99999999999994,
           "trials": 10,
-          "mean_srcc": 0.7955182661029272,
-          "minimum_srcc": 0.7943240057165882,
-          "maximum_srcc": 0.7974173264996949,
-          "mean_delta_srcc": -0.0007708540748889714
+          "mean_srcc": 0.7965633997777312,
+          "minimum_srcc": 0.7933011985711267,
+          "maximum_srcc": 0.7982714673353196,
+          "mean_delta_srcc": -0.0005011226635501798
         },
         {
           "kind": "combined",
           "level": 0.05,
           "trials": 10,
-          "mean_srcc": 0.7938497315156338,
-          "minimum_srcc": 0.7906374864887507,
-          "maximum_srcc": 0.7964933915174321,
-          "mean_delta_srcc": -0.002439388662182407
+          "mean_srcc": 0.7956388293613774,
+          "minimum_srcc": 0.7937515279487415,
+          "maximum_srcc": 0.7980703040972364,
+          "mean_delta_srcc": -0.0014256930799039225
         },
         {
           "kind": "combined",
           "level": 0.1,
           "trials": 10,
-          "mean_srcc": 0.7903853845583566,
-          "minimum_srcc": 0.7840518682891336,
-          "maximum_srcc": 0.7942124939404901,
-          "mean_delta_srcc": -0.00590373561945956
+          "mean_srcc": 0.7946801350874795,
+          "minimum_srcc": 0.7931532529381742,
+          "maximum_srcc": 0.7979498478956166,
+          "mean_delta_srcc": -0.0023843873538018645
         }
       ],
       "targets_met": true
+    },
+    "shared_mask_audit": {
+      "vision": {
+        "trainable_phase_shape": [
+          1,
+          111,
+          111
+        ],
+        "exported_slots": 16,
+        "distinct_masks": 1,
+        "maximum_slot_phase_difference_rad": 0.0
+      },
+      "language": {
+        "trainable_phase_shape": [
+          1,
+          111,
+          111
+        ],
+        "exported_slots": 16,
+        "distinct_masks": 1,
+        "maximum_slot_phase_difference_rad": 0.0
+      }
     }
   },
   "run_id": "current",
-  "training_run_id": "ccd_noise_20261114/distillation",
+  "training_run_id": "shared_global_phase_20261114/noise_refinement",
   "refinement_stages": [
-    "ccd_noise_20261114/distillation"
+    "shared_global_phase_20261114/noise_refinement"
   ],
   "runtime_benchmark": {
-    "directory": "runs/smoke/runtime_ccd_noise_20261114",
+    "directory": "runs/smoke/runtime_shared_global_phase_20261114",
     "project": "reference"
-  }
+  },
+  "shared_global_phase": true
 }

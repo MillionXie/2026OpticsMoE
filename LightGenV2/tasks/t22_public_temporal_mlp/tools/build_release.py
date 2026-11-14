@@ -56,7 +56,7 @@ def import_public_module(name):
         sys.path.pop(0)
 
 
-def verify_optical_arrays(directory, predictions):
+def verify_optical_arrays(directory, predictions, *, shared_phase=False):
     reports = {}
     metrics = json.loads((directory / '02_metrics.json').read_text('utf-8'))
     start = (metrics['visualized_field'] - 1) * 16
@@ -76,6 +76,9 @@ def verify_optical_arrays(directory, predictions):
             phase = np.zeros((518, 518), dtype=np.float32)
             if mask['phase_tiles'].shape != (16, 111, 111):
                 raise ValueError('Full phase tiles are missing')
+            if shared_phase and not np.array_equal(
+                    mask['phase_tiles'], np.broadcast_to(mask['phase_tiles'][:1], (16, 111, 111))):
+                raise ValueError('Video slots have different learned masks in ' + branch)
             for tile, (row, column) in zip(mask['phase_tiles'], mask['slot_origins']):
                 phase[row+2:row+113, column+2:column+113] = tile
             np.testing.assert_array_equal(phase, mask['phase'])
@@ -119,8 +122,16 @@ def build_release():
         if not torch.equal(tensor, public['model'][name]):
             raise ValueError('Public model tensor differs: ' + name)
     public_model = import_public_module('model')
+    source_config = dict(original['config'])
+    target_config = dict(public['config'])
+    source_config.setdefault('shared_global_phase', False)
+    target_config.setdefault('shared_global_phase', False)
+    expected_architecture = (public_model.ARCHITECTURE if target_config['shared_global_phase']
+                             else public_model.LEGACY_ARCHITECTURE)
+    if public['schema'] != 2 or public['architecture'] != expected_architecture:
+        raise ValueError('Public architecture conflicts with global phase sharing')
     for field in fields(public_model.ModelConfig):
-        if public['config'][field.name] != original['config'][field.name]:
+        if target_config[field.name] != source_config[field.name]:
             raise ValueError('Public configuration differs: ' + field.name)
 
     manifest = ROOT / 'assets/manifest.csv'
@@ -149,7 +160,12 @@ def build_release():
         raise ValueError('Published summary differs from per-video scores')
     if metrics['total_runtime_seconds'] <= 0:
         raise ValueError('Complete program runtime is missing')
-    replay = verify_optical_arrays(result_dir, predictions)
+    shared_phase = original['config'].get('shared_global_phase', False)
+    if shared_phase:
+        for branch in ('frame_global', 'video_global'):
+            if original['model'][branch + '.raw_global_phase'].shape != (1, 111, 111):
+                raise ValueError('Expected one trainable phase tile in ' + branch)
+    replay = verify_optical_arrays(result_dir, predictions, shared_phase=shared_phase)
     names = SOURCE_FILES + ARTIFACT_FILES
     actual = {path.relative_to(PUBLIC).as_posix() for path in PUBLIC.rglob('*') if path.is_file()}
     if actual != set(names):
@@ -197,6 +213,7 @@ def build_release():
     verification = {'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                     'canonical_directory': 'LightGen2', 'files': checksums,
                     'retained_model_tensors_bitwise_equal': True,
+                    'shared_global_phase': shared_phase,
                     'inference_state_fingerprint': tensor_fingerprint(public['model']),
                     'metrics': metrics, 'optical_array_replay': replay, 'archive_sha256': digest}
     write_json(ROOT / 'runs/simulation/current/validation/public_inference/release_verification.json', verification)

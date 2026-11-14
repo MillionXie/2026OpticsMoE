@@ -245,7 +245,8 @@ def build_guide():
     paragraph(document, 'Both branches use a 518 × 518 canvas and a 478 × 478 active area. '
               'Sixteen videos form a 4 × 4 arrangement. Each vision slot contains four '
               'frame patches in a 2 × 2 arrangement. Each language slot contains one patch. '
-              'All sixteen learned 111 × 111 phase tiles are applied in their physical positions.')
+              'Each branch learns one 111 × 111 phase tile. Its identical values are broadcast '
+              'to all sixteen video positions. Vision and language have separate learned tiles.')
     paragraph(document, 'Angular-spectrum propagation operates on the whole coherent canvas. '
               'Detected intensity is divided by each region’s mean, pooled to 49 × 96 '
               'for vision or 42 × 96 for language, then passed through LayerNorm and ReLU. '
