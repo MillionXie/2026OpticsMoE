@@ -24,5 +24,9 @@
     "spatial_locality_20261114",
     "spatial_concentration_20261114",
     "spatial_router_balance_20261114"
-  ]
+  ],
+  "runtime_benchmark": {
+    "directory": "runs/smoke/runtime_paired_20261114",
+    "project": "extracted"
+  }
 }

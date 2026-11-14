@@ -39,11 +39,14 @@ padding entries copied from videos 1 and 2. SRCC uses exactly the 558 actual
 video predictions and labels. The normalized-RGB reference SRCC is 0.798371.
 The evaluation split was used in checkpoint selection.
 
-The complete reference program took 34.413 seconds on an NVIDIA A100-PCIE-40GB.
-This covers imports, model loading, all 558 inputs, prediction,
-metrics and result/figure export. The measured total is saved after inference
-as `total_runtime_seconds` in `02_metrics.json`. Runtime varies with hardware
-and filesystem performance.
+Five complete runs from an extracted package had a median runtime of 71.533
+seconds, ranging from 64.997 to 72.778 seconds, on a shared NVIDIA A100-PCIE-40GB.
+One complete warm-up preceded five fresh Python processes. Timing covers imports,
+model and NPZ loading, all 558 predictions, metrics and result/figure export,
+with CUDA synchronized before completion. Outer ZIP extraction precedes timing.
+The supplied results come from the median run. Each invocation saves its own
+`total_runtime_seconds` in `02_metrics.json`. Runtime varies with shared load,
+hardware and storage performance.
 
 The same run captures field 1 while computing its predictions and exports its
 input frames, complete masks, and optical input/output fields. Choose another

@@ -1,5 +1,6 @@
 """Author-side generation of the editable LightGen2 inference guide."""
 from pathlib import Path
+import hashlib
 import json
 
 from docx import Document
@@ -11,6 +12,25 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 PUBLIC = Path(__file__).resolve().parents[4] / 'LightGen2'
+
+
+def runtime_reference(reference):
+    task = Path(__file__).resolve().parents[1]
+    profile = json.loads((task / 'configs/selected.json').read_text('utf-8'))
+    record = profile['runtime_benchmark']
+    directory = task / record['directory']
+    summary = json.loads((directory / 'summary.json').read_text('utf-8'))
+    protocol = json.loads((directory / 'protocol.json').read_text('utf-8'))
+    timing = summary['projects'][record['project']]['program_seconds']
+    for name, expected in protocol['input_and_source_sha256'].items():
+        with (PUBLIC / name).open('rb') as stream:
+            if hashlib.file_digest(stream, 'sha256').hexdigest() != expected:
+                raise ValueError('Runtime measurement identity differs: ' + name)
+    if (reference['total_runtime_seconds'] != timing['median']
+            or reference['device_name'] != summary['hardware']['device']
+            or reference['videos'] != summary['videos_per_process']):
+        raise ValueError('Reference results differ from the selected runtime measurement')
+    return timing, summary['measured_processes'], protocol['warmup_processes']
 
 
 def paragraph(document, text, style=None):
@@ -86,6 +106,7 @@ def page(document, title):
 
 def build_guide():
     reference = json.loads((PUBLIC / 'results/02_metrics.json').read_text('utf-8'))
+    timing, repeats, warmups = runtime_reference(reference)
     document = Document()
     section = document.sections[0]
     section.page_width = Inches(8.27)
@@ -150,11 +171,14 @@ def build_guide():
               'repeat the first two inputs to fill the coherent field. Exactly 558 actual '
               'predictions and their human temporal MOS labels enter the Spearman rank '
               f"correlation coefficient (SRCC). The reference SRCC is {reference['SRCC']:.6f}.")
-    paragraph(document, f"The complete reference program took {reference['total_runtime_seconds']:.3f} seconds "
-              f"on {reference['device_name']}. This total covers imports, model loading, all "
-              '558 inputs, inference, metrics and result/figure export. After inference, '
-              '02_metrics.json records total_runtime_seconds. Runtime varies with hardware '
-              'and filesystem performance.')
+    paragraph(document, f"On a shared {reference['device_name']}, {repeats} complete runs from an "
+              f"extracted package had a median of {timing['median']:.3f} seconds "
+              f"and a range of {timing['minimum']:.3f} to {timing['maximum']:.3f} seconds. "
+              f"{warmups} complete warm-up preceded fresh Python processes. Timing covers imports, "
+              'model and NPZ loading, all 558 predictions, metrics and figure export, with CUDA '
+              'synchronized before completion. Outer ZIP extraction precedes timing. The supplied '
+              'results come from the median run. Each invocation saves its own total_runtime_seconds '
+              'in 02_metrics.json. Runtime varies with shared load, hardware and storage.')
     paragraph(document, 'Field 1 is captured during this same evaluation. Its sixteen slots '
               'can be matched to results/01_predictions.csv using field and slot numbers. '
               'To display another field, select a number from 1 to 35.')
