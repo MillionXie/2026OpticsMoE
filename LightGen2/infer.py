@@ -136,6 +136,8 @@ def main():
         sample_ids, targets = read_input_metadata(archive)
         _, metrics = evaluate(model, archive, sample_ids, targets, args.device, args.output,
                               visualize_field=args.visualize_field)
+    if torch.device(args.device).type == 'cuda':
+        torch.cuda.synchronize(args.device)
     metrics['total_runtime_seconds'] = time.perf_counter() - PROGRAM_STARTED
     metrics['device_name'] = device_name
     (args.output / '02_metrics.json').write_text(json.dumps(metrics, indent=2, allow_nan=False)

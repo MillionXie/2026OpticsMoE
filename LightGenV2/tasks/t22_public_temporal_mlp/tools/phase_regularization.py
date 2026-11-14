@@ -10,6 +10,13 @@ def circular_difference(value):
     return torch.atan2(value.sin(), value.cos())
 
 
+@torch.no_grad()
+def reset_raw_phases(model):
+    """Start both sigmoid phase masks at raw zero, giving physical phase pi."""
+    for stage in (model.frame_global, model.video_global):
+        stage.raw_global_phase.zero_()
+
+
 def phase_penalties(phase):
     horizontal = phase[..., :, 1:] - phase[..., :, :-1]
     vertical = phase[..., 1:, :] - phase[..., :-1, :]

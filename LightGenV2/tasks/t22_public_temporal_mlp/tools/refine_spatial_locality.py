@@ -19,7 +19,7 @@ from torch.nn import functional as F
 if __package__:
     from . import _paths
     from .data import load_inputs, groups, batch, sha256
-    from .phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics
+    from .phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics, reset_raw_phases
     from .run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from .spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from .training_policy import restrict_training_to
@@ -27,7 +27,7 @@ if __package__:
 else:
     import _paths
     from data import load_inputs, groups, batch, sha256
-    from phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics
+    from phase_regularization import model_phase_penalties, smooth_phase_gradients, smooth_phase_parameters, phase_statistics, reset_raw_phases
     from run import evaluate, write, save_checkpoint, correlation, router_regularization, update_router_bias
     from spatial_locality import capture_modulated_fields, spatial_locality_loss, audit_spatial_locality
     from training_policy import restrict_training_to
@@ -82,8 +82,21 @@ def train(args):
             raise ValueError('Frozen frontend identity differs: ' + name)
     if not torch.equal(model.prompt_embedding.cpu(), payload['prompt']):
         raise ValueError('Frozen prompt identity differs')
-    teacher = copy.deepcopy(model).requires_grad_(False).eval()
-    prefixes = ['readout']
+    if args.teacher_weights is not None:
+        teacher, teacher_metadata = load_lightgen(args.teacher_weights, args.device)
+        if teacher.cfg != model.cfg or teacher_metadata['dataset'] != parent_metadata['dataset']:
+            raise ValueError('Teacher architecture or dataset differs')
+    else:
+        teacher = copy.deepcopy(model)
+    teacher.requires_grad_(False).eval()
+    phase_initialization = config.get('raw_phase_initialization', 'inherit')
+    if phase_initialization not in ('inherit', 'zeros'):
+        raise ValueError('Expected inherited or zero-initialized raw phase parameters')
+    if phase_initialization == 'zeros':
+        reset_raw_phases(model)
+    initial_phase_statistics = {name: phase_statistics(getattr(model, name))
+                                for name in ('frame_global', 'video_global')}
+    prefixes = ['readout'] if config.get('train_readout', True) else []
     if config.get('train_phases', True):
         prefixes.extend(('frame_global.raw_global_phase', 'video_global.raw_global_phase'))
     if config.get('train_language_router_bias', False):
@@ -92,7 +105,10 @@ def train(args):
     if config.get('train_field_encoders', False):
         prefixes.extend(encoders)
     restrict_training_to(model, prefixes)
-    parameter_groups = [{'params': model.readout.parameters(), 'lr': config['readout_learning_rate'], 'name': 'readout'}]
+    parameter_groups = []
+    if config.get('train_readout', True):
+        parameter_groups.append({'params': model.readout.parameters(),
+                                 'lr': config['readout_learning_rate'], 'name': 'readout'})
     if config.get('train_phases', True):
         parameter_groups.append({'params': [model.frame_global.raw_global_phase, model.video_global.raw_global_phase],
                                  'lr': config['phase_learning_rate'], 'name': 'phase'})
@@ -114,6 +130,9 @@ def train(args):
                                   for name in ('refine_spatial_locality.py', 'spatial_locality.py')},
                 'command': sys.argv, 'pid': os.getpid(), 'config': config,
                 'initialization': {'checkpoint_sha256': sha256(args.weights), 'parent_epoch': parent_metadata.get('epoch')},
+                'raw_phase_initialization': phase_initialization,
+                'initial_phase_statistics': initial_phase_statistics,
+                'teacher_checkpoint_sha256': sha256(args.teacher_weights or args.weights),
                 'dataset': payload['identity'], 'front_source': front['source'],
                 'python': platform.python_version(), 'torch': str(torch.__version__),
                 'gpu': torch.cuda.get_device_name(0) if args.device.startswith('cuda') else 'CPU',
@@ -215,6 +234,8 @@ def train(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--weights', type=Path, required=True)
+    parser.add_argument('--teacher-weights', type=Path,
+                        help='Optional fixed TRAIN distillation teacher with the same architecture')
     parser.add_argument('--paths', type=Path, required=True)
     parser.add_argument('--config', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)

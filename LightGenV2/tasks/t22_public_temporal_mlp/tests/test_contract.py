@@ -12,7 +12,8 @@ from ..tools.run import (save_checkpoint, selection_score, router_regularization
 from ..tools.data import attach_train_soft_targets
 from ..infer import frames_from_video, iter_video_fields
 from ..tools.phase_regularization import (phase_penalties, gaussian_phase, illumination_support,
-                                    initialize_phase, smooth_phase_gradients, smooth_phase_parameters)
+                                    initialize_phase, smooth_phase_gradients, smooth_phase_parameters,
+                                    reset_raw_phases)
 from ..tools.training_policy import freeze_parameters,restrict_training_to
 from ..tools.prepare_joint_router import expand_router
 from ..tools.phase_plotting import phase_display_norm, phase_display_values
@@ -23,6 +24,18 @@ from ..tools.analyze_global_ablation import identity_global, ablation_metrics
 class Contracts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):torch.set_num_threads(4)
+
+    def test_reset_starts_physical_phase_at_pi_and_preserves_other_parameters(self):
+        model = LightGenTemporal(ModelConfig(width=8, router_hidden=8, readout_hidden=8))
+        preserved = model.frame_global.width_to_field.weight.detach().clone()
+        with torch.no_grad():
+            model.frame_global.raw_global_phase.normal_()
+            model.video_global.raw_global_phase.normal_()
+        reset_raw_phases(model)
+        for stage in (model.frame_global, model.video_global):
+            self.assertEqual(int(stage.raw_global_phase.count_nonzero()), 0)
+            self.assertTrue(torch.allclose(stage.phase(), torch.full_like(stage.phase(), torch.pi)))
+        self.assertTrue(torch.equal(preserved, model.frame_global.width_to_field.weight))
 
     def test_global_identity_bypass_preserves_token_shape(self):
         tokens=torch.randn(2,16,4,49,8)
