@@ -21,6 +21,34 @@ from .evaluate_detector_noise import (detector_noise, noise_level, detector_nois
 from ..model import load_lightgen
 
 
+@torch.inference_mode()
+def validate_candidate(model,payload,device,review,epoch,reference):
+    review = Path(review)
+    review.mkdir(parents=True,exist_ok=False)
+    metrics = evaluate(model,payload,device,4,review,epoch)
+    locality,arrays = audit_spatial_locality(model,payload,device,split='test',field_count=35)
+    np.savez_compressed(review/'single_video_leakage.npz',**arrays)
+    controls = phase_controls(model,payload,device,4)
+    gains = {branch:metrics['srcc']-max(values.values()) for branch,values in controls.items()}
+    final = dict(metrics=metrics,phase_gain=gains,constant_phase_srcc=controls,locality=locality,
+                 input_fields=input_field_audit(model,payload,device,review),
+                 noise_reference_intensity={'fixed_parent_TRAIN':reference},noise={})
+    final['noise_reference_intensity']['candidate_TRAIN'] = reference_intensities(model,payload,device,4)
+    for label,intensity in final['noise_reference_intensity'].items():
+        configuration = dict(reference_intensity=intensity,evaluation_kinds=['gaussian','poisson','combined'],
+                             evaluation_fractions=[.05,.1],selection_trials=10,selection_seed_base=29301)
+        final['noise'][label] = detector_noise_metrics(model,payload,device,4,configuration)
+        write(review/'final_review.json',final)
+    final['checks'] = dict(clean_srcc_in_requested_interval=.790<=metrics['srcc']<.800,
+                           both_phase_gains_positive=min(gains.values())>0,
+                           every_video_leakage_below_one_percent=all(locality[branch]['maximum_video_foreign_fraction']<.01
+                                                                     for branch in ('vision','language')),
+                           noise_targets=all(row['srcc']>=(.79 if row['fraction']==.05 else .78)
+                                             for values in final['noise'].values() for row in values))
+    write(review/'final_review.json',final)
+    return final
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--weights',type=Path,required=True)
@@ -141,33 +169,15 @@ def main():
         write(args.out/'status.json',dict(state='training',epoch=epoch,best_epoch=best_epoch,
                                           best_srcc=best_score if best_epoch is not None else None))
         print(json.dumps(row),flush=True)
-    if best_epoch is not None:
-        write(args.out/'status.json',dict(state='final_validation',best_epoch=best_epoch,best_srcc=best_score))
-        selected,_ = load_candidate(args.out/'best_checkpoint.pt',args.device)
-        selected.requires_grad_(False)
-        review = args.out/'review'
-        review.mkdir()
-        metrics = evaluate(selected,payload,args.device,4,review,best_epoch)
-        controls = json.loads((args.out/'best_metrics.json').read_text('utf-8'))
-        final = dict(metrics=metrics,phase_gain=controls['phase_gain'],locality=controls['locality'],
-                     input_fields=input_field_audit(selected,payload,args.device,review),
-                     noise_reference_intensity={'fixed_parent_TRAIN':reference},noise={})
-        final['noise_reference_intensity']['candidate_TRAIN'] = reference_intensities(selected,payload,args.device,4)
-        for label,intensity in final['noise_reference_intensity'].items():
-            configuration = dict(reference_intensity=intensity,evaluation_kinds=['gaussian','poisson','combined'],
-                                 evaluation_fractions=[.05,.1],selection_trials=10,selection_seed_base=29301)
-            final['noise'][label] = detector_noise_metrics(selected,payload,args.device,4,configuration)
-            write(review/'final_review.json',final)
-        final['checks'] = dict(clean_srcc_in_requested_interval=.790<=metrics['srcc']<.800,
-                               both_phase_gains_positive=min(final['phase_gain'].values())>0,
-                               every_video_leakage_below_one_percent=all(final['locality'][branch]['maximum_video_foreign_fraction']<.01
-                                                                         for branch in ('vision','language')),
-                               noise_targets=all(row['srcc']>=(.79 if row['fraction']==.05 else .78)
-                                                 for values in final['noise'].values() for row in values))
-        write(review/'final_review.json',final)
+    chosen_epoch = best_epoch if best_epoch is not None else args.epochs
+    chosen_path = args.out/('best_checkpoint.pt' if best_epoch is not None else 'last_checkpoint.pt')
+    write(args.out/'status.json',dict(state='final_validation',best_epoch=best_epoch,chosen_epoch=chosen_epoch))
+    selected,_ = load_candidate(chosen_path,args.device)
+    selected.requires_grad_(False)
+    final = validate_candidate(selected,payload,args.device,args.out/'review',chosen_epoch,reference)
     write(args.out/'status.json',dict(state='completed',best_epoch=best_epoch,
                                       best_srcc=best_score if best_epoch is not None else None,
-                                      checks=final['checks'] if best_epoch is not None else {}))
+                                      evaluated_epoch=chosen_epoch,checks=final['checks']))
 
 
 if __name__=='__main__':
