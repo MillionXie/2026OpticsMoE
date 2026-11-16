@@ -1,0 +1,6 @@
+assets/
+runs/
+releases/
+paths.local.json
+__pycache__/
+*.pyc

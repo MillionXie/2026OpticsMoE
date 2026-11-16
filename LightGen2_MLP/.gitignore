@@ -1,0 +1,7 @@
+weights/
+data/
+results/
+README.docx
+README.pdf
+__pycache__/
+*.pyc
