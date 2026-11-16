@@ -688,23 +688,23 @@ class Experts(nn.Module):
 
 class GlobalMLP(nn.Module):
 
-    def __init__(self,config,token_count,output_width):
+    def __init__(self, config, token_count, output_width):
         super().__init__()
-        self.token_count=token_count
-        self.input_width=config.width
-        self.output_width=output_width
-        self.fc1=nn.Linear(token_count*config.width,config.global_hidden)
-        self.activation=nn.ReLU()
-        self.fc2=nn.Linear(config.global_hidden,token_count*output_width)
+        self.token_count = token_count
+        self.input_width = config.width
+        self.output_width = output_width
+        self.fc1 = nn.Linear(token_count * config.width, config.global_hidden)
+        self.activation = nn.ReLU()
+        self.fc2 = nn.Linear(config.global_hidden, token_count * output_width)
 
-    def forward(self,tokens):
-        if tuple(tokens.shape[-2:])!=(self.token_count,self.input_width):
+    def forward(self, tokens):
+        if tuple(tokens.shape[-2:]) != (self.token_count, self.input_width):
             raise ValueError('Global MLP input dimensions differ')
-        leading=tokens.shape[:-2]
-        flattened=tokens.flatten(-2)
-        hidden=self.activation(self.fc1(flattened))
-        output=self.fc2(hidden)
-        return output.reshape(*leading,self.token_count,self.output_width)
+        leading = tokens.shape[:-2]
+        flattened = tokens.flatten(-2)
+        hidden = self.activation(self.fc1(flattened))
+        output = self.fc2(hidden)
+        return output.reshape(*leading, self.token_count, self.output_width)
 
 
 
@@ -745,9 +745,9 @@ class LightGen2(nn.Module):
         projected_tokens = self.vision_adapter(visual_embeddings.float())
         routing = self.vision_router(projected_tokens)
         expert_tokens = self.vision_experts(projected_tokens, routing['weights'])
-        detector_tokens = self.vision_global(expert_tokens)
-        average_tokens = detector_tokens.mean(-2)
-        maximum_tokens = detector_tokens.amax(-2)
+        global_tokens = self.vision_global(expert_tokens)
+        average_tokens = global_tokens.mean(-2)
+        maximum_tokens = global_tokens.amax(-2)
         pooled_summary = torch.cat((average_tokens, maximum_tokens), dim=-1)
         visual_summary = self.vision_merger(pooled_summary)
         positioned_summary = visual_summary + self.vision_frame_position
@@ -761,8 +761,8 @@ class LightGen2(nn.Module):
         positioned_tokens = joint_tokens + sequence_position
         routing = self.language_router(positioned_tokens)
         expert_tokens = self.language_experts(positioned_tokens, routing['weights'])
-        detector_tokens = self.language_global(expert_tokens)
-        return detector_tokens, routing
+        global_tokens = self.language_global(expert_tokens)
+        return global_tokens, routing
 
     def forward(self, normalized_rgb):
         visual_embeddings = self.vision_frontend(normalized_rgb)
@@ -781,12 +781,12 @@ class LightGen2(nn.Module):
                 'routing': {'vision': vision_routing, 'language': language_routing}}
 
 
-def load_lightgen2(path,device='cpu'):
-    payload=torch.load(path,map_location='cpu',weights_only=True)
-    if payload['schema']!=3 or payload['architecture']!=ARCHITECTURE:
+def load_lightgen2(path, device='cpu'):
+    payload = torch.load(path, map_location='cpu', weights_only=True)
+    if payload['schema'] != 3 or payload['architecture'] != ARCHITECTURE:
         raise ValueError('Expected a LightGen-II MLP global checkpoint')
-    model=LightGen2(ModelConfig(**payload['config']))
-    frontend=QwenFrontCheckpoint(payload,model.vision_frontend.geometry)
-    model.load_state_dict(frontend.restore_state(model.vision_frontend),strict=True)
-    return model.to(device).eval(),payload['metadata']
+    model = LightGen2(ModelConfig(**payload['config']))
+    frontend = QwenFrontCheckpoint(payload, model.vision_frontend.geometry)
+    model.load_state_dict(frontend.restore_state(model.vision_frontend), strict=True)
+    return model.to(device).eval(), payload['metadata']
 
