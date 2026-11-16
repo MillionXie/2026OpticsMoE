@@ -47,6 +47,8 @@ def checkpoint(model,base_payload,training=None):
 
 
 def export_checkpoint(source,destination):
+    destination=Path(destination)
+    destination.parent.mkdir(parents=True,exist_ok=True)
     payload=torch.load(source,map_location='cpu',weights_only=True)
     payload.pop('training',None)
     save_checkpoint(destination,payload)

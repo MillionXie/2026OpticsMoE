@@ -7,7 +7,7 @@ import torch
 
 from LightGen2_MLP import model as public
 from LightGen2 import model as parent
-from ..checkpoints import inherit_parent,checkpoint
+from ..checkpoints import inherit_parent,checkpoint,export_checkpoint
 
 
 class MLPGlobalTests(unittest.TestCase):
@@ -53,7 +53,9 @@ class MLPGlobalTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'LightGen2.pt'
             torch.save(payload,path)
-            loaded,_=public.load_lightgen2(path)
+            output=Path(directory)/'separate_project/weights/LightGen2.pt'
+            export_checkpoint(path,output)
+            loaded,_=public.load_lightgen2(output)
         for name,value in model.state_dict().items():
             self.assertTrue(torch.equal(value,loaded.state_dict()[name]),name)
 
