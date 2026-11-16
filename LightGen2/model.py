@@ -99,11 +99,127 @@ class VisionFrontGeometry:
         return self.output_grid * self.output_grid
 
 
+@dataclass(frozen=True)
+class VisionFrameBatch:
+    leading_shape: tuple
+    geometry: VisionFrontGeometry
+
+    @classmethod
+    def from_images(cls, images, geometry):
+        if not isinstance(images, torch.Tensor):
+            raise ValueError('Qwen frontend input must be a tensor')
+        if images.ndim < 3 or tuple(images.shape[-3:]) != geometry.frame_shape:
+            raise ValueError('Expected normalized floating-point RGB frames shaped [...,3,448,448]')
+        if not images.is_floating_point():
+            raise ValueError('Expected normalized floating-point RGB frames shaped [...,3,448,448]')
+        leading_shape = tuple(images.shape[:-3])
+        if any(size <= 0 for size in leading_shape):
+            raise ValueError('The frontend batch must contain at least one frame')
+        return cls(leading_shape, geometry)
+
+    @property
+    def frame_count(self):
+        return math.prod(self.leading_shape)
+
+    @property
+    def image_shape(self):
+        return (*self.leading_shape, *self.geometry.frame_shape)
+
+    @property
+    def flattened_shape(self):
+        return (self.frame_count, *self.geometry.frame_shape)
+
+    @property
+    def token_shape(self):
+        return (self.frame_count, self.geometry.output_tokens,
+                self.geometry.hidden_size)
+
+    def flatten_frames(self, images):
+        if tuple(images.shape) != self.image_shape:
+            raise ValueError('Video and frame dimensions changed before patch projection')
+        flattened_frames = images.reshape(*self.flattened_shape)
+        return flattened_frames
+
+    def restore_tokens(self, pooled_grid):
+        expected = (self.frame_count, self.geometry.output_grid,
+                    self.geometry.output_grid, self.geometry.hidden_size)
+        if tuple(pooled_grid.shape) != expected:
+            raise ValueError('The pooled Qwen grid does not match the input frame batch')
+        flat_tokens = pooled_grid.reshape(*self.token_shape)
+        restored_shape = (*self.leading_shape, self.geometry.output_tokens,
+                          self.geometry.hidden_size)
+        restored_tokens = flat_tokens.reshape(*restored_shape)
+        return restored_tokens.to(torch.float16)
+
+
+class QwenSpatialLayout(nn.Module):
+
+    def __init__(self, geometry):
+        super().__init__()
+        self.geometry = geometry
+
+    def validate_projection_grid(self, patch_grid):
+        expected = (self.geometry.hidden_size, self.geometry.patch_grid,
+                    self.geometry.patch_grid)
+        if patch_grid.ndim != 4 or tuple(patch_grid.shape[1:]) != expected:
+            raise ValueError('Projected Qwen patches require a channel-first spatial grid')
+
+    def split_projection_grid(self, patch_grid):
+        self.validate_projection_grid(patch_grid)
+        frames = patch_grid.shape[0]
+        grid = self.geometry.merged_grid
+        group = self.geometry.merge_side
+        width = self.geometry.hidden_size
+        spatial_groups = patch_grid.reshape(frames, width, grid, group, grid, group)
+        return spatial_groups
+
+    def order_projection_groups(self, spatial_groups):
+        ordered_groups = spatial_groups.permute(0, 2, 4, 3, 5, 1)
+        return ordered_groups
+
+    def flatten_projection_groups(self, ordered_groups):
+        frames = ordered_groups.shape[0]
+        width = self.geometry.hidden_size
+        grouped_tokens = ordered_groups.reshape(frames, self.geometry.patch_tokens, width)
+        return grouped_tokens
+
+    def group_projection(self, patch_grid):
+        spatial_groups = self.split_projection_grid(patch_grid)
+        ordered_groups = self.order_projection_groups(spatial_groups)
+        grouped_tokens = self.flatten_projection_groups(ordered_groups)
+        return grouped_tokens
+
+    def split_position_grid(self, spatial_positions):
+        expected = (self.geometry.patch_tokens, self.geometry.hidden_size)
+        if tuple(spatial_positions.shape) != expected:
+            raise ValueError('Interpolated Qwen positions do not match the projected patch grid')
+        grid = self.geometry.merged_grid
+        group = self.geometry.merge_side
+        width = self.geometry.hidden_size
+        position_grid = spatial_positions.reshape(1, grid, group, grid, group, width)
+        return position_grid
+
+    def order_position_groups(self, position_grid):
+        ordered_positions = position_grid.permute(0, 1, 3, 2, 4, 5)
+        return ordered_positions
+
+    def flatten_position_groups(self, ordered_positions):
+        grouped_positions = ordered_positions.flatten(0, 4).contiguous()
+        return grouped_positions
+
+    def group_positions(self, spatial_positions):
+        position_grid = self.split_position_grid(spatial_positions)
+        ordered_positions = self.order_position_groups(position_grid)
+        grouped_positions = self.flatten_position_groups(ordered_positions)
+        return grouped_positions
+
+
 class QwenPatchProjection(nn.Module):
 
     def __init__(self, geometry):
         super().__init__()
         self.geometry = geometry
+        self.spatial_layout = QwenSpatialLayout(geometry)
 
     def validate_projection(self, weight, bias):
         if tuple(weight.shape) != self.geometry.kernel_shape:
@@ -112,27 +228,38 @@ class QwenPatchProjection(nn.Module):
             raise ValueError('Qwen patch-projection bias dimensions differ')
         if weight.device != bias.device or weight.dtype != bias.dtype:
             raise ValueError('Qwen patch-projection tensors require a common device and dtype')
+        if not weight.is_floating_point() or not bias.is_floating_point():
+            raise ValueError('Qwen patch-projection tensors must be floating point')
 
     def temporal_pair(self, images, dtype):
-        frames = images.reshape(-1, *self.geometry.frame_shape)
+        frame_batch = VisionFrameBatch.from_images(images, self.geometry)
+        frames = frame_batch.flatten_frames(images)
         temporal_frames = frames.unsqueeze(2)
         paired_frames = temporal_frames.expand(-1, -1, self.geometry.temporal_patch, -1, -1)
         return paired_frames.to(dtype)
 
+    def validate_temporal_pixels(self, temporal_pixels, weight):
+        expected = (self.geometry.channels, self.geometry.temporal_patch,
+                    self.geometry.image_side, self.geometry.image_side)
+        if temporal_pixels.ndim != 5 or tuple(temporal_pixels.shape[1:]) != expected:
+            raise ValueError('Qwen patch projection requires complete temporal patch pairs')
+        if temporal_pixels.device != weight.device:
+            raise ValueError('Frames and the Qwen patch projection must be on the same device')
+        if temporal_pixels.dtype != weight.dtype:
+            raise ValueError('Frames and the Qwen patch projection must use the same dtype')
+
     def project_patches(self, temporal_pixels, weight, bias):
+        self.validate_temporal_pixels(temporal_pixels, weight)
         stride = (self.geometry.temporal_patch,
                   self.geometry.patch_side, self.geometry.patch_side)
         embedded = F.conv3d(temporal_pixels, weight, bias, stride=stride)
+        if embedded.shape[2] != 1:
+            raise ValueError('The selected Qwen frontend projects one temporal patch per frame')
         patch_grid = embedded[:, :, 0]
         return patch_grid
 
     def group_patches(self, patch_grid):
-        grid = self.geometry.merged_grid
-        group = self.geometry.merge_side
-        width = self.geometry.hidden_size
-        spatial_groups = patch_grid.reshape(-1, width, grid, group, grid, group)
-        ordered_groups = spatial_groups.permute(0, 2, 4, 3, 5, 1)
-        grouped_tokens = ordered_groups.reshape(-1, self.geometry.patch_tokens, width)
+        grouped_tokens = self.spatial_layout.group_projection(patch_grid)
         return grouped_tokens
 
     def forward(self, images, weight, bias):
@@ -148,6 +275,7 @@ class QwenPositionInterpolation(nn.Module):
     def __init__(self, geometry):
         super().__init__()
         self.geometry = geometry
+        self.spatial_layout = QwenSpatialLayout(geometry)
 
     def validate_table(self, table):
         if not isinstance(table, torch.Tensor) or table.ndim != 2:
@@ -198,11 +326,7 @@ class QwenPositionInterpolation(nn.Module):
         return spatial_positions
 
     def group_positions(self, spatial_positions):
-        grid = self.geometry.merged_grid
-        group = self.geometry.merge_side
-        position_grid = spatial_positions.reshape(1, grid, group, grid, group, -1)
-        ordered_grid = position_grid.permute(0, 1, 3, 2, 4, 5)
-        grouped_positions = ordered_grid.flatten(0, 4).contiguous()
+        grouped_positions = self.spatial_layout.group_positions(spatial_positions)
         return grouped_positions
 
     def forward(self, table):
@@ -221,20 +345,42 @@ class VisionSpatialPooling(nn.Module):
         super().__init__()
         self.geometry = geometry
 
-    def merge_patch_groups(self, positioned_tokens):
+    def validate_patch_tokens(self, positioned_tokens):
+        expected = (self.geometry.patch_tokens, self.geometry.hidden_size)
+        if positioned_tokens.ndim != 3 or tuple(positioned_tokens.shape[1:]) != expected:
+            raise ValueError('Spatial pooling requires complete positioned Qwen patch tokens')
+
+    def split_patch_groups(self, positioned_tokens):
+        self.validate_patch_tokens(positioned_tokens)
+        frames = positioned_tokens.shape[0]
         grid = self.geometry.merged_grid
         group_count = self.geometry.merge_side * self.geometry.merge_side
         width = self.geometry.hidden_size
-        groups = positioned_tokens.reshape(-1, grid * grid, group_count, width)
+        groups = positioned_tokens.reshape(frames, grid * grid, group_count, width)
+        return groups
+
+    def merge_patch_groups(self, positioned_tokens):
+        groups = self.split_patch_groups(positioned_tokens)
+        grid = self.geometry.merged_grid
+        width = self.geometry.hidden_size
         merged_tokens = groups.mean(2)
         merged_grid = merged_tokens.reshape(-1, grid, grid, width)
         return merged_grid
 
-    def pool_spatial_grid(self, merged_grid):
+    def split_spatial_groups(self, merged_grid):
+        expected = (self.geometry.merged_grid, self.geometry.merged_grid,
+                    self.geometry.hidden_size)
+        if merged_grid.ndim != 4 or tuple(merged_grid.shape[1:]) != expected:
+            raise ValueError('The merged Qwen grid has incompatible spatial dimensions')
+        frames = merged_grid.shape[0]
         grid = self.geometry.output_grid
         group = self.geometry.pool_side
         width = self.geometry.hidden_size
-        spatial_groups = merged_grid.reshape(-1, grid, group, grid, group, width)
+        spatial_groups = merged_grid.reshape(frames, grid, group, grid, group, width)
+        return spatial_groups
+
+    def pool_spatial_grid(self, merged_grid):
+        spatial_groups = self.split_spatial_groups(merged_grid)
         pooled_grid = spatial_groups.mean((2, 4))
         return pooled_grid
 
@@ -261,8 +407,10 @@ class FrozenVisionFront(nn.Module):
     def validate_frames(self, images):
         if not bool(self.ready):
             raise RuntimeError('Visual frontend weights have not been loaded')
-        if tuple(images.shape[-3:]) != self.geometry.frame_shape or not images.is_floating_point():
-            raise ValueError('Expected normalized floating-point RGB frames shaped [...,3,448,448]')
+        frame_batch = VisionFrameBatch.from_images(images, self.geometry)
+        if images.device != self.patch_weight.device:
+            raise ValueError('Video frames and the frozen frontend must be on the same device')
+        return frame_batch
 
     @torch.no_grad()
     def prepare_position_table(self, source_table, reference_position=None):
@@ -290,22 +438,92 @@ class FrozenVisionFront(nn.Module):
         return self.spatial_pooling(positioned_tokens)
 
     def add_position(self, grouped_tokens):
+        expected = (self.geometry.patch_tokens, self.geometry.hidden_size)
+        if grouped_tokens.ndim != 3 or tuple(grouped_tokens.shape[1:]) != expected:
+            raise ValueError('The grouped Qwen tokens do not match the cached positions')
         positioned_tokens = grouped_tokens + self.position
         return positioned_tokens
 
     def restore_token_shape(self, pooled_grid, leading_shape):
-        output_shape = (*leading_shape, self.geometry.output_tokens, self.geometry.hidden_size)
-        visual_tokens = pooled_grid.reshape(*output_shape)
-        return visual_tokens.to(torch.float16)
+        frame_batch = VisionFrameBatch(tuple(leading_shape), self.geometry)
+        return frame_batch.restore_tokens(pooled_grid)
 
     def forward(self, images):
-        self.validate_frames(images)
-        leading_shape = images.shape[:-3]
+        frame_batch = self.validate_frames(images)
         grouped_tokens = self.patch_projection(images, self.patch_weight, self.patch_bias)
         positioned_tokens = self.add_position(grouped_tokens)
         pooled_grid = self.spatial_pooling(positioned_tokens)
-        visual_tokens = self.restore_token_shape(pooled_grid, leading_shape)
+        visual_tokens = frame_batch.restore_tokens(pooled_grid)
         return visual_tokens
+
+
+class QwenFrontCheckpoint:
+
+    def __init__(self, payload, geometry):
+        self.payload = payload
+        self.geometry = geometry
+        self.prefix = 'vision_frontend.'
+
+    def model_state(self):
+        state = self.payload.get('model')
+        if not isinstance(state, dict):
+            raise ValueError('The inference checkpoint requires a model state dictionary')
+        return state
+
+    def tensor(self, state, name, shape, dtype):
+        key = self.prefix + name
+        value = state.get(key)
+        if not isinstance(value, torch.Tensor):
+            raise ValueError('The frozen Qwen frontend is missing ' + key)
+        if tuple(value.shape) != shape:
+            raise ValueError('The frozen Qwen frontend has an incompatible shape for ' + key)
+        if value.dtype != dtype:
+            raise ValueError('The frozen Qwen frontend has an incompatible dtype for ' + key)
+        if value.is_floating_point() and not bool(torch.isfinite(value).all()):
+            raise ValueError('The frozen Qwen frontend contains nonfinite values in ' + key)
+        return value
+
+    def validate_projection(self, state):
+        weight = self.tensor(state, 'patch_weight', self.geometry.kernel_shape, torch.bfloat16)
+        bias = self.tensor(state, 'patch_bias', (self.geometry.hidden_size,), torch.bfloat16)
+        ready = self.tensor(state, 'ready', (), torch.bool)
+        return weight, bias, ready
+
+    def source_position_table(self):
+        frontend = self.payload.get('frontend')
+        if frontend is None:
+            if self.payload['schema'] == 3:
+                raise ValueError('The frontend checkpoint requires its original Qwen position table')
+            return None
+        if not isinstance(frontend, dict) or set(frontend) != {'position_table'}:
+            raise ValueError('Expected the original Qwen frontend position table')
+        table = frontend['position_table']
+        if not isinstance(table, torch.Tensor):
+            raise ValueError('The original Qwen position table must be a tensor')
+        if table.dtype != torch.bfloat16:
+            raise ValueError('The original Qwen position table must retain its bfloat16 dtype')
+        return table
+
+    def cached_position(self, state, required):
+        key = self.prefix + 'position'
+        if key not in state and not required:
+            return None
+        shape = (self.geometry.patch_tokens, self.geometry.hidden_size)
+        return self.tensor(state, 'position', shape, torch.bfloat16)
+
+    def restore_state(self, frontend):
+        if frontend.geometry != self.geometry:
+            raise ValueError('Checkpoint and Qwen frontend geometries differ')
+        state = self.model_state()
+        self.validate_projection(state)
+        source_table = self.source_position_table()
+        reference = self.cached_position(state, required=source_table is None)
+        if source_table is None:
+            return state
+        prepared_position = frontend.prepare_position_table(source_table, reference_position=reference)
+        restored_state = dict(state)
+        restored_state[self.prefix + 'position'] = prepared_position
+        return restored_state
 
 
 class VisionAdapter(nn.Sequential):
@@ -725,16 +943,7 @@ def load_lightgen2(path, device='cpu'):
     if config['shared_global_phase'] != (payload['architecture'] == ARCHITECTURE):
         raise ValueError('Global phase sharing conflicts with the checkpoint architecture')
     model = LightGen2(ModelConfig(**config))
-    state = payload['model']
-    frontend = payload.get('frontend')
-    if payload['schema'] == 3 and frontend is None:
-        raise ValueError('The frontend checkpoint requires its original Qwen position table')
-    if frontend is not None:
-        if not isinstance(frontend, dict) or set(frontend) != {'position_table'}:
-            raise ValueError('Expected the original Qwen frontend position table')
-        state = dict(state)
-        position_key = 'vision_frontend.position'
-        state[position_key] = model.vision_frontend.prepare_position_table(
-            frontend['position_table'], reference_position=state.get(position_key))
+    frontend_checkpoint = QwenFrontCheckpoint(payload, model.vision_frontend.geometry)
+    state = frontend_checkpoint.restore_state(model.vision_frontend)
     model.load_state_dict(state, strict=True)
     return model.to(device).eval(), payload['metadata']

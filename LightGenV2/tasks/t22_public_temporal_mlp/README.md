@@ -237,3 +237,10 @@ Windows Python 3.8、3.11和服务器Python 3.11均通过97项回归测试。
 
 本轮备份与核验记录位于`runs/smoke/qwen_frontend_20261116`和
 `runs/archives/author_archives/t22_qwen_frontend_20261116/before`。
+
+独立推理工程仅使用`weights/LightGen2.pt`一份权重，Qwen原始位置表同样位于这份PT中。
+加载时生成的位置向量只保存在模型内存中，后续所有前向复用，无需额外的前端文件。
+帧批次恢复、图像patch与位置向量的共同排列、两次空间汇聚及冻结前端权重校验已分别展开。
+这些改动未添加可训练层，router、expert、global及读出头的实现保持不变。
+本轮核验记录位于`runs/smoke/qwen_frontend_layout_20261116`，修改前源码与发行包保存在
+`runs/archives/author_archives/t22_qwen_frontend_layout_20261116/before`。

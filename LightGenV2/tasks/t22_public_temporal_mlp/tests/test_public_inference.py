@@ -112,6 +112,96 @@ class PublicInferenceTests(unittest.TestCase):
                 table = torch.randn(side * side, 1024).to(torch.bfloat16)
                 self.assertTrue(torch.equal(interpolation(table), position_28(table)))
 
+    def test_frontend_frame_layout_restores_video_and_frame_identity(self):
+        geometry = public.VisionFrontGeometry()
+        for leading in ((), (2,), (1, 2, 4)):
+            with self.subTest(leading=leading):
+                images = torch.empty(*leading, 3, 448, 448)
+                layout = public.VisionFrameBatch.from_images(images, geometry)
+                count = int(np.prod(leading)) if leading else 1
+                flattened = layout.flatten_frames(images)
+                self.assertEqual(tuple(flattened.shape), (count, 3, 448, 448))
+                grid = torch.arange(count).reshape(count, 1, 1, 1).expand(count, 7, 7, 1024).float()
+                actual = layout.restore_tokens(grid)
+                self.assertEqual(tuple(actual.shape), (*leading, 49, 1024))
+                self.assertEqual(actual.reshape(count, 49, 1024)[:, 0, 0].tolist(), list(range(count)))
+
+    def test_qwen_patch_and_position_order_share_the_same_spatial_coordinates(self):
+        geometry = public.VisionFrontGeometry()
+        layout = public.QwenSpatialLayout(geometry)
+        coordinates = torch.arange(28 * 28).reshape(28, 28)
+        channel_first = coordinates[None, None].expand(2, 1024, 28, 28)
+        position_table = coordinates.flatten()[:, None].expand(784, 1024)
+        grouped_patches = layout.group_projection(channel_first)
+        grouped_positions = layout.group_positions(position_table)
+        expected = [row * 28 + column
+                    for group_row in range(14) for group_column in range(14)
+                    for row in range(2 * group_row, 2 * group_row + 2)
+                    for column in range(2 * group_column, 2 * group_column + 2)]
+        self.assertEqual(grouped_patches[0, :, 0].tolist(), expected)
+        self.assertTrue(torch.equal(grouped_patches[0], grouped_positions))
+        self.assertTrue(torch.equal(grouped_patches[0], grouped_patches[1]))
+
+    def test_single_checkpoint_load_prepares_positions_once_for_repeated_forwards(self):
+        table = torch.randn(16, 1024).to(torch.bfloat16)
+        state = dict(self.inference.state_dict())
+        state['vision_frontend.ready'] = torch.tensor(True)
+        del state['vision_frontend.position']
+        payload = {'schema': 3, 'architecture': public.ARCHITECTURE,
+                   'config': {name: getattr(self.inference.cfg, name) for name in self.config_fields},
+                   'model': state, 'metadata': {}, 'frontend': {'position_table': table}}
+        interpolate = public.QwenPositionInterpolation.forward
+        with patch.object(torch, 'load', return_value=payload) as load, \
+                patch.object(public.QwenPositionInterpolation, 'forward', autospec=True,
+                             side_effect=interpolate) as prepare:
+            model, _ = public.load_lightgen2('single_model.pt')
+            self.assertEqual(load.call_count, 1)
+            self.assertEqual(prepare.call_count, 1)
+            images = torch.zeros(1, 3, 448, 448)
+            with torch.inference_mode():
+                first = model.vision_frontend(images)
+                second = model.vision_frontend(images)
+            self.assertTrue(torch.equal(first, second))
+            self.assertEqual(prepare.call_count, 1)
+
+    def test_frontend_checkpoint_rejects_corrupt_frozen_weights_without_silent_casts(self):
+        state = dict(self.inference.state_dict())
+        geometry = self.inference.vision_frontend.geometry
+        changes = (
+            ('vision_frontend.patch_weight', state['vision_frontend.patch_weight'].float()),
+            ('vision_frontend.patch_bias', torch.zeros(1023, dtype=torch.bfloat16)),
+            ('vision_frontend.ready', torch.ones(1, dtype=torch.bool)),
+            ('vision_frontend.position', torch.zeros(784, 1024)),
+            ('vision_frontend.patch_bias', torch.full((1024,), float('nan'), dtype=torch.bfloat16)),
+        )
+        for name, tensor in changes:
+            with self.subTest(tensor=name, dtype=tensor.dtype, shape=tensor.shape):
+                modified = dict(state)
+                modified[name] = tensor
+                checkpoint = public.QwenFrontCheckpoint({'schema': 2, 'model': modified}, geometry)
+                with self.assertRaises(ValueError):
+                    checkpoint.restore_state(self.inference.vision_frontend)
+
+    def test_frontend_rejects_malformed_rgb_batches(self):
+        front = public.FrozenVisionFront()
+        front.ready.fill_(True)
+        invalid = (torch.zeros(3, 448, 448, dtype=torch.uint8),
+                   torch.zeros(3, 447, 448), torch.zeros(3, 448),
+                   torch.empty(0, 3, 448, 448), None)
+        for images in invalid:
+            with self.subTest(shape=None if images is None else images.shape):
+                with self.assertRaises(ValueError):
+                    front(images)
+
+    def test_frontend_accepts_noncontiguous_images_without_changing_patch_values(self):
+        geometry = public.VisionFrontGeometry()
+        projection = public.QwenPatchProjection(geometry)
+        images = torch.randn(1, 3, 448, 448).transpose(-2, -1)
+        self.assertFalse(images.is_contiguous())
+        actual = projection.temporal_pair(images, torch.bfloat16)
+        expected = images.contiguous().unsqueeze(2).repeat(1, 1, 2, 1, 1).to(torch.bfloat16)
+        self.assertTrue(torch.equal(actual, expected))
+
     def test_position_initialization_preserves_cache_and_rejects_mismatch(self):
         from ..tools.front import position_28
 
