@@ -120,7 +120,7 @@ def export_evaluation(records, metrics, directory):
     axis.plot([lower, upper], [lower, upper], color='#888888', linewidth=.7)
     axis.set_xlabel('Human temporal MOS')
     axis.set_ylabel('Predicted temporal MOS')
-    score = f"{metrics['SRCC']:.6f}" if metrics['SRCC'] is not None else 'undefined'
+    score = f"{metrics['SRCC']:.2f}" if metrics['SRCC'] is not None else 'undefined'
     axis.set_title(f"{len(records)} videos with SRCC {score}")
     axis.spines[['top', 'right']].set_visible(False)
     save_figure(figure, directory / '03_prediction_vs_mos.png')

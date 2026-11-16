@@ -1,7 +1,7 @@
-# LightGen2 temporal video quality reference
+# LightGenII temporal video quality reference
 
 本目录保存作者侧研究、核验与打包工具。独立推理工程位于仓库根目录
-[`LightGen2`](../../../LightGen2/README.pdf)，可编辑说明为该目录的`README.docx`。
+[`LightGenII`](../../../LightGenII/README.pdf)，可编辑说明为该目录的`README.docx`。
 正式推理权重采用每支global共享一块相位的结构。
 
 ## 唯一推理流程
@@ -31,12 +31,12 @@ patch投影、位置编码、固定汇聚及后续网络均由推理代码执行
 | language | 1×111×111 | 16 | 1 | 0 rad |
 
 研究检查点schema为9，架构标记以`_shared_phase`结尾。
-公开检查点架构为`lightgen2_temporal_inference_v3_shared_phase`。
+公开检查点架构为`lightgenii_temporal_inference_v3_shared_phase`。
 加载器同时校验架构、共享配置和参数形状。回归检查覆盖前向、梯度、保存加载及导出。
 打包时额外核验相位数组中16块mask逐元素相等。
 历史检查点按其原架构和配置读取。
 
-## 当前选定权重与完整程序计时
+## 当前选定权重与推理结果
 
 训练run为`runs/simulation/shared_global_phase_20261114/noise_refinement`，共完成120轮，
 按原噪声目标余量和物理门槛选定第60轮best。正式冻结副本位于该run同级`selected`。
@@ -44,7 +44,7 @@ patch投影、位置编码、固定汇聚及后续网络均由推理代码执行
 当前唯一发布入口由`configs/selected.json`指向`runs/simulation/current/LightGen.pt`。
 
 研究PT的SHA256为`df3ad58a1cb22e277bc792902a5af50ed7b0f0c3f427174784e1e2341f3a8a7c`。
-独立推理PT的SHA256为`157f78f940a6f52093ae5c3333eeef227356ac1921f300c29525230a50200bd0`。
+独立推理PT的SHA256为`a74c4f11b2e88bae56c8e23d56b21a57c63643ab2923e51dee5ace2328e06347`。
 两者保留的模型张量已逐一核验相等。
 
 | 项目 | 核验值 |
@@ -52,22 +52,26 @@ patch投影、位置编码、固定汇聚及后续网络均由推理代码执行
 | 完整558条归一化RGB推理SRCC | 0.7970645224412813 |
 | 完整558条缓存前端推理SRCC | 0.7970645224412813 |
 | 两入口最大MOS浮点差 | 0.00004196166992 |
-| 服务器RTX 4090完整程序5次中位数 | 55.8584210秒 |
-| 5次最小和最大时间 | 52.4391324–66.4436495秒 |
 | 16次槽位轮换平均SRCC | 0.7970111926 |
 | 16次槽位轮换最低SRCC | 0.7961938741 |
 
-计时设备为服务器NVIDIA GeForce RTX 4090，PCI地址`00000000:1A:00.0`。
-启动前核验无其他计算进程，全程按秒记录GPU负载及计算进程，未发现其他计算任务。
-完整预热1次后，执行5个独立Python进程。
-程序时间覆盖模块导入、PT和NPZ读取、558条推理、指标计算与结果绘图导出，结束前同步CUDA。
-外层ZIP解压在计时前完成。NPZ数组读取和解压计入程序时间。
-5次同卡预测CSV彼此逐字节相同，公开结果取实际中位数运行`measured_02`。
-与A100参考结果相比，逐视频MOS最大差为0.0000495911，SRCC完全一致。
-当前RTX 4090重复计时记录位于`runs/smoke/runtime_rtx4090_20261115`。
-此前共享A100记录保存在`runs/smoke/runtime_video_frames_20261114`。
-旧入口计时记录保存在`runs/smoke/runtime_release_readme_20261114`和
-`runs/smoke/runtime_shared_global_phase_20261114`。
+公开推理入口导出558条预测、完整精度的SRCC和一组16视频的输入、相位及输出场。
+公开说明及散点图中的SRCC按两位小数显示为0.80。
+推理入口及结果JSON仅保留预测评价信息。既有计时原始记录按原身份归档。
+
+## 传播核与前端核验
+
+传播核对照正式时序版本`experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py`
+中的`AngularSpectrum`和`configs/release/temporal.yaml`。518×518画布、532 nm波长、
+17 μm像素间距、0.1 m距离和0.5°截止角一致。传递函数逐元素相等，
+随机复光场、常数场及归档真实调制输入的传播输出最大绝对差均为0。
+正式版本另有输入形状校验。当前发布传播类的实现文本保持原样。
+核验记录位于`runs/smoke/lightgenii_release_20261116/propagation_verification.json`。
+
+冻结前端按时间切片配对、patch投影、patch分组、位置编码与两次空间汇聚展开。
+保留的张量名称、形状及前向计算顺序一致，逐元素回归覆盖展开前后的结果。
+原Qwen3-VL的Transformers 4.57.3模型文件为1561行，patch嵌入类为18行。
+本项目的前端提取范围及定制汇聚由当前代码直接表达。
 
 ## 相位收益与逐视频泄漏
 
@@ -154,7 +158,7 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 
 | 路径 | 用途 |
 | --- | --- |
-| `configs/selected.json` | 当前权重、共享结构和重复计时身份 |
+| `configs/selected.json` | 当前权重和共享结构 |
 | `runs/simulation/current/LightGen.pt` | 当前研究PT |
 | `runs/simulation/current/validation/shared_phase` | 完整噪声、物理、路由和mask一致性核验 |
 | `runs/simulation/current/validation/public_inference` | 独立发行包核验及SHA |
@@ -163,12 +167,10 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 | `tools/build_release.py` | 张量、身份、指标、mask一致性和光场复算后打包 |
 | `tests` | 共享梯度、检查点兼容、前向和导出回归检查 |
 
-根目录`LightGen2`维护独立推理源码，`releases/current`为生成镜像，
-`releases/LightGen2.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
+根目录`LightGenII`维护独立推理源码，`releases/current`为生成镜像，
+`releases/LightGenII.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
 正式包使用`README.pdf`，作者编辑用的`README.docx`单独保留在根目录工程中。
 主项目代码沿用ACCEL官方README声明的GPL v3.0，Qwen上游Apache-2.0许可与署名文件随包附带。
-当前RTX 4090计时使用已发布的`229bb4276711b7365b6bbc6ae9909b44dd278a56`计时工具，
-推理代码与此前发布版一致，完整源码、PT和输入SHA保存在计时协议中。旧A100记录及此前发布包按SHA保留。
 本轮修复Python 3.8不支持`Path.write_text(newline=...)`的兼容问题，指标经临时文件原子替换保存。
 已在RFL的Python 3.8.0、PyTorch 2.4.1环境核验完整558条推理的兼容性。
 新增主入口回归覆盖旧版Pathlib及重复写入已有指标文件。
@@ -179,7 +181,14 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 `E:/2026LightGen2Data/_internal_archives/t22_shared_global_phase_20261114/before`。
 当前训练和核验数据同步归档在其同级目录中。
 
-公开结果按01–10顺序阅读，01为全部预测，02为指标和完整程序时间，03为散点图，
+公开结果按01–10顺序阅读，01为全部预测，02为完整精度SRCC与视频数量，03为散点图，
 04为所选光场视频帧，05–07为vision输入、mask和输出，08–10为language输入、mask和输出。
 公开CSV保留视频ID、人工MOS和预测MOS。光场分组及有效位仍保存在对应光学NPZ中，
 打包工具据此核对样本身份和尾组填充。专家份额的作者侧核验记录保留在研究run中。
+
+## 说明文档的论文结果引用
+
+说明文档末段引用投稿文件`E:/2026LightGen2Data/投稿文件/supplement information.pdf`
+的Supplementary Note 3–4和Table S2。论文实验系统为0.611 ms/frame与0.113 J/frame，
+Qwen3-VL对照为71.326 ms/frame与27.987 J/frame。文档明确将这些数据归属于
+论文实验系统，代码复现结果为558条时序质量推理、SRCC约0.80。

@@ -68,7 +68,7 @@ def draw_network(path, config=None):
         f'LN / linear adapter -> 49 x {width}', '#e4edf9')
     box(ax, .4, 6.15, 8.2, 1.0,
         'VISION STAGE   (frame_*)\n'
-        f'Each frame: router -> Top2 {expert_label} -> optical global\n'
+        f'Each frame: router -> Top2 {expert_label} -> global\n'
         f'Four separate frames retain shape 4 x 49 x {width}', '#d9e8f8')
     arrow(ax, (4.5, 7.7), (4.5, 7.2))
     box(ax, .4, 4.8, 8.2, .8,

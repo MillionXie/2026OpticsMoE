@@ -26,7 +26,7 @@ else:
 
 
 ROOT = _paths.ROOT
-PUBLIC = ROOT.parents[2] / 'LightGen2'
+PUBLIC = ROOT.parents[2] / 'LightGenII'
 SOURCE_FILES = (
     '.gitignore', '.gitattributes', 'model.py', 'infer.py', 'visualize.py',
     'requirements.txt', 'LICENSE', 'licenses/NOTICE.txt', 'licenses/QWEN_LICENSE.txt',
@@ -38,7 +38,7 @@ RESULT_FILES = (
           for branch, first in (('vision', 5), ('language', 8))
           for number, kind in enumerate(('input_field', 'mask', 'output_field'), first)
           for suffix in ('npz', 'png'))
-ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.pdf', 'data/input_for_review.npz',
+ARTIFACT_FILES = ('weights/LightGenII.pt', 'README.pdf', 'data/input_for_review.npz',
                   'data/reference_mos.csv') + tuple(
     'results/' + name for name in RESULT_FILES)
 
@@ -52,7 +52,7 @@ def write_json(path, value):
 def import_public_module(name):
     sys.path.insert(0, str(PUBLIC.parent))
     try:
-        return importlib.import_module('LightGen2.' + name)
+        return importlib.import_module('LightGenII.' + name)
     finally:
         sys.path.pop(0)
 
@@ -108,7 +108,7 @@ def build_release():
     if file_sha256(source_path) != profile['checkpoint_sha256']:
         raise ValueError('Research checkpoint differs from the selected profile')
     original = torch.load(source_path, map_location='cpu', weights_only=True)
-    public = torch.load(PUBLIC / 'weights/LightGen2.pt', map_location='cpu', weights_only=True)
+    public = torch.load(PUBLIC / 'weights/LightGenII.pt', map_location='cpu', weights_only=True)
     omitted = {'target_mean', 'target_std', 'level_boundaries'}
     expected = {inference_state_name(name): tensor for name, tensor in original['model'].items()
                 if name not in omitted}
@@ -159,10 +159,8 @@ def build_release():
         raise ValueError('Published summary differs from per-video scores')
     if set(predictions[0]) != {'sample_id', 'target_MOS', 'predicted_MOS'}:
         raise ValueError('Published prediction columns differ')
-    if set(metrics) != {'videos', 'SRCC', 'total_runtime_seconds', 'device_name'}:
+    if set(metrics) != {'videos', 'SRCC'}:
         raise ValueError('Published metrics contain unexpected keys')
-    if metrics['total_runtime_seconds'] <= 0:
-        raise ValueError('Complete program runtime is missing')
     shared_phase = original['config'].get('shared_global_phase', False)
     if shared_phase:
         for branch in ('frame_global', 'video_global'):
@@ -186,24 +184,24 @@ def build_release():
                 raise ValueError('Private metadata in public file: ' + name)
     checksums = {name: file_sha256(PUBLIC / name) for name in sorted(names)}
     release_root = ROOT / 'releases'
-    stage = Path(tempfile.mkdtemp(prefix='lightgen2-release-')).resolve()
+    stage = Path(tempfile.mkdtemp(prefix='lightgenii-release-')).resolve()
     for name, digest in checksums.items():
         destination = stage / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(PUBLIC / name, destination)
         if file_sha256(destination) != digest:
             raise ValueError('Staged file differs: ' + name)
-    archive = release_root / '.LightGen2.zip.building'
+    archive = release_root / '.LightGenII.zip.building'
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=4) as zipped:
         for name in names:
             compression = zipfile.ZIP_STORED if name.endswith('.npz') else zipfile.ZIP_DEFLATED
-            zipped.write(stage / name, 'LightGen2/' + name, compress_type=compression)
+            zipped.write(stage / name, 'LightGenII/' + name, compress_type=compression)
     with zipfile.ZipFile(archive) as zipped:
-        if set(zipped.namelist()) != {'LightGen2/' + name for name in names}:
+        if set(zipped.namelist()) != {'LightGenII/' + name for name in names}:
             raise ValueError('Unexpected ZIP entries')
         for name, expected_hash in checksums.items():
             digest = hashlib.sha256()
-            with zipped.open('LightGen2/' + name) as stream:
+            with zipped.open('LightGenII/' + name) as stream:
                 for block in iter(lambda: stream.read(8 * 1024 * 1024), b''):
                     digest.update(block)
             if digest.hexdigest() != expected_hash:
@@ -212,14 +210,14 @@ def build_release():
     if mirror.exists():
         if mirror.resolve().parent != release_root.resolve():
             raise ValueError('Release mirror is outside the expected directory')
-        backup = Path(tempfile.mkdtemp(prefix='lightgen2-previous-release-')) / 'current'
+        backup = Path(tempfile.mkdtemp(prefix='lightgenii-previous-release-')) / 'current'
         mirror.rename(backup)
     stage.rename(mirror)
-    archive.replace(release_root / 'LightGen2.zip')
-    digest = file_sha256(release_root / 'LightGen2.zip')
-    (release_root / 'LightGen2.zip.sha256').write_text(digest + '  LightGen2.zip\n', encoding='utf-8')
+    archive.replace(release_root / 'LightGenII.zip')
+    digest = file_sha256(release_root / 'LightGenII.zip')
+    (release_root / 'LightGenII.zip.sha256').write_text(digest + '  LightGenII.zip\n', encoding='utf-8')
     verification = {'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-                    'canonical_directory': 'LightGen2', 'files': checksums,
+                    'canonical_directory': 'LightGenII', 'files': checksums,
                     'guide_format': 'PDF', 'project_code_license': 'GPL-3.0-only',
                     'retained_model_tensors_bitwise_equal': True,
                     'shared_global_phase': shared_phase,
@@ -227,7 +225,7 @@ def build_release():
                     'metrics': metrics, 'optical_array_replay': replay, 'archive_sha256': digest}
     write_json(ROOT / 'runs/simulation/current/validation/public_inference/release_verification.json', verification)
     print(json.dumps({'files': len(names), 'SRCC': score, 'archive_sha256': digest,
-                      'archive': str(release_root / 'LightGen2.zip')}, indent=2))
+                      'archive': str(release_root / 'LightGenII.zip')}, indent=2))
 
 
 if __name__ == '__main__':

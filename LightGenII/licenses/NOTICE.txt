@@ -1,5 +1,5 @@
-LightGen2 temporal video quality assessment
-Copyright 2026 LightGen2 contributors
+LightGenII temporal video quality assessment
+Copyright 2026 LightGenII contributors
 
 The original source code of this project is distributed under the GNU General
 Public License, Version 3.0. The license text is provided in the project-root LICENSE file.
@@ -7,7 +7,7 @@ Public License, Version 3.0. The license text is provided in the project-root LI
 The standalone checkpoint contains frozen visual patch-projection tensors,
 interpolated position tensors, and embeddings originating from
 Qwen3-VL-2B-Instruct, developed by the Qwen Team at Alibaba Cloud.
-The patch and position processing is adapted for the LightGen2 reference model.
+The patch and position processing is adapted for the LightGenII reference model.
 
 Upstream model and license information
 https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct

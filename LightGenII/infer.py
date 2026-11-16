@@ -1,10 +1,6 @@
 """Evaluate the complete video list and visualize one of its optical fields."""
 from __future__ import annotations
 
-import time
-
-PROGRAM_STARTED = time.perf_counter()
-
 import argparse
 import csv
 import json
@@ -15,9 +11,9 @@ import numpy as np
 import torch
 
 if __package__:
-    from .model import load_lightgen2
+    from .model import load_lightgenii
 else:
-    from model import load_lightgen2
+    from model import load_lightgenii
 
 
 PROJECT = Path(__file__).resolve().parent
@@ -117,7 +113,7 @@ def evaluate(model, archive, sample_ids, targets, device, directory, *, visualiz
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--weights', type=Path, default=PROJECT / 'weights/LightGen2.pt')
+    parser.add_argument('--weights', type=Path, default=PROJECT / 'weights/LightGenII.pt')
     parser.add_argument('--input', type=Path, default=PROJECT / 'data/input_for_review.npz',
                         help='LGVQ video frames')
     parser.add_argument('--reference-scores', type=Path, default=PROJECT / 'data/reference_mos.csv',
@@ -133,19 +129,12 @@ def main():
     else:
         from visualize import configure_figures
     configure_figures()
-    device_name = (torch.cuda.get_device_name(torch.device(args.device))
-                   if torch.device(args.device).type == 'cuda' else 'CPU')
-    print('Running on ' + device_name, flush=True)
-    model, _ = load_lightgen2(args.weights, args.device)
+    model, _ = load_lightgenii(args.weights, args.device)
     with np.load(args.input, allow_pickle=False) as archive:
         sample_ids = read_input_metadata(archive)
         targets = read_reference_scores(args.reference_scores, sample_ids)
         _, metrics = evaluate(model, archive, sample_ids, targets, args.device, args.output,
                               visualize_field=args.visualize_field)
-    if torch.device(args.device).type == 'cuda':
-        torch.cuda.synchronize(args.device)
-    metrics['total_runtime_seconds'] = time.perf_counter() - PROGRAM_STARTED
-    metrics['device_name'] = device_name
     metrics_path = args.output / '02_metrics.json'
     temporary = metrics_path.with_suffix('.json.tmp')
     with temporary.open('w', encoding='utf-8', newline='\n') as stream:
@@ -154,7 +143,6 @@ def main():
     temporary.replace(metrics_path)
     print(f"SRCC {metrics['SRCC']} over {metrics['videos']} distinct videos")
     print('Saved predictions and optical fields to ' + str(args.output.resolve()))
-    print(f"Complete program runtime {metrics['total_runtime_seconds']:.3f} seconds")
 
 
 if __name__ == '__main__':

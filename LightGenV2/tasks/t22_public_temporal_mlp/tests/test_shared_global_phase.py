@@ -6,7 +6,7 @@ import unittest
 
 import torch
 
-from LightGen2 import model as public
+from LightGenII import model as public
 from ..model import LightGenTemporal, ModelConfig, load_lightgen
 from ..tools.analyze_phase_effect import constant_modulation, phase_information
 from ..tools.checkpoint_utils import export_inference_checkpoint, share_global_phases
@@ -83,7 +83,7 @@ class SharedGlobalPhaseTests(unittest.TestCase):
             torch.save(self.parent.checkpoint(), source)
             config_fields = [field.name for field in fields(public.ModelConfig)]
             export_inference_checkpoint(source, destination, config_fields, public.LEGACY_ARCHITECTURE)
-            restored, _ = public.load_lightgen2(destination)
+            restored, _ = public.load_lightgenii(destination)
             self.assertFalse(restored.cfg.shared_global_phase)
             self.assertEqual(restored.vision_global.raw_phase.shape, (16, 111, 111))
 

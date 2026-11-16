@@ -1,4 +1,4 @@
-"""LightGen2 inference with vision and language optical branches."""
+"""LightGenII inference with vision and language branches."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -9,8 +9,8 @@ from torch import nn
 from torch.nn import functional as F
 
 
-ARCHITECTURE = 'lightgen2_temporal_inference_v3_shared_phase'
-LEGACY_ARCHITECTURE = 'lightgen2_temporal_inference_v2'
+ARCHITECTURE = 'lightgenii_temporal_inference_v3_shared_phase'
+LEGACY_ARCHITECTURE = 'lightgenii_temporal_inference_v2'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -50,6 +50,7 @@ class ModelConfig:
 
 
 class FrozenVisionFront(nn.Module):
+    """Frozen patch projection and position tensors with spatial pooling."""
 
     def __init__(self):
         super().__init__()
@@ -59,20 +60,51 @@ class FrozenVisionFront(nn.Module):
         self.register_buffer('ready', torch.tensor(False))
 
     def forward(self, images):
+        """Encode the RGB frames while preserving their batch and video order."""
+        self.validate_frames(images)
+        leading_shape = images.shape[:-3]
+        temporal_pixels = self.temporal_pair(images)
+        patch_grid = self.project_patches(temporal_pixels)
+        grouped_tokens = self.group_patches(patch_grid)
+        positioned_tokens = grouped_tokens + self.position
+        pooled_tokens = self.pool_patches(positioned_tokens)
+        return pooled_tokens.reshape(*leading_shape, 49, 1024).to(torch.float16)
+
+    def validate_frames(self, images):
         if not bool(self.ready):
             raise RuntimeError('Visual frontend weights have not been loaded')
         if tuple(images.shape[-3:]) != (3, 448, 448) or not images.is_floating_point():
             raise ValueError('Expected normalized floating-point RGB frames shaped [...,3,448,448]')
-        leading = images.shape[:-3]
-        rgb = images.reshape(-1, 3, 448, 448)
-        rgb = rgb.unsqueeze(2).expand(-1, -1, 2, -1, -1).to(self.patch_weight.dtype)
-        hidden = F.conv3d(rgb, self.patch_weight, self.patch_bias, stride=(2, 16, 16))[:, :, 0]
-        hidden = hidden.reshape(-1, 1024, 14, 2, 14, 2)
-        hidden = hidden.permute(0, 2, 4, 3, 5, 1).reshape(-1, 784, 1024)
-        hidden = hidden + self.position
-        merged = hidden.reshape(-1, 196, 4, 1024).mean(2).reshape(-1, 14, 14, 1024)
-        pooled = merged.reshape(-1, 7, 2, 7, 2, 1024).mean((2, 4))
-        return pooled.reshape(*leading, 49, 1024).to(torch.float16)
+
+    def temporal_pair(self, images):
+        """Supply the two identical temporal slices expected by the patch kernel."""
+        frames = images.reshape(-1, 3, 448, 448)
+        paired_frames = frames.unsqueeze(2).expand(-1, -1, 2, -1, -1)
+        return paired_frames.to(self.patch_weight.dtype)
+
+    def project_patches(self, temporal_pixels):
+        """Apply the frozen 2 by 16 by 16 kernel to obtain a 28 by 28 grid."""
+        embedded = F.conv3d(
+            temporal_pixels,
+            self.patch_weight,
+            self.patch_bias,
+            stride=(2, 16, 16),
+        )
+        return embedded[:, :, 0]
+
+    def group_patches(self, patch_grid):
+        """Keep each contiguous 2 by 2 patch group in the processor's order."""
+        groups = patch_grid.reshape(-1, 1024, 14, 2, 14, 2)
+        groups = groups.permute(0, 2, 4, 3, 5, 1)
+        return groups.reshape(-1, 784, 1024)
+
+    def pool_patches(self, positioned_tokens):
+        """Reduce the spatial grid from 28 by 28 to 14 by 14 and then 7 by 7."""
+        first_groups = positioned_tokens.reshape(-1, 196, 4, 1024)
+        first_pooled = first_groups.mean(2)
+        first_grid = first_pooled.reshape(-1, 14, 14, 1024)
+        second_groups = first_grid.reshape(-1, 7, 2, 7, 2, 1024)
+        return second_groups.mean((2, 4))
 
 
 class Router(nn.Module):
@@ -133,7 +165,7 @@ class Propagation(nn.Module):
         return torch.fft.ifft2(spectrum * self.transfer)
 
 
-class OpticalGlobal(nn.Module):
+class Global(nn.Module):
 
     def __init__(self, config, branch):
         super().__init__()
@@ -219,7 +251,7 @@ class OpticalGlobal(nn.Module):
         return output.reshape(*leading, count, output.shape[-1])
 
 
-class LightGen2(nn.Module):
+class LightGenII(nn.Module):
 
     def __init__(self, config):
         super().__init__()
@@ -231,14 +263,14 @@ class LightGen2(nn.Module):
         self.language_adapter = nn.Sequential(nn.LayerNorm(2048), nn.Linear(2048, config.width))
         self.vision_router = Router(config, 49)
         self.vision_experts = Experts(config)
-        self.vision_global = OpticalGlobal(config, 'vision')
+        self.vision_global = Global(config, 'vision')
         self.vision_merger = nn.Sequential(nn.LayerNorm(2 * config.width),
                                           nn.Linear(2 * config.width, config.width), nn.ReLU())
         self.vision_frame_position = nn.Parameter(torch.empty(1, 1, 4, config.width))
         self.language_sequence_position = nn.Parameter(torch.empty(1, 64, config.width))
         self.language_router = Router(config, 4 + config.prompt_length)
         self.language_experts = Experts(config)
-        self.language_global = OpticalGlobal(config, 'language')
+        self.language_global = Global(config, 'language')
         self.readout = nn.Sequential(nn.Flatten(-2),
                                      nn.Linear((4 + config.prompt_length) * 96, config.readout_hidden),
                                      nn.ReLU(), nn.Linear(config.readout_hidden, 5))
@@ -293,14 +325,14 @@ class LightGen2(nn.Module):
                 'routing': {'vision': vision_routing, 'language': language_routing}}
 
 
-def load_lightgen2(path, device='cpu'):
+def load_lightgenii(path, device='cpu'):
     payload = torch.load(path, map_location='cpu', weights_only=True)
     if payload['schema'] != 2 or payload['architecture'] not in (ARCHITECTURE, LEGACY_ARCHITECTURE):
-        raise ValueError('Expected the LightGen2 inference checkpoint')
+        raise ValueError('Expected the LightGenII inference checkpoint')
     config = dict(payload['config'])
     config.setdefault('shared_global_phase', False)
     if config['shared_global_phase'] != (payload['architecture'] == ARCHITECTURE):
         raise ValueError('Global phase sharing conflicts with the checkpoint architecture')
-    model = LightGen2(ModelConfig(**config))
+    model = LightGenII(ModelConfig(**config))
     model.load_state_dict(payload['model'], strict=True)
     return model.to(device).eval(), payload['metadata']

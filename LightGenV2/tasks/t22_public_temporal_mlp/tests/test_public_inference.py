@@ -9,8 +9,8 @@ from unittest.mock import patch
 import torch
 import numpy as np
 
-from LightGen2 import model as public
-from LightGen2 import infer as public_infer
+from LightGenII import model as public
+from LightGenII import infer as public_infer
 from .. import model as research
 from ..tools.checkpoint_utils import export_inference_checkpoint, inference_state_name
 
@@ -34,7 +34,7 @@ class PublicInferenceTests(unittest.TestCase):
             cls.original.prompt_embedding.normal_()
         cls.config_fields = [field.name for field in fields(public.ModelConfig)]
         public_config = public.ModelConfig(**{name: getattr(config, name) for name in cls.config_fields})
-        cls.inference = public.LightGen2(public_config).eval()
+        cls.inference = public.LightGenII(public_config).eval()
         cls.omitted = {'target_mean', 'target_std', 'level_boundaries'}
         state = {inference_state_name(name): value for name, value in cls.original.state_dict().items()
                  if name not in cls.omitted}
@@ -56,8 +56,44 @@ class PublicInferenceTests(unittest.TestCase):
             self.assertTrue(torch.equal(expected['routing'][old]['weights'],
                                         actual['routing'][new]['weights']))
 
+    def test_frontend_steps_match_the_previous_forward_exactly(self):
+        front = public.FrozenVisionFront()
+        front.ready.fill_(True)
+        front.patch_weight.normal_(std=.01)
+        front.patch_bias.normal_(std=.01)
+        front.position.normal_(std=.01)
+        images = torch.randn(1, 1, 1, 3, 448, 448)
+        rgb = images.reshape(-1, 3, 448, 448)
+        rgb = rgb.unsqueeze(2).expand(-1, -1, 2, -1, -1).to(front.patch_weight.dtype)
+        hidden = torch.nn.functional.conv3d(rgb, front.patch_weight, front.patch_bias,
+                                            stride=(2, 16, 16))[:, :, 0]
+        hidden = hidden.reshape(-1, 1024, 14, 2, 14, 2)
+        hidden = hidden.permute(0, 2, 4, 3, 5, 1).reshape(-1, 784, 1024)
+        hidden = hidden + front.position
+        merged = hidden.reshape(-1, 196, 4, 1024).mean(2).reshape(-1, 14, 14, 1024)
+        expected = merged.reshape(-1, 7, 2, 7, 2, 1024).mean((2, 4))
+        expected = expected.reshape(1, 1, 1, 49, 1024).to(torch.float16)
+        with torch.inference_mode():
+            actual = front(images)
+        self.assertTrue(torch.equal(actual, expected))
+
+    def test_propagation_matches_the_formal_temporal_implementation(self):
+        from types import SimpleNamespace
+        from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling import AngularSpectrum
+
+        config = public.ModelConfig(alpha_eval=.5)
+        settings = SimpleNamespace(geometry=SimpleNamespace(canvas_size=config.canvas),
+                                   wavelength_nm=config.wavelength_nm, pixel_pitch_um=config.pitch_um,
+                                   distance_m=config.distance_m, k_space_enabled=True,
+                                   theta_max_deg=config.cutoff_deg)
+        reference = AngularSpectrum(settings)
+        actual = public.Propagation(config)
+        self.assertTrue(torch.equal(reference.transfer, actual.transfer))
+        field = torch.randn(2, config.canvas, config.canvas, dtype=torch.complex64)
+        self.assertTrue(torch.equal(reference(field), actual(field)))
+
     def test_main_saves_metrics_with_python38_pathlib(self):
-        from LightGen2 import visualize
+        from LightGenII import visualize
 
         original_write_text = Path.write_text
 
@@ -75,7 +111,7 @@ class PublicInferenceTests(unittest.TestCase):
             arguments = ['infer.py', '--input', str(inputs), '--reference-scores', str(reference),
                          '--device', 'cpu', '--output', str(root)]
             with patch('sys.argv', arguments), \
-                    patch.object(public_infer, 'load_lightgen2', return_value=(None, None)), \
+                    patch.object(public_infer, 'load_lightgenii', return_value=(None, None)), \
                     patch.object(public_infer, 'evaluate', return_value=([], {'videos': 2, 'SRCC': .79})), \
                     patch.object(visualize, 'configure_figures'), \
                     patch.object(Path, 'write_text', new=legacy_write_text):
@@ -84,17 +120,16 @@ class PublicInferenceTests(unittest.TestCase):
             metrics = json.loads((root / '02_metrics.json').read_text('utf-8'))
             self.assertEqual(metrics['videos'], 2)
             self.assertEqual(metrics['SRCC'], .79)
-            self.assertEqual(metrics['device_name'], 'CPU')
-            self.assertGreater(metrics['total_runtime_seconds'], 0)
+            self.assertEqual(set(metrics), {'videos', 'SRCC'})
             self.assertFalse((root / '02_metrics.json.tmp').exists())
 
     def test_export_runs_in_inference_mode_and_retains_tensors(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)/'source.pt'
-            destination = Path(directory)/'LightGen2.pt'
+            destination = Path(directory)/'LightGenII.pt'
             torch.save(self.original.checkpoint(), source)
             identity = export_inference_checkpoint(source, destination, self.config_fields, public.ARCHITECTURE)
-            loaded, _ = public.load_lightgen2(destination)
+            loaded, _ = public.load_lightgenii(destination)
             self.assertFalse(loaded.predict_from_embeddings(self.input)['prediction'].requires_grad)
             self.assertEqual(set(identity['omitted_auxiliary_buffers']), self.omitted)
             self.assertTrue(identity['retained_model_tensors_bitwise_equal'])
@@ -152,7 +187,7 @@ class PublicInferenceTests(unittest.TestCase):
                     public_infer.read_reference_scores(path, ['b', 'a'])
 
     def test_reference_labels_affect_only_metrics_and_output_targets(self):
-        from LightGen2 import visualize
+        from LightGenII import visualize
 
         class FixedModel:
             def __call__(self, *, normalized_rgb):
@@ -179,7 +214,7 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertTrue(torch.equal(((stored.float() + 1) * 127.5).round(), pixels))
 
     def test_full_evaluation_scores_each_field_once_and_excludes_padding(self):
-        from LightGen2 import visualize
+        from LightGenII import visualize
 
         class CountingModel:
             calls = 0
