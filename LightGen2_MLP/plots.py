@@ -3,15 +3,13 @@ import csv
 
 import matplotlib
 matplotlib.use('Agg')
-from matplotlib import font_manager
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
 
 def configure_figures():
-    font_manager.findfont(font_manager.FontProperties(family='Arial'),fallback_to_default=False)
-    plt.rcParams.update({'font.family':'Arial','font.size':7,'axes.labelsize':7,'axes.titlesize':8,
+    plt.rcParams.update({'font.family':['Arial','DejaVu Sans'],'font.size':7,'axes.labelsize':7,'axes.titlesize':8,
         'xtick.labelsize':7,'ytick.labelsize':7,'legend.fontsize':7,'figure.titlesize':8,'axes.linewidth':.6})
 
 
