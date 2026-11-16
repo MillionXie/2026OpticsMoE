@@ -101,6 +101,86 @@ class FrozenVisionFront(nn.Module):
         return second_groups.mean((2, 4))
 
 
+class VisionAdapter(nn.Sequential):
+
+    def __init__(self, config):
+        normalization = nn.LayerNorm(1024)
+        projection = nn.Linear(
+            in_features=1024,
+            out_features=config.width,
+        )
+        super().__init__(normalization, projection)
+
+    def forward(self, visual_embeddings):
+        normalization, projection = self
+        normalized_embeddings = normalization(visual_embeddings)
+        visual_tokens = projection(normalized_embeddings)
+        return visual_tokens
+
+
+class LanguageAdapter(nn.Sequential):
+
+    def __init__(self, config):
+        normalization = nn.LayerNorm(2048)
+        projection = nn.Linear(
+            in_features=2048,
+            out_features=config.width,
+        )
+        super().__init__(normalization, projection)
+
+    def forward(self, prompt_embeddings):
+        normalization, projection = self
+        normalized_embeddings = normalization(prompt_embeddings)
+        language_tokens = projection(normalized_embeddings)
+        return language_tokens
+
+
+class VisionMerger(nn.Sequential):
+
+    def __init__(self, config):
+        summary_width = 2 * config.width
+        normalization = nn.LayerNorm(summary_width)
+        projection = nn.Linear(
+            in_features=summary_width,
+            out_features=config.width,
+        )
+        activation = nn.ReLU()
+        super().__init__(normalization, projection, activation)
+
+    def forward(self, pooled_summary):
+        normalization, projection, activation = self
+        normalized_summary = normalization(pooled_summary)
+        projected_summary = projection(normalized_summary)
+        visual_summary = activation(projected_summary)
+        return visual_summary
+
+
+class QualityReadout(nn.Sequential):
+
+    def __init__(self, config):
+        sequence_length = config.frames + config.prompt_length
+        input_features = sequence_length * 96
+        flatten = nn.Flatten(start_dim=-2)
+        hidden_projection = nn.Linear(
+            in_features=input_features,
+            out_features=config.readout_hidden,
+        )
+        activation = nn.ReLU()
+        grade_projection = nn.Linear(
+            in_features=config.readout_hidden,
+            out_features=len(QUALITY_WORDS),
+        )
+        super().__init__(flatten, hidden_projection, activation, grade_projection)
+
+    def forward(self, sequence):
+        flatten, hidden_projection, activation, grade_projection = self
+        flattened_sequence = flatten(sequence)
+        hidden_features = hidden_projection(flattened_sequence)
+        activated_features = activation(hidden_features)
+        grade_logits = grade_projection(activated_features)
+        return grade_logits
+
+
 class Router(nn.Module):
 
     def __init__(self, config, token_count):
@@ -208,25 +288,44 @@ class Global(nn.Module):
 
     @property
     def origins(self):
-        return [(23 + 119 * row, 23 + 119 * column)
-                for row in range(4) for column in range(4)]
+        origins = []
+        for row in range(4):
+            top = 23 + 119 * row
+            for column in range(4):
+                left = 23 + 119 * column
+                origins.append((top, left))
+        return origins
 
     @property
     def frame_offsets(self):
         return ((0, 0), (0, 59), (59, 0), (59, 59))
 
     def fields(self, tokens):
-        value = F.relu(self.width_to_field(tokens))
         if self.is_vision:
-            transposed = value.transpose(-2, -1)
-            spatial_projection = self.tokens_to_field(transposed)
-            value = F.relu(spatial_projection).transpose(-2, -1)
+            amplitude = self.encode_vision_field(tokens)
         else:
-            missing_rows = 56 - value.shape[-2]
-            value = F.pad(value, (0, 0, 0, missing_rows))
-        mean_intensity = value.square().mean((-2, -1), keepdim=True)
+            amplitude = self.encode_language_field(tokens)
+        intensity = amplitude.square()
+        mean_intensity = intensity.mean((-2, -1), keepdim=True)
         scale = mean_intensity.clamp_min(1e-12).sqrt()
-        return value / scale
+        normalized_amplitude = amplitude / scale
+        return normalized_amplitude
+
+    def encode_vision_field(self, visual_tokens):
+        channel_projection = self.width_to_field(visual_tokens)
+        channel_amplitude = F.relu(channel_projection)
+        transposed_amplitude = channel_amplitude.transpose(-2, -1)
+        spatial_projection = self.tokens_to_field(transposed_amplitude)
+        spatial_amplitude = F.relu(spatial_projection)
+        frame_amplitude = spatial_amplitude.transpose(-2, -1)
+        return frame_amplitude
+
+    def encode_language_field(self, joint_tokens):
+        channel_projection = self.width_to_field(joint_tokens)
+        token_amplitude = F.relu(channel_projection)
+        missing_rows = 56 - token_amplitude.shape[-2]
+        video_amplitude = F.pad(token_amplitude, (0, 0, 0, missing_rows))
+        return video_amplitude
 
     def phase(self, *, wrapped=False):
         value = 2 * math.pi * torch.sigmoid(self.raw_phase)
@@ -245,16 +344,29 @@ class Global(nn.Module):
     def input_field(self, tokens):
         fields = self.fields(tokens)
         canvas = fields.new_zeros(len(fields), self.cfg.canvas, self.cfg.canvas)
+        if self.is_vision:
+            return self.place_vision_fields(fields, canvas)
+        return self.place_language_fields(fields, canvas)
+
+    def place_vision_fields(self, fields, canvas):
         for slot, (row, column) in enumerate(self.origins):
-            if self.is_vision:
-                for frame, (offset_y, offset_x) in enumerate(self.frame_offsets):
-                    top = row + offset_y + 14
-                    left = column + offset_x + 14
-                    canvas[:, top:top+27, left:left+27] = fields[:, slot, frame]
-            else:
-                top = row + 29
-                left = column + 29
-                canvas[:, top:top+56, left:left+56] = fields[:, slot]
+            for frame, (offset_y, offset_x) in enumerate(self.frame_offsets):
+                top = row + offset_y + 14
+                left = column + offset_x + 14
+                bottom = top + 27
+                right = left + 27
+                frame_amplitude = fields[:, slot, frame]
+                canvas[:, top:bottom, left:right] = frame_amplitude
+        return canvas
+
+    def place_language_fields(self, fields, canvas):
+        for slot, (row, column) in enumerate(self.origins):
+            top = row + 29
+            left = column + 29
+            bottom = top + 56
+            right = left + 56
+            video_amplitude = fields[:, slot]
+            canvas[:, top:bottom, left:right] = video_amplitude
         return canvas
 
     def modulation_field(self, canvas):
@@ -267,28 +379,49 @@ class Global(nn.Module):
         return mask
 
     def detector_regions(self, detector):
-        patches = []
+        if self.is_vision:
+            patches = self.vision_detector_regions(detector)
+        else:
+            patches = self.language_detector_regions(detector)
+        nonnegative_patches = patches.clamp_min(0)
+        relative_intensity = self.process_detector(nonnegative_patches)
+        return relative_intensity
+
+    def vision_detector_regions(self, detector):
+        video_regions = []
         for row, column in self.origins:
-            if self.is_vision:
-                pieces = []
-                for offset_y, offset_x in self.frame_offsets:
-                    top = row + offset_y
-                    left = column + offset_x
-                    pieces.append(detector[:, top:top+56, left:left+56])
-                patches.append(torch.stack(pieces, 1))
-            else:
-                patches.append(detector[:, row:row+115, column:column+115])
-        patches = self.process_detector(torch.stack(patches, 1).clamp_min(0))
-        return patches
+            frame_regions = []
+            for offset_y, offset_x in self.frame_offsets:
+                top = row + offset_y
+                left = column + offset_x
+                bottom = top + 56
+                right = left + 56
+                frame_region = detector[:, top:bottom, left:right]
+                frame_regions.append(frame_region)
+            video_region = torch.stack(frame_regions, dim=1)
+            video_regions.append(video_region)
+        return torch.stack(video_regions, dim=1)
+
+    def language_detector_regions(self, detector):
+        video_regions = []
+        for row, column in self.origins:
+            bottom = row + 115
+            right = column + 115
+            video_region = detector[:, row:bottom, column:right]
+            video_regions.append(video_region)
+        return torch.stack(video_regions, dim=1)
 
     def detector_tokens(self, patches, count):
         leading = patches.shape[:-2]
         detector_images = patches.reshape(-1, 1, *patches.shape[-2:])
-        pooled = F.adaptive_avg_pool2d(detector_images, (count, 96))[:, 0]
-        normalized = self.norm(pooled)
-        activated = F.relu(normalized)
-        output = self.output(activated)
-        return output.reshape(*leading, count, output.shape[-1])
+        pooled_images = F.adaptive_avg_pool2d(detector_images, (count, 96))
+        pooled_tokens = pooled_images[:, 0]
+        normalized_tokens = self.norm(pooled_tokens)
+        activated_tokens = F.relu(normalized_tokens)
+        projected_tokens = self.output(activated_tokens)
+        output_shape = (*leading, count, projected_tokens.shape[-1])
+        detector_tokens = projected_tokens.reshape(*output_shape)
+        return detector_tokens
 
     def forward(self, tokens):
         canvas = self.input_field(tokens)
@@ -309,21 +442,18 @@ class LightGen2(nn.Module):
         self.vision_frontend = FrozenVisionFront()
         self.register_buffer('language_prompt_embedding', torch.zeros(config.prompt_length, 2048, dtype=torch.float16))
         self.register_buffer('language_prompt_ready', torch.tensor(False))
-        self.vision_adapter = nn.Sequential(nn.LayerNorm(1024), nn.Linear(1024, config.width))
-        self.language_adapter = nn.Sequential(nn.LayerNorm(2048), nn.Linear(2048, config.width))
+        self.vision_adapter = VisionAdapter(config)
+        self.language_adapter = LanguageAdapter(config)
         self.vision_router = Router(config, 49)
         self.vision_experts = Experts(config)
         self.vision_global = Global(config, 'vision')
-        self.vision_merger = nn.Sequential(nn.LayerNorm(2 * config.width),
-                                          nn.Linear(2 * config.width, config.width), nn.ReLU())
+        self.vision_merger = VisionMerger(config)
         self.vision_frame_position = nn.Parameter(torch.empty(1, 1, 4, config.width))
         self.language_sequence_position = nn.Parameter(torch.empty(1, 64, config.width))
         self.language_router = Router(config, 4 + config.prompt_length)
         self.language_experts = Experts(config)
         self.language_global = Global(config, 'language')
-        self.readout = nn.Sequential(nn.Flatten(-2),
-                                     nn.Linear((4 + config.prompt_length) * 96, config.readout_hidden),
-                                     nn.ReLU(), nn.Linear(config.readout_hidden, 5))
+        self.readout = QualityReadout(config)
         self.register_buffer('grade_scores', torch.zeros(5))
         self.register_buffer('readout_ready', torch.tensor(False))
 
@@ -338,23 +468,27 @@ class LightGen2(nn.Module):
     def encode_vision(self, visual_embeddings):
         if tuple(visual_embeddings.shape[1:]) != (16, 4, 49, 1024):
             raise ValueError('Expected [batch,16,4,49,1024] visual features')
-        vision = self.vision_adapter(visual_embeddings.float())
-        routing = self.vision_router(vision)
-        vision = self.vision_experts(vision, routing['weights'])
-        vision = self.vision_global(vision)
-        summary = torch.cat((vision.mean(-2), vision.amax(-2)), -1)
-        visual_summary = self.vision_merger(summary) + self.vision_frame_position
-        return visual_summary, routing
+        projected_tokens = self.vision_adapter(visual_embeddings.float())
+        routing = self.vision_router(projected_tokens)
+        expert_tokens = self.vision_experts(projected_tokens, routing['weights'])
+        detector_tokens = self.vision_global(expert_tokens)
+        average_tokens = detector_tokens.mean(-2)
+        maximum_tokens = detector_tokens.amax(-2)
+        pooled_summary = torch.cat((average_tokens, maximum_tokens), dim=-1)
+        visual_summary = self.vision_merger(pooled_summary)
+        positioned_summary = visual_summary + self.vision_frame_position
+        return positioned_summary, routing
 
     def encode_language(self, visual_summary):
-        prompt = self.language_adapter(self.language_prompt_embedding.float())
-        prompt = prompt[None, None].expand(len(visual_summary), 16, -1, -1)
-        sequence = torch.cat((visual_summary, prompt), dim=-2)
-        sequence = sequence + self.language_sequence_position[:, None, :sequence.shape[-2]]
-        routing = self.language_router(sequence)
-        sequence = self.language_experts(sequence, routing['weights'])
-        sequence = self.language_global(sequence)
-        return sequence, routing
+        projected_prompt = self.language_adapter(self.language_prompt_embedding.float())
+        prompt_tokens = projected_prompt[None, None].expand(len(visual_summary), 16, -1, -1)
+        joint_tokens = torch.cat((visual_summary, prompt_tokens), dim=-2)
+        sequence_position = self.language_sequence_position[:, None, :joint_tokens.shape[-2]]
+        positioned_tokens = joint_tokens + sequence_position
+        routing = self.language_router(positioned_tokens)
+        expert_tokens = self.language_experts(positioned_tokens, routing['weights'])
+        detector_tokens = self.language_global(expert_tokens)
+        return detector_tokens, routing
 
     @torch.inference_mode()
     def forward(self, normalized_rgb):

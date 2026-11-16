@@ -56,6 +56,32 @@ class PublicInferenceTests(unittest.TestCase):
             torch.testing.assert_close(actual['routing'][new]['weights'],
                                        expected['routing'][old]['weights'], rtol=1e-6, atol=1e-6)
 
+    def test_explicit_modules_preserve_sequential_weights_and_outputs(self):
+        config = self.inference.cfg
+        cases = (
+            (public.VisionAdapter,
+             torch.nn.Sequential(torch.nn.LayerNorm(1024), torch.nn.Linear(1024, config.width)),
+             (2, 49, 1024)),
+            (public.LanguageAdapter,
+             torch.nn.Sequential(torch.nn.LayerNorm(2048), torch.nn.Linear(2048, config.width)),
+             (2, 38, 2048)),
+            (public.VisionMerger,
+             torch.nn.Sequential(torch.nn.LayerNorm(384), torch.nn.Linear(384, config.width), torch.nn.ReLU()),
+             (2, 4, 384)),
+            (public.QualityReadout,
+             torch.nn.Sequential(torch.nn.Flatten(-2), torch.nn.Linear(42 * 96, 32),
+                                 torch.nn.ReLU(), torch.nn.Linear(32, 5)),
+             (2, 42, 96)),
+        )
+        for module_class, reference, shape in cases:
+            with self.subTest(module=module_class.__name__):
+                actual = module_class(config)
+                self.assertEqual(list(actual.state_dict()), list(reference.state_dict()))
+                actual.load_state_dict(reference.state_dict(), strict=True)
+                value = torch.randn(*shape)
+                with torch.inference_mode():
+                    self.assertTrue(torch.equal(actual(value), reference(value)))
+
     def test_frontend_steps_match_the_previous_forward_exactly(self):
         front = public.FrozenVisionFront()
         front.ready.fill_(True)
