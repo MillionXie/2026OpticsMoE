@@ -1,4 +1,3 @@
-"""LightGen-II inference with vision and language branches."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -51,7 +50,6 @@ class ModelConfig:
 
 
 class FrozenVisionFront(nn.Module):
-    """Frozen patch projection and position tensors with spatial pooling."""
 
     def __init__(self):
         super().__init__()
@@ -61,7 +59,6 @@ class FrozenVisionFront(nn.Module):
         self.register_buffer('ready', torch.tensor(False))
 
     def forward(self, images):
-        """Encode the RGB frames while preserving their batch and video order."""
         self.validate_frames(images)
         leading_shape = images.shape[:-3]
         temporal_pixels = self.temporal_pair(images)
@@ -78,13 +75,11 @@ class FrozenVisionFront(nn.Module):
             raise ValueError('Expected normalized floating-point RGB frames shaped [...,3,448,448]')
 
     def temporal_pair(self, images):
-        """Supply the two identical temporal slices expected by the patch kernel."""
         frames = images.reshape(-1, 3, 448, 448)
         paired_frames = frames.unsqueeze(2).expand(-1, -1, 2, -1, -1)
         return paired_frames.to(self.patch_weight.dtype)
 
     def project_patches(self, temporal_pixels):
-        """Apply the frozen 2 by 16 by 16 kernel to obtain a 28 by 28 grid."""
         embedded = F.conv3d(
             temporal_pixels,
             self.patch_weight,
@@ -94,13 +89,11 @@ class FrozenVisionFront(nn.Module):
         return embedded[:, :, 0]
 
     def group_patches(self, patch_grid):
-        """Keep each contiguous 2 by 2 patch group in the processor's order."""
         groups = patch_grid.reshape(-1, 1024, 14, 2, 14, 2)
         groups = groups.permute(0, 2, 4, 3, 5, 1)
         return groups.reshape(-1, 784, 1024)
 
     def pool_patches(self, positioned_tokens):
-        """Reduce the spatial grid from 28 by 28 to 14 by 14 and then 7 by 7."""
         first_groups = positioned_tokens.reshape(-1, 196, 4, 1024)
         first_pooled = first_groups.mean(2)
         first_grid = first_pooled.reshape(-1, 14, 14, 1024)
@@ -147,13 +140,6 @@ class Experts(nn.Module):
 
 
 class Propagation(nn.Module):
-    """Angular-spectrum propagation using a centered Fourier spectrum.
-
-    The kernel follows the shifted-FFT construction of the D2NN reference.
-    Sampling, propagation distance and the angular aperture come from the
-    selected LightGen-II configuration. Both kernel buffers are derived
-    quantities and move with the model to its inference device.
-    """
 
     def __init__(self, config):
         super().__init__()
@@ -169,13 +155,11 @@ class Propagation(nn.Module):
         self.register_buffer('transfer', unshifted_transfer, persistent=False)
 
     def frequency_grid(self):
-        """Return centered spatial frequencies in cycles per metre."""
         frequency = np.fft.fftfreq(self.size, d=self.pixel_pitch_m)
         centered = np.fft.fftshift(frequency)
         return np.meshgrid(centered, centered)
 
     def build_phase_kernel(self):
-        """Construct the fixed propagation phase in double precision."""
         frequency_x, frequency_y = self.frequency_grid()
         squared_frequency = frequency_x ** 2 + frequency_y ** 2
         argument = (2 * np.pi) ** 2 * (
@@ -193,7 +177,6 @@ class Propagation(nn.Module):
         return torch.where(aperture, phase, torch.zeros_like(phase))
 
     def forward(self, field):
-        """Propagate each field over its final two spatial dimensions."""
         if field.ndim < 2 or tuple(field.shape[-2:]) != (self.size, self.size):
             raise ValueError(f'Expected fields with spatial shape [{self.size},{self.size}]')
         field = field.to(torch.complex64)
@@ -205,7 +188,6 @@ class Propagation(nn.Module):
 
 
 class Global(nn.Module):
-    """Encode, modulate, propagate and detect a complete shared video field."""
 
     def __init__(self, config, branch):
         super().__init__()
@@ -234,7 +216,6 @@ class Global(nn.Module):
         return ((0, 0), (0, 59), (59, 0), (59, 59))
 
     def fields(self, tokens):
-        """Encode nonnegative amplitude on the common physical sampling grid."""
         value = F.relu(self.width_to_field(tokens))
         if self.is_vision:
             transposed = value.transpose(-2, -1)
@@ -248,24 +229,20 @@ class Global(nn.Module):
         return value / scale
 
     def phase(self, *, wrapped=False):
-        """Broadcast the learned phase tile to all video positions."""
         value = 2 * math.pi * torch.sigmoid(self.raw_phase)
         value = value.expand(self.cfg.videos, -1, -1)
         return value.remainder(2 * math.pi) if wrapped else value
 
     def modulation(self):
-        """Form the complex modulation including the configured residual field."""
         value = torch.exp(1j * self.phase())
         coefficient = value.real.new_tensor(self.cfg.alpha_eval)
         return coefficient * value + (1 - coefficient)
 
     def process_detector(self, patches):
-        """Convert each detector region to its relative intensity."""
         mean_intensity = patches.mean((-2, -1), keepdim=True)
         return patches / mean_intensity.clamp_min(1e-6)
 
     def input_field(self, tokens):
-        """Place all sixteen videos on the same coherent propagation canvas."""
         fields = self.fields(tokens)
         canvas = fields.new_zeros(len(fields), self.cfg.canvas, self.cfg.canvas)
         for slot, (row, column) in enumerate(self.origins):
@@ -281,7 +258,6 @@ class Global(nn.Module):
         return canvas
 
     def modulation_field(self, canvas):
-        """Embed the shared branch mask at each video position."""
         mask = torch.ones_like(canvas, dtype=torch.complex64)
         modulation = self.modulation()
         for slot, (row, column) in enumerate(self.origins):
@@ -291,7 +267,6 @@ class Global(nn.Module):
         return mask
 
     def detector_regions(self, detector):
-        """Read the detector regions belonging to each video and frame."""
         patches = []
         for row, column in self.origins:
             if self.is_vision:
@@ -307,7 +282,6 @@ class Global(nn.Module):
         return patches
 
     def detector_tokens(self, patches, count):
-        """Pool and project detector intensities into branch token features."""
         leading = patches.shape[:-2]
         detector_images = patches.reshape(-1, 1, *patches.shape[-2:])
         pooled = F.adaptive_avg_pool2d(detector_images, (count, 96))[:, 0]
@@ -317,7 +291,6 @@ class Global(nn.Module):
         return output.reshape(*leading, count, output.shape[-1])
 
     def forward(self, tokens):
-        """Apply the complete field computation for one branch."""
         canvas = self.input_field(tokens)
         mask = self.modulation_field(canvas)
         modulated_field = canvas.to(torch.complex64) * mask
