@@ -290,39 +290,80 @@ class QwenPositionInterpolation(nn.Module):
         return source_side
 
     def sampling_axis(self, source_side):
-        coordinates = torch.linspace(0, source_side - 1, self.geometry.patch_grid,
-                                     dtype=torch.float32, device='cpu')
+        first_coordinate = 0
+        last_coordinate = source_side - 1
+        target_positions = self.geometry.patch_grid
+        coordinates = torch.linspace(
+            start=first_coordinate,
+            end=last_coordinate,
+            steps=target_positions,
+            dtype=torch.float32,
+            device='cpu',
+        )
         lower = coordinates.int()
-        upper = (lower + 1).clamp(max=source_side - 1)
+        next_coordinate = lower + 1
+        upper = next_coordinate.clamp(max=last_coordinate)
         fraction = coordinates - lower
         return lower, upper, fraction
 
     def corner_indices(self, lower, upper, source_side):
-        top_left = lower[:, None] * source_side + lower[None, :]
-        top_right = lower[:, None] * source_side + upper[None, :]
-        bottom_left = upper[:, None] * source_side + lower[None, :]
-        bottom_right = upper[:, None] * source_side + upper[None, :]
-        corners = (top_left.flatten(), top_right.flatten(),
-                   bottom_left.flatten(), bottom_right.flatten())
-        return torch.stack(corners, dim=0).long()
+        top_rows = lower[:, None]
+        bottom_rows = upper[:, None]
+        left_columns = lower[None, :]
+        right_columns = upper[None, :]
+        top_row_offsets = top_rows * source_side
+        bottom_row_offsets = bottom_rows * source_side
+        top_left = top_row_offsets + left_columns
+        top_right = top_row_offsets + right_columns
+        bottom_left = bottom_row_offsets + left_columns
+        bottom_right = bottom_row_offsets + right_columns
+        top_left_indices = top_left.flatten()
+        top_right_indices = top_right.flatten()
+        bottom_left_indices = bottom_left.flatten()
+        bottom_right_indices = bottom_right.flatten()
+        corner_indices = torch.stack((top_left_indices, top_right_indices,
+                                      bottom_left_indices, bottom_right_indices), dim=0)
+        return corner_indices.long()
 
     def corner_weights(self, fraction, dtype):
         row_fraction = fraction[:, None]
         column_fraction = fraction[None, :]
-        top_left = (1 - row_fraction) * (1 - column_fraction)
-        top_right = (1 - row_fraction) * column_fraction
-        bottom_left = row_fraction * (1 - column_fraction)
-        bottom_right = row_fraction * column_fraction
-        corners = (top_left.flatten(), top_right.flatten(),
-                   bottom_left.flatten(), bottom_right.flatten())
-        return torch.stack(corners, dim=0).to(dtype)
+        top_row_weight = 1 - row_fraction
+        bottom_row_weight = row_fraction
+        left_column_weight = 1 - column_fraction
+        right_column_weight = column_fraction
+        top_left = top_row_weight * left_column_weight
+        top_right = top_row_weight * right_column_weight
+        bottom_left = bottom_row_weight * left_column_weight
+        bottom_right = bottom_row_weight * right_column_weight
+        top_left_weights = top_left.flatten()
+        top_right_weights = top_right.flatten()
+        bottom_left_weights = bottom_left.flatten()
+        bottom_right_weights = bottom_right.flatten()
+        corner_weights = torch.stack((top_left_weights, top_right_weights,
+                                      bottom_left_weights, bottom_right_weights), dim=0)
+        return corner_weights.to(dtype)
 
     def interpolate(self, table, indices, weights):
-        corner_embeddings = table[indices]
-        weighted_embeddings = corner_embeddings * weights[:, :, None]
-        top_embeddings = weighted_embeddings[0] + weighted_embeddings[1]
-        three_corners = top_embeddings + weighted_embeddings[2]
-        spatial_positions = three_corners + weighted_embeddings[3]
+        top_left_indices = indices[0]
+        top_right_indices = indices[1]
+        bottom_left_indices = indices[2]
+        bottom_right_indices = indices[3]
+        top_left_embeddings = table[top_left_indices]
+        top_right_embeddings = table[top_right_indices]
+        bottom_left_embeddings = table[bottom_left_indices]
+        bottom_right_embeddings = table[bottom_right_indices]
+        top_left_weights = weights[0, :, None]
+        top_right_weights = weights[1, :, None]
+        bottom_left_weights = weights[2, :, None]
+        bottom_right_weights = weights[3, :, None]
+        weighted_top_left = top_left_embeddings * top_left_weights
+        weighted_top_right = top_right_embeddings * top_right_weights
+        weighted_bottom_left = bottom_left_embeddings * bottom_left_weights
+        weighted_bottom_right = bottom_right_embeddings * bottom_right_weights
+        top_embeddings = weighted_top_left + weighted_top_right
+        three_corners = top_embeddings + weighted_bottom_left
+        spatial_positions = three_corners + weighted_bottom_right
         return spatial_positions
 
     def group_positions(self, spatial_positions):
@@ -332,8 +373,10 @@ class QwenPositionInterpolation(nn.Module):
     def forward(self, table):
         source_side = self.validate_table(table)
         lower, upper, fraction = self.sampling_axis(source_side)
-        indices = self.corner_indices(lower, upper, source_side).to(table.device)
-        weights = self.corner_weights(fraction, table.dtype).to(table.device)
+        sampling_indices = self.corner_indices(lower, upper, source_side)
+        sampling_weights = self.corner_weights(fraction, table.dtype)
+        indices = sampling_indices.to(table.device)
+        weights = sampling_weights.to(table.device)
         spatial_positions = self.interpolate(table, indices, weights)
         grouped_positions = self.group_positions(spatial_positions)
         return grouped_positions
@@ -418,11 +461,23 @@ class FrozenVisionFront(nn.Module):
             raise ValueError('The source position table must be a tensor')
         if source_table.dtype != self.position.dtype:
             raise ValueError('Source and cached position tensors require the same dtype')
-        source_table = source_table.detach().to('cpu').contiguous()
+        source_table = source_table.detach()
+        source_table = source_table.to('cpu')
+        source_table = source_table.contiguous()
         prepared_position = self.position_interpolation(source_table)
-        if reference_position is not None and not torch.equal(prepared_position, reference_position.detach().cpu()):
-            raise ValueError('The source position table differs from the checkpoint position cache')
-        self.position.copy_(prepared_position.to(self.position.device))
+        if reference_position is not None:
+            if not isinstance(reference_position, torch.Tensor):
+                raise ValueError('The checkpoint position cache must be a tensor')
+            if reference_position.shape != prepared_position.shape:
+                raise ValueError('The checkpoint position cache has incompatible dimensions')
+            if reference_position.dtype != prepared_position.dtype:
+                raise ValueError('The checkpoint position cache has an incompatible dtype')
+            reference_position = reference_position.detach()
+            reference_position = reference_position.to('cpu')
+            if not torch.equal(prepared_position, reference_position):
+                raise ValueError('The source position table differs from the checkpoint position cache')
+        destination_position = prepared_position.to(self.position.device)
+        self.position.copy_(destination_position)
         return prepared_position
 
     def temporal_pair(self, images):
