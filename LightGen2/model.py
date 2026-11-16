@@ -1,16 +1,17 @@
-"""LightGenII inference with vision and language branches."""
+"""LightGen-II inference with vision and language branches."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 import math
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
 
 
-ARCHITECTURE = 'lightgenii_temporal_inference_v3_shared_phase'
-LEGACY_ARCHITECTURE = 'lightgenii_temporal_inference_v2'
+ARCHITECTURE = 'lightgen2_temporal_inference_v3_shared_phase'
+LEGACY_ARCHITECTURE = 'lightgen2_temporal_inference_v2'
 QUALITY_WORDS = ('Bad', 'Poor', 'Fair', 'Good', 'Excellent')
 
 
@@ -118,7 +119,10 @@ class Router(nn.Module):
         self.activation = nn.ReLU()
 
     def forward(self, tokens):
-        logits = self.fc2(self.activation(self.fc1(self.norm(tokens).flatten(-2))))
+        normalized = self.norm(tokens)
+        flattened = normalized.flatten(-2)
+        hidden = self.activation(self.fc1(flattened))
+        logits = self.fc2(hidden)
         probabilities = (logits / self.temperature).softmax(-1)
         indices = probabilities.topk(2, dim=-1).indices
         selected = torch.zeros_like(probabilities).scatter(-1, indices, 1.0)
@@ -143,29 +147,65 @@ class Experts(nn.Module):
 
 
 class Propagation(nn.Module):
+    """Angular-spectrum propagation using a centered Fourier spectrum.
+
+    The kernel follows the shifted-FFT construction of the D2NN reference.
+    Sampling, propagation distance and the angular aperture come from the
+    selected LightGen-II configuration. Both kernel buffers are derived
+    quantities and move with the model to its inference device.
+    """
 
     def __init__(self, config):
         super().__init__()
-        frequency = torch.fft.fftfreq(config.canvas, d=config.pitch_um * 1e-6, dtype=torch.float64)
-        frequency_y, frequency_x = torch.meshgrid(frequency, frequency, indexing='ij')
-        wavelength = config.wavelength_nm * 1e-9
-        squared_frequency = frequency_x.square() + frequency_y.square()
-        argument = (2 * math.pi) ** 2 * (
-            (1 / wavelength) ** 2 - frequency_x.square() - frequency_y.square())
-        radial_frequency = 2 * math.pi * torch.sqrt(squared_frequency)
-        cutoff = (2 * math.pi / wavelength) * math.sin(math.radians(config.cutoff_deg))
-        valid = (argument >= 0) & (radial_frequency <= cutoff)
-        transfer = torch.exp(1j * config.distance_m * torch.sqrt(argument.clamp_min(0)))
-        transfer = transfer.to(torch.complex64)
-        self.register_buffer('transfer', torch.where(valid, transfer, torch.zeros_like(transfer)),
-                             persistent=False)
+        self.size = config.canvas
+        self.pixel_pitch_m = config.pitch_um * 1e-6
+        self.wavelength_m = config.wavelength_nm * 1e-9
+        self.distance_m = config.distance_m
+        self.cutoff_deg = config.cutoff_deg
+
+        centered_phase = self.build_phase_kernel()
+        self.register_buffer('phase', centered_phase, persistent=False)
+        unshifted_transfer = torch.fft.ifftshift(centered_phase, dim=(-2, -1))
+        self.register_buffer('transfer', unshifted_transfer, persistent=False)
+
+    def frequency_grid(self):
+        """Return centered spatial frequencies in cycles per metre."""
+        frequency = np.fft.fftfreq(self.size, d=self.pixel_pitch_m)
+        centered = np.fft.fftshift(frequency)
+        return np.meshgrid(centered, centered)
+
+    def build_phase_kernel(self):
+        """Construct the fixed propagation phase in double precision."""
+        frequency_x, frequency_y = self.frequency_grid()
+        squared_frequency = frequency_x ** 2 + frequency_y ** 2
+        argument = (2 * np.pi) ** 2 * (
+            (1.0 / self.wavelength_m) ** 2 - frequency_x ** 2 - frequency_y ** 2
+        )
+        magnitude = np.sqrt(np.abs(argument))
+        longitudinal_wave_number = np.where(argument >= 0, magnitude, 1j * magnitude)
+        longitudinal_wave_number = torch.from_numpy(longitudinal_wave_number)
+        phase = torch.exp(1j * longitudinal_wave_number * self.distance_m)
+
+        radial_wave_number = 2 * np.pi * np.sqrt(squared_frequency)
+        cutoff = (2 * np.pi / self.wavelength_m) * math.sin(math.radians(self.cutoff_deg))
+        aperture = torch.from_numpy((argument >= 0) & (radial_wave_number <= cutoff))
+        phase = phase.to(torch.complex64)
+        return torch.where(aperture, phase, torch.zeros_like(phase))
 
     def forward(self, field):
-        spectrum = torch.fft.fft2(field.to(torch.complex64))
-        return torch.fft.ifft2(spectrum * self.transfer)
+        """Propagate each field over its final two spatial dimensions."""
+        if field.ndim < 2 or tuple(field.shape[-2:]) != (self.size, self.size):
+            raise ValueError(f'Expected fields with spatial shape [{self.size},{self.size}]')
+        field = field.to(torch.complex64)
+        spectrum = torch.fft.fft2(field, dim=(-2, -1))
+        centered_spectrum = torch.fft.fftshift(spectrum, dim=(-2, -1))
+        propagated_spectrum = centered_spectrum * self.phase
+        unshifted_spectrum = torch.fft.ifftshift(propagated_spectrum, dim=(-2, -1))
+        return torch.fft.ifft2(unshifted_spectrum, dim=(-2, -1))
 
 
 class Global(nn.Module):
+    """Encode, modulate, propagate and detect a complete shared video field."""
 
     def __init__(self, config, branch):
         super().__init__()
@@ -189,69 +229,106 @@ class Global(nn.Module):
         return [(23 + 119 * row, 23 + 119 * column)
                 for row in range(4) for column in range(4)]
 
+    @property
+    def frame_offsets(self):
+        return ((0, 0), (0, 59), (59, 0), (59, 59))
+
     def fields(self, tokens):
+        """Encode nonnegative amplitude on the common physical sampling grid."""
         value = F.relu(self.width_to_field(tokens))
         if self.is_vision:
-            value = F.relu(self.tokens_to_field(value.transpose(-2, -1))).transpose(-2, -1)
+            transposed = value.transpose(-2, -1)
+            spatial_projection = self.tokens_to_field(transposed)
+            value = F.relu(spatial_projection).transpose(-2, -1)
         else:
-            value = F.pad(value, (0, 0, 0, 56 - value.shape[-2]))
-        scale = value.square().mean((-2, -1), keepdim=True).clamp_min(1e-12).sqrt()
+            missing_rows = 56 - value.shape[-2]
+            value = F.pad(value, (0, 0, 0, missing_rows))
+        mean_intensity = value.square().mean((-2, -1), keepdim=True)
+        scale = mean_intensity.clamp_min(1e-12).sqrt()
         return value / scale
 
     def phase(self, *, wrapped=False):
+        """Broadcast the learned phase tile to all video positions."""
         value = 2 * math.pi * torch.sigmoid(self.raw_phase)
         value = value.expand(self.cfg.videos, -1, -1)
         return value.remainder(2 * math.pi) if wrapped else value
 
     def modulation(self):
+        """Form the complex modulation including the configured residual field."""
         value = torch.exp(1j * self.phase())
         coefficient = value.real.new_tensor(self.cfg.alpha_eval)
         return coefficient * value + (1 - coefficient)
 
     def process_detector(self, patches):
-        return patches / patches.mean((-2, -1), keepdim=True).clamp_min(1e-6)
+        """Convert each detector region to its relative intensity."""
+        mean_intensity = patches.mean((-2, -1), keepdim=True)
+        return patches / mean_intensity.clamp_min(1e-6)
 
     def input_field(self, tokens):
+        """Place all sixteen videos on the same coherent propagation canvas."""
         fields = self.fields(tokens)
-        canvas = fields.new_zeros(len(fields), 518, 518)
-        frame_offsets = [(0, 0), (0, 59), (59, 0), (59, 59)]
+        canvas = fields.new_zeros(len(fields), self.cfg.canvas, self.cfg.canvas)
         for slot, (row, column) in enumerate(self.origins):
             if self.is_vision:
-                for frame, (dy, dx) in enumerate(frame_offsets):
-                    canvas[:, row+dy+14:row+dy+41, column+dx+14:column+dx+41] = fields[:, slot, frame]
+                for frame, (offset_y, offset_x) in enumerate(self.frame_offsets):
+                    top = row + offset_y + 14
+                    left = column + offset_x + 14
+                    canvas[:, top:top+27, left:left+27] = fields[:, slot, frame]
             else:
-                canvas[:, row+29:row+85, column+29:column+85] = fields[:, slot]
+                top = row + 29
+                left = column + 29
+                canvas[:, top:top+56, left:left+56] = fields[:, slot]
         return canvas
 
     def modulation_field(self, canvas):
+        """Embed the shared branch mask at each video position."""
         mask = torch.ones_like(canvas, dtype=torch.complex64)
         modulation = self.modulation()
         for slot, (row, column) in enumerate(self.origins):
-            mask[:, row+2:row+113, column+2:column+113] = modulation[slot]
+            top = row + 2
+            left = column + 2
+            mask[:, top:top+111, left:left+111] = modulation[slot]
         return mask
 
-    def forward(self, tokens):
-        canvas = self.input_field(tokens)
-        mask = self.modulation_field(canvas)
-        detector = self.propagation(canvas.to(torch.complex64) * mask).abs().square().float()
+    def detector_regions(self, detector):
+        """Read the detector regions belonging to each video and frame."""
         patches = []
-        frame_offsets = [(0, 0), (0, 59), (59, 0), (59, 59)]
         for row, column in self.origins:
             if self.is_vision:
-                pieces = [detector[:, row+dy:row+dy+56, column+dx:column+dx+56]
-                          for dy, dx in frame_offsets]
+                pieces = []
+                for offset_y, offset_x in self.frame_offsets:
+                    top = row + offset_y
+                    left = column + offset_x
+                    pieces.append(detector[:, top:top+56, left:left+56])
                 patches.append(torch.stack(pieces, 1))
             else:
                 patches.append(detector[:, row:row+115, column:column+115])
         patches = self.process_detector(torch.stack(patches, 1).clamp_min(0))
+        return patches
+
+    def detector_tokens(self, patches, count):
+        """Pool and project detector intensities into branch token features."""
         leading = patches.shape[:-2]
-        count = self.cfg.tokens if self.is_vision else tokens.shape[-2]
-        pooled = F.adaptive_avg_pool2d(patches.reshape(-1, 1, *patches.shape[-2:]), (count, 96))[:, 0]
-        output = self.output(F.relu(self.norm(pooled)))
+        detector_images = patches.reshape(-1, 1, *patches.shape[-2:])
+        pooled = F.adaptive_avg_pool2d(detector_images, (count, 96))[:, 0]
+        normalized = self.norm(pooled)
+        activated = F.relu(normalized)
+        output = self.output(activated)
         return output.reshape(*leading, count, output.shape[-1])
 
+    def forward(self, tokens):
+        """Apply the complete field computation for one branch."""
+        canvas = self.input_field(tokens)
+        mask = self.modulation_field(canvas)
+        modulated_field = canvas.to(torch.complex64) * mask
+        output_field = self.propagation(modulated_field)
+        detector = output_field.abs().square().float()
+        patches = self.detector_regions(detector)
+        count = self.cfg.tokens if self.is_vision else tokens.shape[-2]
+        return self.detector_tokens(patches, count)
 
-class LightGenII(nn.Module):
+
+class LightGen2(nn.Module):
 
     def __init__(self, config):
         super().__init__()
@@ -325,14 +402,14 @@ class LightGenII(nn.Module):
                 'routing': {'vision': vision_routing, 'language': language_routing}}
 
 
-def load_lightgenii(path, device='cpu'):
+def load_lightgen2(path, device='cpu'):
     payload = torch.load(path, map_location='cpu', weights_only=True)
     if payload['schema'] != 2 or payload['architecture'] not in (ARCHITECTURE, LEGACY_ARCHITECTURE):
-        raise ValueError('Expected the LightGenII inference checkpoint')
+        raise ValueError('Expected the LightGen-II inference checkpoint')
     config = dict(payload['config'])
     config.setdefault('shared_global_phase', False)
     if config['shared_global_phase'] != (payload['architecture'] == ARCHITECTURE):
         raise ValueError('Global phase sharing conflicts with the checkpoint architecture')
-    model = LightGenII(ModelConfig(**config))
+    model = LightGen2(ModelConfig(**config))
     model.load_state_dict(payload['model'], strict=True)
     return model.to(device).eval(), payload['metadata']

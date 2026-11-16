@@ -11,7 +11,7 @@ from docx.shared import Inches, Pt, RGBColor
 from docx.text.paragraph import Paragraph
 
 
-PUBLIC = Path(__file__).resolve().parents[4] / 'LightGenII'
+PUBLIC = Path(__file__).resolve().parents[4] / 'LightGen2'
 CAPTIONS = (
     'Predicted versus human temporal MOS for the 558 LGVQ videos (03_prediction_vs_mos.png).',
     'Vision input field, phase mask and output field, from left to right.',
@@ -114,11 +114,11 @@ def add_page_numbers(document):
 def build_guide(path):
     original = path.read_bytes()
     document = Document(path)
-    replace_text(document.paragraphs[0], 'codes for LightGenII')
+    replace_text(document.paragraphs[0], 'Codes for LightGen-II')
     for table in document.tables:
         for row in list(table.rows):
             name = row.cells[0].text
-            if name == 'weights/LightGenII.pt':
+            if name == 'weights/LightGen2.pt':
                 replace_cell(row.cells[1], 'Model weights.')
             elif name in ('README.md and README.docx', 'README.pdf'):
                 replace_cell(row.cells[0], 'README.pdf')

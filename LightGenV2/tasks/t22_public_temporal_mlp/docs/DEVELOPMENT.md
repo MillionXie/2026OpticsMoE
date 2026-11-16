@@ -242,7 +242,7 @@ python tools/analyze_phase_effect.py --checkpoints runs/simulation/current/Light
 ## 归档与发布
 
 活动模型与结果统一位于 `runs/simulation/current/`。父版本、训练尝试和原始核验
-材料存入 `E:\2026LightGen2Data\_internal_archives\` 下的任务归档目录，并保留
+材料存入本任务 `runs/archives/` 下的归档目录，并保留
 SHA256 清单及选择回执。公开发布入口为 `releases/current/` 和同名 ZIP。
 
 无区间约束的 head128 候选曾在完整模型复算中得到 SRCC 0.8050366302。

@@ -109,7 +109,9 @@ def inference_state_name(name):
 
 def export_inference_checkpoint(source, destination, config_fields, architecture):
     """Export the selected forward tensors and inference configuration."""
-    with tempfile.TemporaryDirectory(prefix='lightgen-inference-export-') as directory:
+    destination = Path(destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.lightgen-inference-export-', dir=destination.parent) as directory:
         intermediate = Path(directory)/'LightGen.pt'
         identity = export_public_checkpoint(source, intermediate)
         payload = torch.load(intermediate, map_location='cpu', weights_only=True)

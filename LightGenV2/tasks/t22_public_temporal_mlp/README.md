@@ -1,7 +1,7 @@
-# LightGenII temporal video quality reference
+# LightGen-II temporal video quality reference
 
 本目录保存作者侧研究、核验与打包工具。独立推理工程位于仓库根目录
-[`LightGenII`](../../../LightGenII/README.pdf)，可编辑说明为该目录的`README.docx`。
+[`LightGen2`](../../../LightGen2/README.pdf)，可编辑说明为该目录的`README.docx`。
 正式推理权重采用每支global共享一块相位的结构。
 
 ## 唯一推理流程
@@ -31,7 +31,7 @@ patch投影、位置编码、固定汇聚及后续网络均由推理代码执行
 | language | 1×111×111 | 16 | 1 | 0 rad |
 
 研究检查点schema为9，架构标记以`_shared_phase`结尾。
-公开检查点架构为`lightgenii_temporal_inference_v3_shared_phase`。
+公开检查点架构为`lightgen2_temporal_inference_v3_shared_phase`。
 加载器同时校验架构、共享配置和参数形状。回归检查覆盖前向、梯度、保存加载及导出。
 打包时额外核验相位数组中16块mask逐元素相等。
 历史检查点按其原架构和配置读取。
@@ -167,8 +167,8 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 | `tools/build_release.py` | 张量、身份、指标、mask一致性和光场复算后打包 |
 | `tests` | 共享梯度、检查点兼容、前向和导出回归检查 |
 
-根目录`LightGenII`维护独立推理源码，`releases/current`为生成镜像，
-`releases/LightGenII.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
+根目录`LightGen2`维护独立推理源码，`releases/current`为生成镜像，
+`releases/LightGen2.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
 正式包使用`README.pdf`，作者编辑用的`README.docx`单独保留在根目录工程中。
 主项目代码沿用ACCEL官方README声明的GPL v3.0，Qwen上游Apache-2.0许可与署名文件随包附带。
 本轮修复Python 3.8不支持`Path.write_text(newline=...)`的兼容问题，指标经临时文件原子替换保存。
@@ -177,9 +177,10 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 兼容回归记录位于`runs/smoke/python38_final_20261115`。
 根目录`LICENSE`为本项目GPL v3.0文本，`licenses/NOTICE.txt`与`licenses/QWEN_LICENSE.txt`
 集中保存第三方署名、数据出处和上游Apache-2.0许可。
-上一轮完整ZIP、PT、配置和作者current快照保存在
-`E:/2026LightGen2Data/_internal_archives/t22_shared_global_phase_20261114/before`。
-当前训练和核验数据同步归档在其同级目录中。
+历史ZIP、PT、配置、作者快照和临时材料统一保存在本任务`runs/archives`中。
+2026-11-16迁移逐文件核验SHA，清单为
+`runs/smoke/storage_relocation_20261116/migration_manifest.json`。
+发布暂存和镜像备份分别在`releases`和`runs/archives/release_mirrors`中建立。
 
 公开结果按01–10顺序阅读，01为全部预测，02为完整精度SRCC与视频数量，03为散点图，
 04为所选光场视频帧，05–07为vision输入、mask和输出，08–10为language输入、mask和输出。
@@ -188,7 +189,24 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 
 ## 说明文档的论文结果引用
 
-说明文档末段引用投稿文件`E:/2026LightGen2Data/投稿文件/supplement information.pdf`
-的Supplementary Note 3–4和Table S2。论文实验系统为0.611 ms/frame与0.113 J/frame，
-Qwen3-VL对照为71.326 ms/frame与27.987 J/frame。文档明确将这些数据归属于
-论文实验系统，代码复现结果为558条时序质量推理、SRCC约0.80。
+说明文档末段的实验数据核对自投稿文件
+`E:/2026LightGen2Data/投稿文件/supplement information.pdf`。
+论文实验系统为0.611 ms/frame与0.113 J/frame，Qwen3-VL对照为71.326 ms/frame与27.987 J/frame。
+Qwen3-VL完整558条temporal SRCC为0.7663428037，文档显示0.77。
+本工程完整推理SRCC显示0.80。文档将系统速度和能耗归属于论文实验系统。
+
+## 公开传播参考与物理采样
+
+`LightGen2/model.py`的`Propagation`采用
+`opticalmoe/notebooks/github_D2NN_mnist4.ipynb`的中心频谱角谱传播写法。
+保留选定模型的532 nm波长、17 µm采样、518画布、478有效区域、0.1 m传播距离与0.5°频域孔径。
+Notebook的默认16 µm采样和0.2 m距离在实例化时由本工程参数替换。
+二维FFT平移显式作用于最后两个空间维度。传播核以双精度构建，运行时沿用complex64。
+记录用的`transfer`保留未平移频序，供原始NPZ的NumPy复算使用。
+本轮修改前的独立数值对照显示，传播核最大绝对差7.45×10⁻⁹，
+实测保存场的复输出相对L2差1.86×10⁻⁹。
+
+17 µm是本工程输入与mask的共同计算网格。原版硬件导出脚本
+`experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/export_hardware_masks.py`
+将相位按物理坐标从17 µm重采样到8 µm相位SLM，比例为17/8。
+输入振幅SLM像元为17 µm。硬件导出仍需执行该物理坐标映射。

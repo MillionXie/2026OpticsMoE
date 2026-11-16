@@ -9,8 +9,8 @@ from unittest.mock import patch
 import torch
 import numpy as np
 
-from LightGenII import model as public
-from LightGenII import infer as public_infer
+from LightGen2 import model as public
+from LightGen2 import infer as public_infer
 from .. import model as research
 from ..tools.checkpoint_utils import export_inference_checkpoint, inference_state_name
 
@@ -34,7 +34,7 @@ class PublicInferenceTests(unittest.TestCase):
             cls.original.prompt_embedding.normal_()
         cls.config_fields = [field.name for field in fields(public.ModelConfig)]
         public_config = public.ModelConfig(**{name: getattr(config, name) for name in cls.config_fields})
-        cls.inference = public.LightGenII(public_config).eval()
+        cls.inference = public.LightGen2(public_config).eval()
         cls.omitted = {'target_mean', 'target_std', 'level_boundaries'}
         state = {inference_state_name(name): value for name, value in cls.original.state_dict().items()
                  if name not in cls.omitted}
@@ -51,10 +51,10 @@ class PublicInferenceTests(unittest.TestCase):
             expected = self.original(self.input)
             actual = self.inference.predict_from_embeddings(self.input)
         for name in ('prediction', 'quality_logits', 'quality_probabilities'):
-            self.assertTrue(torch.equal(expected[name], actual[name]), name)
+            torch.testing.assert_close(actual[name], expected[name], rtol=1e-6, atol=1e-6, msg=name)
         for old, new in (('frame', 'vision'), ('video', 'language')):
-            self.assertTrue(torch.equal(expected['routing'][old]['weights'],
-                                        actual['routing'][new]['weights']))
+            torch.testing.assert_close(actual['routing'][new]['weights'],
+                                       expected['routing'][old]['weights'], rtol=1e-6, atol=1e-6)
 
     def test_frontend_steps_match_the_previous_forward_exactly(self):
         front = public.FrozenVisionFront()
@@ -88,12 +88,42 @@ class PublicInferenceTests(unittest.TestCase):
                                    theta_max_deg=config.cutoff_deg)
         reference = AngularSpectrum(settings)
         actual = public.Propagation(config)
-        self.assertTrue(torch.equal(reference.transfer, actual.transfer))
+        torch.testing.assert_close(actual.transfer, reference.transfer, rtol=1e-7, atol=1e-7)
         field = torch.randn(2, config.canvas, config.canvas, dtype=torch.complex64)
-        self.assertTrue(torch.equal(reference(field), actual(field)))
+        torch.testing.assert_close(actual(field), reference(field), rtol=1e-6, atol=1e-6)
+
+    def test_propagation_matches_the_notebook_with_the_selected_aperture(self):
+        import ast
+
+        path = Path(__file__).resolve().parents[4] / 'opticalmoe/notebooks/github_D2NN_mnist4.ipynb'
+        notebook = json.loads(path.read_text('utf-8'))
+        cell = next(cell for cell in notebook['cells'] if 'class Propagation_Layer' in ''.join(cell.get('source', [])))
+        tree = ast.parse(''.join(cell['source']))
+        definition = next(node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'Propagation_Layer')
+        namespace = {'torch': torch, 'np': np, 'device': torch.device('cpu')}
+        exec(compile(ast.Module(body=[definition], type_ignores=[]), str(path), 'exec'), namespace)
+        config = public.ModelConfig(alpha_eval=.5)
+        reference = namespace['Propagation_Layer'](λ=config.wavelength_nm*1e-9,
+                                                 N_pixels=config.canvas,
+                                                 pixel_size=config.pitch_um*1e-6,
+                                                 distance=config.distance_m)
+        actual = public.Propagation(config)
+        reference.phase = reference.phase.to(torch.complex64)
+        reference.phase = torch.where(actual.phase.abs() > 0, reference.phase, 0)
+        self.assertTrue(torch.equal(actual.phase, reference.phase))
+        field = torch.randn(3, config.canvas, config.canvas, dtype=torch.complex64)
+        self.assertTrue(torch.equal(actual(field), reference(field)))
+
+    def test_propagation_preserves_batch_order_and_input_contract(self):
+        propagation = public.Propagation(public.ModelConfig(alpha_eval=.5))
+        field = torch.randn(3, 518, 518, dtype=torch.complex64)
+        expected = torch.stack([propagation(item) for item in field])
+        torch.testing.assert_close(propagation(field), expected, rtol=1e-6, atol=1e-6)
+        with self.assertRaisesRegex(ValueError, 'spatial shape'):
+            propagation(torch.zeros(2, 517, 518))
 
     def test_main_saves_metrics_with_python38_pathlib(self):
-        from LightGenII import visualize
+        from LightGen2 import visualize
 
         original_write_text = Path.write_text
 
@@ -111,7 +141,7 @@ class PublicInferenceTests(unittest.TestCase):
             arguments = ['infer.py', '--input', str(inputs), '--reference-scores', str(reference),
                          '--device', 'cpu', '--output', str(root)]
             with patch('sys.argv', arguments), \
-                    patch.object(public_infer, 'load_lightgenii', return_value=(None, None)), \
+                    patch.object(public_infer, 'load_lightgen2', return_value=(None, None)), \
                     patch.object(public_infer, 'evaluate', return_value=([], {'videos': 2, 'SRCC': .79})), \
                     patch.object(visualize, 'configure_figures'), \
                     patch.object(Path, 'write_text', new=legacy_write_text):
@@ -126,10 +156,10 @@ class PublicInferenceTests(unittest.TestCase):
     def test_export_runs_in_inference_mode_and_retains_tensors(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)/'source.pt'
-            destination = Path(directory)/'LightGenII.pt'
+            destination = Path(directory)/'LightGen2.pt'
             torch.save(self.original.checkpoint(), source)
             identity = export_inference_checkpoint(source, destination, self.config_fields, public.ARCHITECTURE)
-            loaded, _ = public.load_lightgenii(destination)
+            loaded, _ = public.load_lightgen2(destination)
             self.assertFalse(loaded.predict_from_embeddings(self.input)['prediction'].requires_grad)
             self.assertEqual(set(identity['omitted_auxiliary_buffers']), self.omitted)
             self.assertTrue(identity['retained_model_tensors_bitwise_equal'])
@@ -187,7 +217,7 @@ class PublicInferenceTests(unittest.TestCase):
                     public_infer.read_reference_scores(path, ['b', 'a'])
 
     def test_reference_labels_affect_only_metrics_and_output_targets(self):
-        from LightGenII import visualize
+        from LightGen2 import visualize
 
         class FixedModel:
             def __call__(self, *, normalized_rgb):
@@ -214,7 +244,7 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertTrue(torch.equal(((stored.float() + 1) * 127.5).round(), pixels))
 
     def test_full_evaluation_scores_each_field_once_and_excludes_padding(self):
-        from LightGenII import visualize
+        from LightGen2 import visualize
 
         class CountingModel:
             calls = 0

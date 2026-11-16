@@ -11,9 +11,9 @@ import numpy as np
 import torch
 
 if __package__:
-    from .model import load_lightgenii
+    from .model import load_lightgen2
 else:
-    from model import load_lightgenii
+    from model import load_lightgen2
 
 
 PROJECT = Path(__file__).resolve().parent
@@ -113,7 +113,7 @@ def evaluate(model, archive, sample_ids, targets, device, directory, *, visualiz
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--weights', type=Path, default=PROJECT / 'weights/LightGenII.pt')
+    parser.add_argument('--weights', type=Path, default=PROJECT / 'weights/LightGen2.pt')
     parser.add_argument('--input', type=Path, default=PROJECT / 'data/input_for_review.npz',
                         help='LGVQ video frames')
     parser.add_argument('--reference-scores', type=Path, default=PROJECT / 'data/reference_mos.csv',
@@ -129,7 +129,7 @@ def main():
     else:
         from visualize import configure_figures
     configure_figures()
-    model, _ = load_lightgenii(args.weights, args.device)
+    model, _ = load_lightgen2(args.weights, args.device)
     with np.load(args.input, allow_pickle=False) as archive:
         sample_ids = read_input_metadata(archive)
         targets = read_reference_scores(args.reference_scores, sample_ids)
