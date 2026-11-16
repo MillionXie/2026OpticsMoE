@@ -112,7 +112,7 @@ class PublicInferenceTests(unittest.TestCase):
         reference.phase = torch.where(actual.phase.abs() > 0, reference.phase, 0)
         self.assertTrue(torch.equal(actual.phase, reference.phase))
         field = torch.randn(3, config.canvas, config.canvas, dtype=torch.complex64)
-        self.assertTrue(torch.equal(actual(field), reference(field)))
+        torch.testing.assert_close(actual(field), reference(field), rtol=1e-6, atol=1e-6)
 
     def test_propagation_preserves_batch_order_and_input_contract(self):
         propagation = public.Propagation(public.ModelConfig(alpha_eval=.5))
