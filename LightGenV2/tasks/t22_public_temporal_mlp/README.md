@@ -244,3 +244,13 @@ Windows Python 3.8、3.11和服务器Python 3.11均通过97项回归测试。
 这些改动未添加可训练层，router、expert、global及读出头的实现保持不变。
 本轮核验记录位于`runs/smoke/qwen_frontend_layout_20261116`，修改前源码与发行包保存在
 `runs/archives/author_archives/t22_qwen_frontend_layout_20261116/before`。
+
+## Global输入固定尺度候选
+
+`tools/router_power_candidate.py`在独立候选中采用每支一个固定输入振幅尺度，
+按2250条TRAIN的均方强度标定。Top2专家混合经现有振幅编码器后除以这个固定尺度，
+各样本的入射能量差异可传入global传播。候选检查点采用独立架构身份
+`t22_fixed_train_input_scale_candidate_v1`，由同一工具的`load_candidate`加载。
+对照记录位于`runs/simulation/router_power_fixed_scale_20261117`，
+包含558条逐样本预测、相位贡献、全量逐视频泄漏和CCD噪声核验。
+该候选独立于`configs/selected.json`指向的发布权重。
