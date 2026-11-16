@@ -44,7 +44,7 @@ patch投影、位置编码、固定汇聚及后续网络均由推理代码执行
 当前唯一发布入口由`configs/selected.json`指向`runs/simulation/current/LightGen.pt`。
 
 研究PT的SHA256为`df3ad58a1cb22e277bc792902a5af50ed7b0f0c3f427174784e1e2341f3a8a7c`。
-独立推理PT的SHA256为`a74c4f11b2e88bae56c8e23d56b21a57c63643ab2923e51dee5ace2328e06347`。
+独立推理PT的SHA256为`c6593a2b801d74698e4065cd63dcc3ba42fd24c8f571d4f8f3b19bdd8e41701e`。
 两者保留的模型张量已逐一核验相等。
 
 | 项目 | 核验值 |
@@ -219,3 +219,21 @@ Windows Python 3.8、3.11和服务器Python 3.11均通过97项回归测试。
 固定与自身参考、三类CCD噪声、两个强度、每条件10个种子的120次完整复测均通过原门槛。
 5%与10%条件的最低SRCC分别为0.7931133、0.7896774。
 独立ZIP解压后完成558条推理，预测CSV与根目录工程一致，尾组光场数组通过复算。
+
+## Qwen前端的位置编码准备
+
+前端由`QwenPatchProjection`、`QwenPositionInterpolation`与`VisionSpatialPooling`组成。
+原始Qwen位置表为2304×1024，当前448×448输入对应28×28个patch位置。
+提取冻结前端时，原始位置表经双线性插值和位置向量重排生成784×1024缓存。
+图像patch特征的分组重排在每次前向中执行。
+
+独立PT采用schema 3，保存`frontend.position_table`原始位置表。
+导出时逐元素核对原始表生成的位置向量与训练缓存。
+加载时在CPU上构造插值坐标、四邻点索引与权重，按原bfloat16乘加顺序生成位置向量，
+供全部视频帧复用。生成的784×1024位置缓存由加载器重建。
+已有模型状态字典中的键、形状和值经核验相等，旧格式的缓存前端加载路径继续支持。
+来源为Qwen修订`89644892e4d85e24eaac8bacfd4f463576704203`。
+原始位置表和现有patch权重均已与该修订核对。
+
+本轮备份与核验记录位于`runs/smoke/qwen_frontend_20261116`和
+`runs/archives/author_archives/t22_qwen_frontend_20261116/before`。

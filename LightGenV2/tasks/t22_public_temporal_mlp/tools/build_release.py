@@ -112,19 +112,32 @@ def build_release():
     omitted = {'target_mean', 'target_std', 'level_boundaries'}
     expected = {inference_state_name(name): tensor for name, tensor in original['model'].items()
                 if name not in omitted}
-    if expected.keys() != public['model'].keys():
+    public_model = import_public_module('model')
+    prepared, _ = public_model.load_lightgen2(PUBLIC / 'weights/LightGen2.pt', 'cpu')
+    public_state = prepared.state_dict()
+    if expected.keys() != public_state.keys():
         raise ValueError('Public state names differ')
     for name, tensor in expected.items():
-        if not torch.equal(tensor, public['model'][name]):
+        if not torch.equal(tensor, public_state[name]):
             raise ValueError('Public model tensor differs: ' + name)
-    public_model = import_public_module('model')
+    frontend_verification = None
+    if 'frontend' in public:
+        table = public['frontend']['position_table']
+        reference_position = expected['vision_frontend.position']
+        prepared_position = prepared.vision_frontend.position_interpolation(table)
+        if not torch.equal(prepared_position, reference_position):
+            raise ValueError('The original Qwen position table differs from the saved frontend')
+        frontend_verification = {
+            'source_position_shape': list(table.shape),
+            'position_prepared_from_source_bitwise_equal': True,
+        }
     source_config = dict(original['config'])
     target_config = dict(public['config'])
     source_config.setdefault('shared_global_phase', False)
     target_config.setdefault('shared_global_phase', False)
     expected_architecture = (public_model.ARCHITECTURE if target_config['shared_global_phase']
                              else public_model.LEGACY_ARCHITECTURE)
-    if public['schema'] != 2 or public['architecture'] != expected_architecture:
+    if public['schema'] not in (2, 3) or public['architecture'] != expected_architecture:
         raise ValueError('Public architecture conflicts with global phase sharing')
     for field in fields(public_model.ModelConfig):
         if target_config[field.name] != source_config[field.name]:
@@ -224,7 +237,8 @@ def build_release():
                     'guide_format': 'PDF', 'project_code_license': 'GPL-3.0-only',
                     'retained_model_tensors_bitwise_equal': True,
                     'shared_global_phase': shared_phase,
-                    'inference_state_fingerprint': tensor_fingerprint(public['model']),
+                    'qwen_frontend': frontend_verification,
+                    'inference_state_fingerprint': tensor_fingerprint(public_state),
                     'metrics': metrics, 'optical_array_replay': replay, 'archive_sha256': digest}
     write_json(ROOT / 'runs/simulation/current/validation/public_inference/release_verification.json', verification)
     print(json.dumps({'files': len(names), 'SRCC': score, 'archive_sha256': digest,

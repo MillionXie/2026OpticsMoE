@@ -107,7 +107,7 @@ def inference_state_name(name):
     return result.replace('.raw_global_phase', '.raw_phase')
 
 
-def export_inference_checkpoint(source, destination, config_fields, architecture):
+def export_inference_checkpoint(source, destination, config_fields, architecture, *, source_position_table=None):
     """Export the selected forward tensors and inference configuration."""
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -132,14 +132,30 @@ def export_inference_checkpoint(source, destination, config_fields, architecture
         'model': state,
         'metadata': metadata,
     }
+    if source_position_table is not None:
+        if __package__:
+            from .front import position_28
+        else:
+            from front import position_28
+        table = source_position_table.detach().cpu().contiguous()
+        position = position_28(table)
+        if not torch.equal(position, state['vision_frontend.position']):
+            raise ValueError('Original Qwen positions differ from the selected checkpoint')
+        exported['schema'] = 3
+        exported['model'] = {name: tensor for name, tensor in state.items()
+                             if name != 'vision_frontend.position'}
+        exported['frontend'] = {'position_table': table}
     destination = Path(destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     torch.save(exported, destination)
     restored = torch.load(destination, map_location='cpu', weights_only=True)
-    if tensor_fingerprint(restored['model']) != fingerprint:
+    restored_state = dict(restored['model'])
+    if source_position_table is not None:
+        restored_state['vision_frontend.position'] = position_28(restored['frontend']['position_table'])
+    if tensor_fingerprint(restored_state) != fingerprint:
         raise ValueError('Inference export changed retained tensors')
     for name, tensor in payload['model'].items():
-        if name not in omitted and not torch.equal(tensor, restored['model'][inference_state_name(name)]):
+        if name not in omitted and not torch.equal(tensor, restored_state[inference_state_name(name)]):
             raise ValueError('Inference export changed tensor: ' + name)
     return {
         'input_checkpoint_sha256': identity['input_checkpoint_sha256'],

@@ -103,6 +103,56 @@ class PublicInferenceTests(unittest.TestCase):
             actual = front(images)
         self.assertTrue(torch.equal(actual, expected))
 
+    def test_position_interpolation_matches_original_extraction_exactly(self):
+        from ..tools.front import position_28
+
+        interpolation = public.QwenPositionInterpolation(public.VisionFrontGeometry())
+        for side in (1, 3, 4, 48):
+            with self.subTest(source_side=side):
+                table = torch.randn(side * side, 1024).to(torch.bfloat16)
+                self.assertTrue(torch.equal(interpolation(table), position_28(table)))
+
+    def test_position_initialization_preserves_cache_and_rejects_mismatch(self):
+        from ..tools.front import position_28
+
+        table = torch.randn(16, 1024).to(torch.bfloat16)
+        front = public.FrozenVisionFront()
+        expected = position_28(table)
+        front.position.copy_(expected)
+        actual = front.prepare_position_table(table, reference_position=expected)
+        self.assertTrue(torch.equal(actual, expected))
+        self.assertTrue(torch.equal(front.position, expected))
+        changed = table.clone()
+        changed[0].add_(1)
+        with self.assertRaisesRegex(ValueError, 'position cache'):
+            front.prepare_position_table(changed, reference_position=expected)
+        self.assertTrue(torch.equal(front.position, expected))
+
+    def test_checkpoint_loads_original_position_table_with_existing_state_names(self):
+        from ..tools.front import position_28
+
+        table = torch.randn(16, 1024).to(torch.bfloat16)
+        state = dict(self.inference.state_dict())
+        state['vision_frontend.position'] = position_28(table)
+        payload = {
+            'schema': 3,
+            'architecture': public.ARCHITECTURE,
+            'config': {name: getattr(self.inference.cfg, name) for name in self.config_fields},
+            'model': state,
+            'metadata': {},
+            'frontend': {'position_table': table},
+        }
+        saved_state = dict(state)
+        payload['model'] = {name: tensor for name, tensor in state.items()
+                            if name != 'vision_frontend.position'}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'frontend.pt'
+            torch.save(payload, path)
+            loaded, _ = public.load_lightgen2(path)
+        self.assertEqual(list(loaded.state_dict()), list(saved_state))
+        for name, value in saved_state.items():
+            self.assertTrue(torch.equal(loaded.state_dict()[name], value), name)
+
     def test_propagation_matches_the_formal_temporal_implementation(self):
         from types import SimpleNamespace
         from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.modeling import AngularSpectrum
@@ -200,6 +250,32 @@ class PublicInferenceTests(unittest.TestCase):
             public.ModelConfig(alpha_eval=.5, readout_hidden=128)
         with self.assertRaises(ValueError):
             public.ModelConfig(alpha_eval=float('nan'))
+
+    def test_source_position_export_regenerates_cache_and_requires_its_table(self):
+        from ..tools.front import position_28
+
+        table = torch.randn(16, 1024).to(torch.bfloat16)
+        expected = position_28(table)
+        source_payload = self.original.checkpoint()
+        source_payload['model'] = dict(source_payload['model'])
+        source_payload['model']['front.position'] = expected
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'source.pt'
+            destination = Path(directory) / 'LightGen2.pt'
+            torch.save(source_payload, source)
+            identity = export_inference_checkpoint(
+                source, destination, self.config_fields, public.ARCHITECTURE,
+                source_position_table=table)
+            exported = torch.load(destination, map_location='cpu', weights_only=True)
+            self.assertEqual(exported['schema'], 3)
+            self.assertNotIn('vision_frontend.position', exported['model'])
+            loaded, _ = public.load_lightgen2(destination)
+            self.assertTrue(torch.equal(loaded.vision_frontend.position, expected))
+            self.assertTrue(identity['retained_model_tensors_bitwise_equal'])
+            del exported['frontend']
+            torch.save(exported, destination)
+            with self.assertRaisesRegex(ValueError, 'position table'):
+                public.load_lightgen2(destination)
 
     def test_published_model_has_forward_components(self):
         self.assertFalse(hasattr(self.inference, 'set_quality_levels'))
