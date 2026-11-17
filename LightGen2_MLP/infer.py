@@ -10,11 +10,11 @@ from scipy.stats import spearmanr
 if __package__:
     from .model import load_lightgen2
     from .data import read_input_metadata,read_reference_scores,iter_rgb_batches
-    from .plots import configure_figures,export_results,export_input_frames
+    from .visualize import configure_figures,export_results,export_input_frames
 else:
     from model import load_lightgen2
     from data import read_input_metadata,read_reference_scores,iter_rgb_batches
-    from plots import configure_figures,export_results,export_input_frames
+    from visualize import configure_figures,export_results,export_input_frames
 
 
 PROJECT=Path(__file__).resolve().parent

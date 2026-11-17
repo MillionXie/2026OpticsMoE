@@ -65,5 +65,10 @@ MLP global使用新初始化，训练与后续微调的参数范围由配置和r
 独立MOS参考文件及PDF说明。运行`python infer.py`完成全部558条视频推理。
 原`LightGen2`发布工程及33个受保护文件的SHA核验均保持一致。
 
+MLP说明手册沿用`LightGen2/README.docx`的版式、章节顺序、两张Files表、
+灰底命令、图注及页码。编辑用`README.docx`保存在独立工程中，发布包使用`README.pdf`。
+绘图模块统一命名为`visualize.py`。作者运行`tools/write_guide.py`生成Word文档，
+通过`tools/export_guide.ps1`导出PDF，并运行`tools/verify_guide.py`核对表内文件与实际目录。
+
 作者侧运行`python -m LightGenV2.tasks.t23_public_temporal_all_mlp.build_lab_package`，
 生成`releases/LightGen2_MLP.zip`。压缩包按白名单收集，文件SHA与核验信息保存于包外。

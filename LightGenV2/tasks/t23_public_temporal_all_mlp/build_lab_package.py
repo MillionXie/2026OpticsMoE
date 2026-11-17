@@ -19,7 +19,7 @@ TASK = Path(__file__).resolve().parent
 REPO = TASK.parents[2]
 PROJECT = REPO/'LightGen2_MLP'
 FILES = (
-    '.gitattributes', '.gitignore', 'model.py', 'infer.py', 'data.py', 'plots.py',
+    '.gitattributes', '.gitignore', 'model.py', 'infer.py', 'data.py', 'visualize.py',
     'requirements.txt', 'LICENSE', 'licenses/NOTICE.txt', 'licenses/QWEN_LICENSE.txt',
     'README.pdf', 'weights/LightGen2.pt', 'data/input_for_review.npz', 'data/reference_mos.csv',
     'results/01_predictions.csv', 'results/02_metrics.json',
