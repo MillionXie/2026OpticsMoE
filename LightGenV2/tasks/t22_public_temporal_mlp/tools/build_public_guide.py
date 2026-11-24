@@ -48,6 +48,9 @@ def property_value(paragraph, name, value):
 
 def image_paragraph(template, drawings, width_inches=3.3, page_break=False):
     paragraph = deepcopy(template)
+    for attribute in list(paragraph.attrib):
+        if etree.QName(attribute).localname in ('paraId', 'textId'):
+            del paragraph.attrib[attribute]
     for element in list(paragraph):
         if element.tag != qualified('w:pPr'):
             paragraph.remove(element)
@@ -101,7 +104,7 @@ def build_guide(path, project=PUBLIC):
     if len(drawings) != 6:
         raise ValueError('Expected the six existing optical figures')
     captions = {branch:next(element for element in elements
-                if paragraph_text(element).startswith(branch.capitalize() + ' input field,'))
+                if paragraph_text(element).startswith(branch.capitalize() + ' input field'))
                 for branch in ('vision','language')}
     first = elements.index(image_elements[0])
     last = max(elements.index(caption) for caption in captions.values())
