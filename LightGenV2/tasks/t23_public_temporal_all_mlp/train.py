@@ -11,12 +11,14 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from LightGen2.model import load_lightgen2 as load_parent
+from LightGenV2.tasks.t22_public_temporal_mlp.tools.build_release import import_public_module
 from LightGenV2.tasks.t22_public_temporal_mlp.tools.data import load_inputs,groups,batch
 from LightGenV2.tasks.t22_public_temporal_mlp.tools.run import (save_checkpoint,write,correlation,
                                                                router_regularization,update_router_bias)
 from .checkpoints import BASE_SHA256,sha256,inherit_parent,checkpoint
 from .evaluation import evaluate,qualifies,feature_noise
+
+load_parent=import_public_module('model').load_lightgen2
 
 
 ROOT=Path(__file__).resolve().parents[3]

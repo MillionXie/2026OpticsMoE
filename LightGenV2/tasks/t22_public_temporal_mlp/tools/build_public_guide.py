@@ -1,157 +1,159 @@
-"""Apply release formatting to the author's current editable Word guide."""
+"""Arrange the author's existing optical figures while preserving Word formatting."""
+from copy import deepcopy
 from pathlib import Path
 import argparse
 import hashlib
+import zipfile
 
-from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
-from docx.shared import Inches, Pt, RGBColor
-from docx.text.paragraph import Paragraph
+from lxml import etree
 
 
-PUBLIC = Path(__file__).resolve().parents[4] / 'LightGen2'
-CAPTIONS = (
-    'Predicted versus human temporal MOS for the 558 LGVQ videos (03_prediction_vs_mos.png).',
-    'Vision input field, phase mask and output field, from left to right.',
-    'Language input field, phase mask and output field, from left to right.',
-)
-LICENSE_STATEMENT = (
-    'This project is covered under the GNU General Public License v3.0. '
-    'Third-party notices and licenses are provided in licenses/.'
-)
+PUBLIC = Path(__file__).resolve().parents[4] / 'LightGen-II'
+NAMESPACES = {
+    'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main',
+    'a':'http://schemas.openxmlformats.org/drawingml/2006/main',
+    'wp':'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing',
+    'r':'http://schemas.openxmlformats.org/officeDocument/2006/relationships',
+}
 
 
-def replace_text(paragraph, text):
-    if paragraph.runs:
-        paragraph.runs[0].text = text
-        for run in paragraph.runs[1:]:
-            run.text = ''
-    else:
-        paragraph.add_run(text)
+def qualified(name):
+    prefix, local = name.split(':')
+    return '{' + NAMESPACES[prefix] + '}' + local
 
 
-def replace_cell(cell, text):
-    replace_text(cell.paragraphs[0], text)
-    for paragraph in cell.paragraphs[1:]:
-        paragraph._p.getparent().remove(paragraph._p)
+def paragraph_text(element):
+    return ''.join(element.xpath('.//w:t/text()', namespaces=NAMESPACES))
 
 
-def format_command(paragraph):
-    properties = paragraph._p.get_or_add_pPr()
-    shading = properties.find(qn('w:shd'))
-    if shading is None:
-        shading = OxmlElement('w:shd')
-        properties.append(shading)
-    shading.set(qn('w:val'), 'clear')
-    shading.set(qn('w:color'), 'auto')
-    shading.set(qn('w:fill'), 'F2F2F2')
-    paragraph.paragraph_format.space_before = Pt(2)
-    paragraph.paragraph_format.space_after = Pt(6)
+def replace_text(element, text):
+    nodes = element.xpath('.//w:t', namespaces=NAMESPACES)
+    if not nodes:
+        raise ValueError('The existing caption has no text')
+    nodes[0].text = text
+    for node in nodes[1:]:
+        node.text = ''
 
 
-def add_caption(paragraph, text, *, keep_with_next=False):
-    following = paragraph._p.getnext()
-    if following is not None and following.tag == qn('w:p'):
-        existing = Paragraph(following, paragraph._parent)
-        if existing.style.name == 'Caption':
-            caption = existing
-        else:
-            caption = None
-    else:
-        caption = None
-    if caption is None:
-        element = OxmlElement('w:p')
-        paragraph._p.addnext(element)
-        caption = Paragraph(element, paragraph._parent)
-        caption.style = 'Caption'
-        caption.add_run(text)
-    paragraph.paragraph_format.keep_with_next = True
-    caption.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    caption.paragraph_format.keep_together = True
-    caption.paragraph_format.keep_with_next = keep_with_next
-    caption.paragraph_format.space_before = Pt(3)
-    caption.paragraph_format.space_after = Pt(8)
-    for run in caption.runs:
-        run.font.name = 'Times New Roman'
-        run.font.size = Pt(10.5)
-        run.font.italic = False
-        run.font.bold = False
-        run.font.color.rgb = RGBColor(0, 0, 0)
+def property_value(paragraph, name, value):
+    properties = paragraph.find('w:pPr', NAMESPACES)
+    if properties is None:
+        properties = etree.Element(qualified('w:pPr'))
+        paragraph.insert(0, properties)
+    element = properties.find('w:' + name, NAMESPACES)
+    if element is None:
+        element = etree.SubElement(properties, qualified('w:' + name))
+    element.set(qualified('w:val'), value)
 
 
-def add_page_numbers(document):
-    for section in document.sections:
-        section.footer_distance = Inches(.3)
-        footer = section.footer
-        fields = footer._element.xpath('.//w:fldSimple')
-        if any(field.get(qn('w:instr'), '').strip().upper() == 'PAGE' for field in fields):
-            continue
-        paragraph = footer.paragraphs[0] if not any(p.text for p in footer.paragraphs) else footer.add_paragraph()
-        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        paragraph.paragraph_format.space_before = Pt(0)
-        paragraph.paragraph_format.space_after = Pt(0)
-        field = OxmlElement('w:fldSimple')
-        field.set(qn('w:instr'), 'PAGE')
-        field.set(qn('w:dirty'), 'true')
-        run = OxmlElement('w:r')
-        properties = OxmlElement('w:rPr')
-        fonts = OxmlElement('w:rFonts')
-        fonts.set(qn('w:ascii'), 'Times New Roman')
-        fonts.set(qn('w:hAnsi'), 'Times New Roman')
-        size = OxmlElement('w:sz')
-        size.set(qn('w:val'), '18')
-        properties.extend((fonts, size))
-        run.append(properties)
-        text = OxmlElement('w:t')
-        text.text = '1'
-        run.append(text)
-        field.append(run)
-        paragraph._p.append(field)
+def image_paragraph(template, drawings, width_inches=3.3, page_break=False):
+    paragraph = deepcopy(template)
+    for element in list(paragraph):
+        if element.tag != qualified('w:pPr'):
+            paragraph.remove(element)
+    property_value(paragraph, 'jc', 'center')
+    property_value(paragraph, 'keepNext', '1')
+    property_value(paragraph, 'keepLines', '1')
+    property_value(paragraph, 'pageBreakBefore', '1' if page_break else '0')
+    for index, original in enumerate(drawings):
+        if index:
+            run = etree.SubElement(paragraph, qualified('w:r'))
+            space = etree.SubElement(run, qualified('w:t'))
+            space.set('{http://www.w3.org/XML/1998/namespace}space', 'preserve')
+            space.text = ' '
+        drawing = deepcopy(original)
+        extent = drawing.find('.//wp:extent', NAMESPACES)
+        ratio = int(extent.get('cy')) / int(extent.get('cx'))
+        width = round(width_inches * 914400)
+        height = round(width * ratio)
+        for size in drawing.xpath('.//wp:extent | .//a:xfrm/a:ext', namespaces=NAMESPACES):
+            size.set('cx', str(width))
+            size.set('cy', str(height))
+        run = etree.SubElement(paragraph, qualified('w:r'))
+        run.append(drawing)
+    return paragraph
 
 
-def build_guide(path):
+def build_guide(path, project=PUBLIC):
+    path = Path(path)
     original = path.read_bytes()
-    document = Document(path)
-    replace_text(document.paragraphs[0], 'Codes for LightGen-II')
-    for table in document.tables:
-        for row in list(table.rows):
-            name = row.cells[0].text
-            if name == 'weights/LightGen2.pt':
-                replace_cell(row.cells[1], 'Model weights.')
-            elif name in ('README.md and README.docx', 'README.pdf'):
-                replace_cell(row.cells[0], 'README.pdf')
-                replace_cell(row.cells[1], 'Instructions for installing and running the code.')
-            elif name == 'LICENSE, NOTICE and licenses/':
-                table._tbl.remove(row._tr)
-    commands = [paragraph for paragraph in document.paragraphs
-                if paragraph.text.strip() in ('python -m pip install -r requirements.txt', 'python infer.py')]
-    if len(commands) != 2:
-        raise ValueError('The current guide requires the installation and inference commands')
-    for paragraph in commands:
-        format_command(paragraph)
-    figures = [paragraph for paragraph in document.paragraphs if paragraph._p.xpath('.//w:drawing')]
-    if len(figures) != len(CAPTIONS):
-        raise ValueError('The current guide has an unexpected number of image groups')
-    for number, (paragraph, caption) in enumerate(zip(figures, CAPTIONS)):
-        add_caption(paragraph, caption, keep_with_next=number == 1)
-    if not any(paragraph.text == 'License' and paragraph.style.name == 'Heading 1'
-               for paragraph in document.paragraphs):
-        document.add_heading('License', 1)
-        document.add_paragraph(LICENSE_STATEMENT)
-    add_page_numbers(document)
+    with zipfile.ZipFile(path) as archive:
+        entries = archive.infolist()
+        parts = {name:archive.read(name) for name in archive.namelist()}
+    root = etree.fromstring(parts['word/document.xml'])
+    body = root.find('w:body', NAMESPACES)
+    elements = list(body)
+    relations = etree.fromstring(parts['word/_rels/document.xml.rels'])
+    targets = {relation.get('Id'):'word/' + relation.get('Target') for relation in relations
+               if relation.get('Type', '').endswith('/image')}
+    drawings = {}
+    image_elements = []
+    for element in elements:
+        figures = element.xpath('.//w:drawing', namespaces=NAMESPACES)
+        if figures:
+            image_elements.append(element)
+        for drawing in figures:
+            identity = drawing.find('.//a:blip', NAMESPACES).get(qualified('r:embed'))
+            digest = hashlib.sha256(parts[targets[identity]]).hexdigest()
+            if digest in drawings:
+                raise ValueError('A repeated figure requires manual identification')
+            drawings[digest] = drawing
+    if len(drawings) != 6:
+        raise ValueError('Expected the six existing optical figures')
+    captions = {branch:next(element for element in elements
+                if paragraph_text(element).startswith(branch.capitalize() + ' input field,'))
+                for branch in ('vision','language')}
+    first = elements.index(image_elements[0])
+    last = max(elements.index(caption) for caption in captions.values())
+    allowed = {id(element) for element in image_elements + list(captions.values())}
+    if any(id(element) not in allowed and paragraph_text(element) for element in elements[first:last+1]):
+        raise ValueError('Unexpected text between the optical figures')
+    replacement = []
+    for branch, number in (('vision',5),('language',8)):
+        ordered = []
+        for offset, kind in enumerate(('input_field','mask','output_field')):
+            source = project/'results'/f'{number+offset:02d}_{branch}_{kind}.png'
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            if digest not in drawings:
+                raise ValueError('The embedded figure differs from its source ' + source.name)
+            ordered.append(drawings[digest])
+        upper = image_paragraph(image_elements[0], ordered[:2], page_break=branch == 'language')
+        lower = image_paragraph(image_elements[0], ordered[2:])
+        caption = deepcopy(captions[branch])
+        replace_text(caption, branch.capitalize() + ' input field and phase mask (top row), and output field (bottom).')
+        property_value(caption, 'keepNext', '0')
+        property_value(caption, 'keepLines', '1')
+        replacement.extend((upper, lower, caption))
+    for element in elements[first:last+1]:
+        body.remove(element)
+    for offset, element in enumerate(replacement):
+        body.insert(first+offset, element)
+    introduction = next(element for element in body
+                        if paragraph_text(element).startswith('The same execution saves the input video frames'))
+    text = paragraph_text(introduction).replace('in the top row','on the first figure page')
+    text = text.replace('in the bottom row','on the second figure page')
+    if text != paragraph_text(introduction):
+        replace_text(introduction, text)
+    property_value(introduction, 'keepNext', '1')
+    for table in body.findall('w:tbl', NAMESPACES):
+        for row in table.findall('w:tr', NAMESPACES):
+            if '03_prediction_vs_mos.png' in paragraph_text(row):
+                table.remove(row)
+    parts['word/document.xml'] = etree.tostring(root, encoding='UTF-8', xml_declaration=True, standalone=True)
     temporary = path.with_name('.' + path.name + '.editing')
-    document.save(temporary)
+    with zipfile.ZipFile(temporary, 'w') as archive:
+        for entry in entries:
+            archive.writestr(entry, parts[entry.filename])
     if path.read_bytes() != original:
         temporary.unlink()
-        raise RuntimeError('The editable guide changed during formatting')
+        raise RuntimeError('The author edited the guide during figure arrangement')
     temporary.replace(path)
     print('Updated ' + str(path))
-    print('SHA256 ' + hashlib.sha256(path.read_bytes()).hexdigest())
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--document', type=Path, default=PUBLIC / 'README.docx')
-    build_guide(parser.parse_args().document)
+    parser.add_argument('--document', type=Path, default=PUBLIC/'README.docx')
+    parser.add_argument('--project', type=Path, default=PUBLIC)
+    args = parser.parse_args()
+    build_guide(args.document, args.project)

@@ -6,10 +6,12 @@ import unittest
 
 import torch
 
-from LightGen2 import model as public
+from ..tools.build_release import import_public_module
 from ..model import LightGenTemporal, ModelConfig, load_lightgen
 from ..tools.analyze_phase_effect import constant_modulation, phase_information
 from ..tools.checkpoint_utils import export_inference_checkpoint, share_global_phases
+
+public = import_public_module('model')
 
 
 class SharedGlobalPhaseTests(unittest.TestCase):

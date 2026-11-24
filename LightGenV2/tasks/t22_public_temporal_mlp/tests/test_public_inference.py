@@ -9,8 +9,11 @@ from unittest.mock import patch
 import torch
 import numpy as np
 
-from LightGen2 import model as public
-from LightGen2 import infer as public_infer
+from ..tools.build_release import import_public_module
+
+public = import_public_module('model')
+public_infer = import_public_module('infer')
+visualize = import_public_module('visualize')
 from .. import model as research
 from ..tools.checkpoint_utils import export_inference_checkpoint, inference_state_name
 
@@ -289,7 +292,6 @@ class PublicInferenceTests(unittest.TestCase):
             propagation(torch.zeros(2, 517, 518))
 
     def test_main_saves_metrics_with_python38_pathlib(self):
-        from LightGen2 import visualize
 
         original_write_text = Path.write_text
 
@@ -409,7 +411,6 @@ class PublicInferenceTests(unittest.TestCase):
                     public_infer.read_reference_scores(path, ['b', 'a'])
 
     def test_reference_labels_affect_only_metrics_and_output_targets(self):
-        from LightGen2 import visualize
 
         class FixedModel:
             def __call__(self, *, normalized_rgb):
@@ -436,7 +437,6 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertTrue(torch.equal(((stored.float() + 1) * 127.5).round(), pixels))
 
     def test_full_evaluation_scores_each_field_once_and_excludes_padding(self):
-        from LightGen2 import visualize
 
         class CountingModel:
             calls = 0
@@ -480,6 +480,23 @@ class PublicInferenceTests(unittest.TestCase):
         self.assertEqual(len(field_records), 16)
         self.assertEqual(sum(record['is_padding'] for record in field_records), 2)
         self.assertEqual([record['sample_id'] for record in field_records[-2:]], ['0', '1'])
+
+
+class ResultExportTests(unittest.TestCase):
+    def test_export_removes_obsolete_scatter_and_preserves_other_results(self):
+        records = [{'sample_id':'video-a','target_MOS':40.,'predicted_MOS':42.}]
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            obsolete = output/'03_prediction_vs_mos.png'
+            obsolete.write_bytes(b'previous scatter')
+            optical = output/'05_vision_input_field.npz'
+            optical.write_bytes(b'preserved optical array')
+            with patch.object(visualize.plt, 'subplots', side_effect=AssertionError('Unexpected figure')):
+                visualize.export_evaluation(records, {'videos':1,'SRCC':None}, output)
+                visualize.export_evaluation(records, {'videos':1,'SRCC':None}, output)
+            self.assertFalse(obsolete.exists())
+            self.assertEqual(optical.read_bytes(), b'preserved optical array')
+            self.assertIn('video-a,40.0,42.0', (output/'01_predictions.csv').read_text())
 
 
 if __name__ == '__main__':

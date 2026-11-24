@@ -14,7 +14,6 @@ import numpy as np
 import torch
 
 BRANCHES = ('vision', 'language')
-PREDICTION_COLOR = '#6486a3'
 
 
 def configure_figures():
@@ -109,21 +108,9 @@ def write_records(path, records):
 
 
 def export_evaluation(records, metrics, directory):
-    configure_figures()
     directory.mkdir(parents=True, exist_ok=True)
     write_records(directory / '01_predictions.csv', records)
-    target = np.asarray([record['target_MOS'] for record in records])
-    prediction = np.asarray([record['predicted_MOS'] for record in records])
-    figure, axis = plt.subplots(figsize=(3.3, 3.1), layout='constrained')
-    axis.scatter(target, prediction, s=9, alpha=.6, color=PREDICTION_COLOR, linewidths=0)
-    lower, upper = min(target.min(), prediction.min()), max(target.max(), prediction.max())
-    axis.plot([lower, upper], [lower, upper], color='#888888', linewidth=.7)
-    axis.set_xlabel('Human temporal MOS')
-    axis.set_ylabel('Predicted temporal MOS')
-    score = f"{metrics['SRCC']:.2f}" if metrics['SRCC'] is not None else 'undefined'
-    axis.set_title(f"{len(records)} videos with SRCC {score}")
-    axis.spines[['top', 'right']].set_visible(False)
-    save_figure(figure, directory / '03_prediction_vs_mos.png')
+    (directory / '03_prediction_vs_mos.png').unlink(missing_ok=True)
 
 
 @torch.inference_mode()

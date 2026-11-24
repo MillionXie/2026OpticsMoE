@@ -26,13 +26,14 @@ else:
 
 
 ROOT = _paths.ROOT
-PUBLIC = ROOT.parents[2] / 'LightGen2'
+PUBLIC = ROOT.parents[2] / 'LightGen-II'
+PACKAGE_NAME = 'LightGen-II'
 SOURCE_FILES = (
     '.gitignore', '.gitattributes', 'model.py', 'infer.py', 'visualize.py',
     'requirements.txt', 'LICENSE', 'licenses/NOTICE.txt', 'licenses/QWEN_LICENSE.txt',
 )
 RESULT_FILES = (
-    '01_predictions.csv', '02_metrics.json', '03_prediction_vs_mos.png',
+    '01_predictions.csv', '02_metrics.json',
     '04_input_frames.png',
 ) + tuple(f'{number:02d}_{branch}_{kind}.{suffix}'
           for branch, first in (('vision', 5), ('language', 8))
@@ -52,7 +53,7 @@ def write_json(path, value):
 def import_public_module(name):
     sys.path.insert(0, str(PUBLIC.parent))
     try:
-        return importlib.import_module('LightGen2.' + name)
+        return importlib.import_module(PUBLIC.name + '.' + name)
     finally:
         sys.path.pop(0)
 
@@ -182,7 +183,7 @@ def build_release():
     replay = verify_optical_arrays(result_dir, predictions, shared_phase=shared_phase)
     names = SOURCE_FILES + ARTIFACT_FILES
     actual = {path.relative_to(PUBLIC).as_posix() for path in PUBLIC.rglob('*') if path.is_file()}
-    author_files = {'README.docx'}
+    author_files = {'README.docx', PACKAGE_NAME + '.zip'}
     unexpected = actual - set(names) - author_files
     missing = set(names) - actual
     if unexpected or missing:
@@ -205,17 +206,17 @@ def build_release():
         shutil.copyfile(PUBLIC / name, destination)
         if file_sha256(destination) != digest:
             raise ValueError('Staged file differs: ' + name)
-    archive = release_root / '.LightGen2.zip.building'
+    archive = release_root / ('.' + PACKAGE_NAME + '.zip.building')
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=4) as zipped:
         for name in names:
             compression = zipfile.ZIP_STORED if name.endswith('.npz') else zipfile.ZIP_DEFLATED
-            zipped.write(stage / name, 'LightGen2/' + name, compress_type=compression)
+            zipped.write(stage / name, PACKAGE_NAME + '/' + name, compress_type=compression)
     with zipfile.ZipFile(archive) as zipped:
-        if set(zipped.namelist()) != {'LightGen2/' + name for name in names}:
+        if set(zipped.namelist()) != {PACKAGE_NAME + '/' + name for name in names}:
             raise ValueError('Unexpected ZIP entries')
         for name, expected_hash in checksums.items():
             digest = hashlib.sha256()
-            with zipped.open('LightGen2/' + name) as stream:
+            with zipped.open(PACKAGE_NAME + '/' + name) as stream:
                 for block in iter(lambda: stream.read(8 * 1024 * 1024), b''):
                     digest.update(block)
             if digest.hexdigest() != expected_hash:
@@ -229,11 +230,12 @@ def build_release():
         backup = Path(tempfile.mkdtemp(prefix='lightgen2-previous-release-', dir=backup_root)) / 'current'
         mirror.rename(backup)
     stage.rename(mirror)
-    archive.replace(release_root / 'LightGen2.zip')
-    digest = file_sha256(release_root / 'LightGen2.zip')
-    (release_root / 'LightGen2.zip.sha256').write_text(digest + '  LightGen2.zip\n', encoding='utf-8')
+    archive.replace(release_root / (PACKAGE_NAME + '.zip'))
+    digest = file_sha256(release_root / (PACKAGE_NAME + '.zip'))
+    (release_root / (PACKAGE_NAME + '.zip.sha256')).write_text(
+        digest + '  ' + PACKAGE_NAME + '.zip\n', encoding='utf-8')
     verification = {'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-                    'canonical_directory': 'LightGen2', 'files': checksums,
+                    'canonical_directory': PUBLIC.name, 'files': checksums,
                     'guide_format': 'PDF', 'project_code_license': 'GPL-3.0-only',
                     'retained_model_tensors_bitwise_equal': True,
                     'shared_global_phase': shared_phase,
@@ -242,7 +244,7 @@ def build_release():
                     'metrics': metrics, 'optical_array_replay': replay, 'archive_sha256': digest}
     write_json(ROOT / 'runs/simulation/current/validation/public_inference/release_verification.json', verification)
     print(json.dumps({'files': len(names), 'SRCC': score, 'archive_sha256': digest,
-                      'archive': str(release_root / 'LightGen2.zip')}, indent=2))
+                      'archive': str(release_root / (PACKAGE_NAME + '.zip'))}, indent=2))
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 # LightGen-II temporal video quality reference
 
 本目录保存作者侧研究、核验与打包工具。独立推理工程位于仓库根目录
-[`LightGen2`](../../../LightGen2/README.pdf)，可编辑说明为该目录的`README.docx`。
+[`LightGen-II`](../../../LightGen-II/README.pdf)，可编辑说明为该目录的`README.docx`。
 正式推理权重采用每支global共享一块相位的结构。
 
 ## 唯一推理流程
@@ -56,7 +56,7 @@ patch投影、位置编码、固定汇聚及后续网络均由推理代码执行
 | 16次槽位轮换最低SRCC | 0.7961938741 |
 
 公开推理入口导出558条预测、完整精度的SRCC和一组16视频的输入、相位及输出场。
-公开说明及散点图中的SRCC按两位小数显示为0.80。
+公开说明中的SRCC按两位小数显示为0.80。
 推理入口及结果JSON仅保留预测评价信息。既有计时原始记录按原身份归档。
 
 ## 传播核与前端核验
@@ -167,8 +167,8 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 | `tools/build_release.py` | 张量、身份、指标、mask一致性和光场复算后打包 |
 | `tests` | 共享梯度、检查点兼容、前向和导出回归检查 |
 
-根目录`LightGen2`维护独立推理源码，`releases/current`为生成镜像，
-`releases/LightGen2.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
+根目录`LightGen-II`维护独立推理源码，`releases/current`为生成镜像，
+`releases/LightGen-II.zip`为发行包。源码通过Git同步，PT、数据、Word和结果按SHA核验同步。
 正式包使用`README.pdf`，作者编辑用的`README.docx`单独保留在根目录工程中。
 主项目代码沿用ACCEL官方README声明的GPL v3.0，Qwen上游Apache-2.0许可与署名文件随包附带。
 本轮修复Python 3.8不支持`Path.write_text(newline=...)`的兼容问题，指标经临时文件原子替换保存。
@@ -182,8 +182,11 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 `runs/smoke/storage_relocation_20261116/migration_manifest.json`。
 发布暂存和镜像备份分别在`releases`和`runs/archives/release_mirrors`中建立。
 
-公开结果按01–10顺序阅读，01为全部预测，02为完整精度SRCC与视频数量，03为散点图，
+公开结果按文件前缀顺序阅读，01为全部预测，02为完整精度SRCC与视频数量，
 04为所选光场视频帧，05–07为vision输入、mask和输出，08–10为language输入、mask和输出。
+2026-11-24按作者要求取消散点图输出，兼容清理结果目录中遗留的03文件。
+当前Word沿用作者增大的正文字号和格式，六张光场图按每支一页重新分组，
+每页上方为输入与mask，下方为输出。文档字体、样式、表格、页边距及页脚通过XML逐项核验。
 公开CSV保留视频ID、人工MOS和预测MOS。光场分组及有效位仍保存在对应光学NPZ中，
 打包工具据此核对样本身份和尾组填充。专家份额的作者侧核验记录保留在研究run中。
 
