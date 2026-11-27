@@ -25,12 +25,17 @@ ROOT=Path(__file__).resolve().parents[3]
 TASK=Path(__file__).resolve().parent
 
 
-def collect_teacher(teacher,payload,device,directory):
-    path=directory/'teacher_train.pt'
+def collect_teacher(teacher,payload,device,directory,source=None):
+    path=source if source is not None else directory/'teacher_train.pt'
+    if source is not None and not path.is_file():
+        raise FileNotFoundError(path)
     if path.exists():
         cached=torch.load(path,map_location='cpu',weights_only=True)
         if cached['parent_sha256']!=BASE_SHA256 or cached['manifest_sha256']!=payload['identity']['manifest']['sha256']:
             raise ValueError('Teacher cache identity differs')
+        expected=[name for name,split in zip(payload['ids'],payload['splits']) if split=='train']
+        if len(expected)!=2250 or cached['sample_ids']!=expected:
+            raise ValueError('Teacher cache must contain exactly the original TRAIN videos')
         return cached
     indices,valid=groups(payload,'train')
     values={name:[] for name in ('vision_global','language_global','prediction')}
@@ -64,6 +69,7 @@ def main():
     parser.add_argument('--config',type=Path,required=True)
     parser.add_argument('--paths',type=Path,required=True)
     parser.add_argument('--parent',type=Path,required=True)
+    parser.add_argument('--teacher-cache',type=Path)
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--source-commit',required=True)
     parser.add_argument('--device',default='cuda')
@@ -84,7 +90,7 @@ def main():
     parent,_=load_parent(args.parent,args.device)
     parent.requires_grad_(False)
     write(args.out/'status.json',dict(state='collecting_TRAIN_teacher'))
-    cached=collect_teacher(parent,payload,args.device,args.out)
+    cached=collect_teacher(parent,payload,args.device,args.out,args.teacher_cache)
     model=inherit_parent(parent.cpu(),config['global_hidden']).to(args.device)
     del parent
     model.requires_grad_(False)
