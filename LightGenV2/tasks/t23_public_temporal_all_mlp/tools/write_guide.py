@@ -104,7 +104,7 @@ def build(args):
     for attribute in list(image_paragraph.attrib):
         if etree.QName(attribute).localname in ('paraId', 'textId'):
             del image_paragraph.attrib[attribute]
-    property_value(image_paragraph, 'pageBreakBefore', '1')
+    property_value(image_paragraph, 'pageBreakBefore', '0')
     property_value(image_paragraph, 'keepNext', '1')
     image = image_paragraph.find('.//w:drawing', NS)
     blip = image.find('.//a:blip', NS)
@@ -112,7 +112,7 @@ def build(args):
     preview = PROJECT/'results/04_input_frames.png'
     with Image.open(preview) as picture:
         width, height = picture.size
-    extent_width = int(6.7*914400)
+    extent_width = int(5.2*914400)
     extent_height = round(extent_width*height/width)
     for extent in image.xpath('.//wp:extent | .//a:xfrm/a:ext', namespaces=NS):
         extent.set('cx', str(extent_width))

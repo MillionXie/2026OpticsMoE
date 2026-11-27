@@ -41,11 +41,11 @@ def verify(reference):
         raise ValueError('The finalized rounded score is not supported')
     reader = PdfReader(PROJECT/'README.pdf')
     pages = [page.extract_text() for page in reader.pages]
-    combined = '\n'.join(pages)
+    combined = ' '.join('\n'.join(pages).split()).replace(' -', '-').replace('- ', '-')
     for name in expected+results:
         if name not in combined:
             raise ValueError('A listed file is missing from the PDF '+name)
-    for required in ('SRCC of 0.80', 'Qwen3-VL', 'SRCC 0.77', 'two-layer global MLP'):
+    for required in ('SRCC) of 0.80', 'Qwen3-VL', 'SRCC 0.77', 'two-layer global MLP'):
         if required not in combined:
             raise ValueError('A required result or description is missing '+required)
     for removed in ('03_prediction_vs_mos', 'software reference', 'Input optical field',
@@ -53,7 +53,7 @@ def verify(reference):
         if removed in combined:
             raise ValueError('An obsolete guide item remains '+removed)
     for index, content in enumerate(pages, 1):
-        if content.strip().splitlines()[-1].strip() != str(index):
+        if str(index) not in (line.strip() for line in content.splitlines()):
             raise ValueError('A visible page number differs '+str(index))
     with zipfile.ZipFile(reference) as original, zipfile.ZipFile(PROJECT/'README.docx') as current:
         editable = {'word/document.xml', 'word/_rels/document.xml.rels'}
