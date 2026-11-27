@@ -33,5 +33,5 @@ def export_input_frames(images,count,directory):
         axis.set_title(f'Video {index+1}' if index<count else 'Padding')
         axis.axis('off')
     figure.suptitle('Input video frames')
-    figure.savefig(Path(directory)/'04_input_frames.png',dpi=300,bbox_inches='tight',pad_inches=.05)
+    figure.savefig(Path(directory)/'03_input_frames.png',dpi=300,bbox_inches='tight',pad_inches=.05)
     plt.close(figure)

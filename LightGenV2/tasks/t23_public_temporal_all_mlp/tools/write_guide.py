@@ -95,6 +95,7 @@ def build(args):
     replace_text(rows[5].findall('w:tc', NS)[1],
                  'The functions to save predictions and visualize the input frames.')
     result_rows = elements[11].findall('w:tr', NS)
+    replace_text(result_rows[2].findall('w:tc', NS)[0], '03_input_frames.png')
     replace_text(result_rows[2].findall('w:tc', NS)[1],
                  'The four input frames for each of the first 16 videos.')
     for row in result_rows[3:]:
@@ -109,7 +110,7 @@ def build(args):
     image = image_paragraph.find('.//w:drawing', NS)
     blip = image.find('.//a:blip', NS)
     image_id = blip.get(tag('r:embed'))
-    preview = PROJECT/'results/04_input_frames.png'
+    preview = PROJECT/'results/03_input_frames.png'
     with Image.open(preview) as picture:
         width, height = picture.size
     extent_width = int(5.2*914400)
@@ -121,7 +122,7 @@ def build(args):
         properties.set('name', 'Input video frames')
         properties.set('descr', 'The four input frames for each of the first 16 LGVQ videos')
     caption = deepcopy(elements[20])
-    replace_text(caption, text(author_elements[21]))
+    replace_text(caption, text(author_elements[21]).replace('04_input_frames.png', '03_input_frames.png'))
     for element in elements[18:24]:
         body.remove(element)
     body.insert(18, image_paragraph)

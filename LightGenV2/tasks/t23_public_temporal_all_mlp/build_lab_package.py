@@ -27,7 +27,7 @@ FILES = (
     'requirements.txt', 'LICENSE', 'licenses/NOTICE.txt', 'licenses/QWEN_LICENSE.txt',
     'README.pdf', 'weights/LightGen2.pt', 'data/input_for_review.npz', 'data/reference_mos.csv',
     'results/01_predictions.csv', 'results/02_metrics.json',
-    'results/04_input_frames.png',
+    'results/03_input_frames.png',
 )
 
 

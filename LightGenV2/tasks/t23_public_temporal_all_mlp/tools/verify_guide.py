@@ -80,7 +80,7 @@ def verify(reference):
                 if canonical(old[table_index].find(part, NS)) != canonical(new[table_index].find(part, NS)):
                     raise ValueError('A table layout differs '+str(table_index))
         media = [name for name in current.namelist() if name.startswith('word/media/')]
-        if len(media) != 1 or current.read(media[0]) != (PROJECT/'results/04_input_frames.png').read_bytes():
+        if len(media) != 1 or current.read(media[0]) != (PROJECT/'results/03_input_frames.png').read_bytes():
             raise ValueError('The guide image differs from the actual input preview')
         fields = current.read('word/footer1.xml')
         if b'PAGE' not in fields:
