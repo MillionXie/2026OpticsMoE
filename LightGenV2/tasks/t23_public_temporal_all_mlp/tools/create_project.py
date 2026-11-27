@@ -9,7 +9,7 @@ import shutil
 
 ROOT=Path(__file__).resolve().parents[4]
 TASK=ROOT/'LightGenV2/tasks/t23_public_temporal_all_mlp'
-PROJECT=ROOT/'LightGen2_MLP'
+PROJECT=ROOT/'LightGen-II-MLP'
 SOURCE=ROOT/'LightGen-II'
 if (PROJECT/'model.py').exists():
     raise FileExistsError('The independent model already exists')

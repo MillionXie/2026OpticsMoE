@@ -19,17 +19,7 @@ def export_results(records,metrics,directory):
     with (directory/'01_predictions.csv').open('w',encoding='utf-8',newline='') as stream:
         writer=csv.DictWriter(stream,fieldnames=['sample_id','target_MOS','predicted_MOS'])
         writer.writeheader();writer.writerows(records)
-    target=np.asarray([row['target_MOS'] for row in records])
-    prediction=np.asarray([row['predicted_MOS'] for row in records])
-    figure,axis=plt.subplots(figsize=(3.3,3.1),layout='constrained')
-    axis.scatter(target,prediction,s=9,alpha=.6,color='#6486a3',linewidths=0)
-    lower,upper=min(target.min(),prediction.min()),max(target.max(),prediction.max())
-    axis.plot([lower,upper],[lower,upper],color='#888888',linewidth=.7)
-    score=f"{metrics['SRCC']:.2f}" if metrics['SRCC'] is not None else 'undefined'
-    axis.set(xlabel='Human temporal MOS',ylabel='Predicted temporal MOS',title=f"{len(records)} videos with SRCC {score}")
-    axis.spines[['top','right']].set_visible(False)
-    figure.savefig(directory/'03_prediction_vs_mos.png',dpi=300,bbox_inches='tight',pad_inches=.05)
-    plt.close(figure)
+    (directory/'03_prediction_vs_mos.png').unlink(missing_ok=True)
 
 
 def export_input_frames(images,count,directory):

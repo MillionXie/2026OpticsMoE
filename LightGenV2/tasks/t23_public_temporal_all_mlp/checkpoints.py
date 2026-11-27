@@ -2,11 +2,17 @@
 from dataclasses import asdict
 from pathlib import Path
 import hashlib
+import importlib
 
 import torch
 
-from LightGen2_MLP.model import ARCHITECTURE, LightGen2, ModelConfig, load_lightgen2
 from LightGenV2.tasks.t22_public_temporal_mlp.tools.run import save_checkpoint
+
+public_model=importlib.import_module('LightGen-II-MLP.model')
+ARCHITECTURE=public_model.ARCHITECTURE
+LightGen2=public_model.LightGen2
+ModelConfig=public_model.ModelConfig
+load_lightgen2=public_model.load_lightgen2
 
 
 BASE_SHA256='c6593a2b801d74698e4065cd63dcc3ba42fd24c8f571d4f8f3b19bdd8e41701e'

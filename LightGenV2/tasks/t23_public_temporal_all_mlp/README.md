@@ -1,8 +1,8 @@
 # LightGen-II MLP global reference
 
-本任务基于原定开源版`LightGen2/weights/LightGen2.pt`，SHA256为
+本任务基于原定开源版`LightGen-II/weights/LightGen2.pt`，SHA256为
 `c6593a2b801d74698e4065cd63dcc3ba42fd24c8f571d4f8f3b19bdd8e41701e`。
-独立推理工程为仓库根目录`LightGen2_MLP`。
+独立推理工程为仓库根目录`LightGen-II-MLP`。
 
 ## 计算流程
 
@@ -28,14 +28,14 @@ MLP global使用新初始化，训练与后续微调的参数范围由配置和r
 
 作者代码位于本任务，训练产物写入`runs/simulation`，临时核验写入`runs/smoke`。
 独立推理工程使用单个PT和原558条视频帧NPZ，执行入口为`infer.py`。
-结果包含逐视频预测、指标、预测散点图及输入帧预览。
+结果包含逐视频预测、指标及输入帧预览。
 
 ## 当前候选与核验结果
 
 训练记录为`runs/simulation/global32_20261117`。两支global从新初始化开始，
 前40轮训练global，随后同时微调原32单元读出头和language router末层偏置。
 其余继承张量保持冻结。使用第102轮通过精度和路由均衡核验的候选。
-公开权重为`LightGen2_MLP/weights/LightGen2.pt`，SHA256为
+该轮公开权重为`LightGen-II-MLP/weights/LightGen2.pt`，SHA256为
 `0a6e4081eff1aabba8852b06c301bf2540319e1b0134a99a4def3130fab51c1a`。
 
 完整视频帧NPZ经正常推理入口得到558条唯一视频结果，SRCC为0.7939403761。
@@ -61,14 +61,18 @@ MLP global使用新初始化，训练与后续微调的参数范围由配置和r
 
 ## 推理工程与打包
 
-`LightGen2_MLP`只包含推理入口、模型、输入读取、结果绘图、单个PT、558条视频帧输入、
+`LightGen-II-MLP`包含推理入口、模型、结果绘图、单个PT、558条视频帧输入、
 独立MOS参考文件及PDF说明。运行`python infer.py`完成全部558条视频推理。
 原`LightGen2`发布工程及33个受保护文件的SHA核验均保持一致。
 
-MLP说明手册沿用`LightGen2/README.docx`的版式、章节顺序、两张Files表、
+MLP说明手册沿用`LightGen-II/README.docx`的版式、章节顺序、两张Files表、
 灰底命令、图注及页码。编辑用`README.docx`保存在独立工程中，发布包使用`README.pdf`。
 绘图模块统一命名为`visualize.py`。作者运行`tools/write_guide.py`生成Word文档，
 通过`tools/export_guide.ps1`导出PDF，并运行`tools/verify_guide.py`核对表内文件与实际目录。
 
 作者侧运行`python -m LightGenV2.tasks.t23_public_temporal_all_mlp.build_lab_package`，
-生成`releases/LightGen2_MLP.zip`。压缩包按白名单收集，文件SHA与核验信息保存于包外。
+生成`releases/LightGen-II-MLP.zip`。压缩包按白名单收集，文件SHA与核验信息保存于包外。
+
+2026-11-27按作者要求对齐非MLP版的文件结构与说明手册，输入读取并入`infer.py`，
+取消散点图生成并清理旧输出。新增`refine_readout.py`在原2250条TRAIN上微调五等级读出头，
+冻结其余模块，目标为558条开发评估SRCC达到0.795–0.799。

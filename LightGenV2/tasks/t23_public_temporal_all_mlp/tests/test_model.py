@@ -5,9 +5,8 @@ import unittest
 
 import torch
 
-from LightGen2_MLP import model as public
 from LightGenV2.tasks.t22_public_temporal_mlp.tools.build_release import import_public_module
-from ..checkpoints import inherit_parent,checkpoint,export_checkpoint
+from ..checkpoints import inherit_parent,checkpoint,export_checkpoint,public_model as public
 
 parent=import_public_module('model')
 

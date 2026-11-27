@@ -8,10 +8,11 @@ import numpy as np
 import torch
 from torch import nn
 
-from LightGen2_MLP.model import GlobalMLP, load_lightgen2
 from LightGenV2.tasks.t22_public_temporal_mlp.tools.data import load_inputs
-from .checkpoints import export_checkpoint, sha256
+from .checkpoints import export_checkpoint, sha256, public_model, load_lightgen2
 from .evaluation import evaluate, feature_noise, qualifies
+
+GlobalMLP=public_model.GlobalMLP
 
 
 class PairAverage(nn.Module):
@@ -93,7 +94,7 @@ def validate(args):
     exported, _ = load_lightgen2(args.export, args.device)
     exported_metrics, exported_records = evaluate(exported, payload, args.device)
     export_difference = compare_records(reference, exported_records)
-    checks = dict(clean_and_routing=qualifies(clean),
+    checks = dict(clean_and_routing=qualifies(clean, .795, .799),
                   slot_invariance=max(row['maximum_MOS_difference'] for row in permutations) < 1e-3,
                   global_contributions=all(row['clean_minus_control'] > 0 for row in ablations),
                   feature_noise_5pct=noise[0]['minimum_srcc'] >= .790,
