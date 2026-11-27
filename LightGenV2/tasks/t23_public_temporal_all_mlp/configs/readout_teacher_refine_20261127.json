@@ -1,0 +1,17 @@
+{
+  "seed": 1183,
+  "epochs": 200,
+  "minimum_epochs": 20,
+  "eligible_evaluations": 8,
+  "batch_size": 128,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.0001,
+  "teacher_weight": 10.0,
+  "supervised_weight": 0.25,
+  "correlation_weight": 0.05,
+  "noise_probability": 0.25,
+  "noise_fraction": 0.05,
+  "noise_weight": 0.5,
+  "minimum_srcc": 0.795,
+  "maximum_srcc": 0.799
+}
