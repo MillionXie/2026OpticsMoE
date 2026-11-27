@@ -29,6 +29,10 @@ MLP global使用新初始化，训练与后续微调的参数范围由配置和r
 作者代码位于本任务，训练产物写入`runs/simulation`，临时核验写入`runs/smoke`。
 独立推理工程使用单个PT和原558条视频帧NPZ，执行入口为`infer.py`。
 结果包含逐视频预测、指标及输入帧预览。
+随包参考结果保存在`reference_results/`，执行后在`results/`生成本次输出。
+末尾按视频ID比对预测和SRCC，MOS与SRCC绝对误差容差分别为0.001与0.0001，
+通过后显示`Reference comparison: PASS`。输出路径不得覆盖、嵌入参考目录或通过链接写入参考文件。
+ZIP不包含运行产生的`results/`；两个目录中的文件编号保持一致。
 
 ## 当前候选与核验结果
 

@@ -26,13 +26,14 @@ FILES = (
     '.gitattributes', '.gitignore', 'model.py', 'infer.py', 'visualize.py',
     'requirements.txt', 'LICENSE', 'licenses/NOTICE.txt', 'licenses/QWEN_LICENSE.txt',
     'README.pdf', 'weights/LightGen2.pt', 'data/input_for_review.npz', 'data/reference_mos.csv',
-    'results/01_predictions.csv', 'results/02_metrics.json',
-    'results/03_input_frames.png',
+    'reference_results/01_predictions.csv', 'reference_results/02_metrics.json',
+    'reference_results/03_input_frames.png',
 )
 
 
 def build():
-    present = {path.relative_to(PROJECT).as_posix() for path in PROJECT.rglob('*') if path.is_file()}
+    present = {path.relative_to(PROJECT).as_posix() for path in PROJECT.rglob('*')
+               if path.is_file() and not path.relative_to(PROJECT).as_posix().startswith('results/')}
     if present - set(FILES) - {'README.docx', PACKAGE_NAME+'.zip'} or set(FILES) - present:
         raise ValueError('Standalone project contains unexpected or missing files')
     if not (PROJECT/'README.pdf').read_bytes().startswith(b'%PDF-'):
@@ -50,7 +51,7 @@ def build():
         if archive['rgb_0035'].shape != (14,4,3,448,448):
             raise ValueError('Tail input batch differs')
     targets = read_reference_scores(PROJECT/'data/reference_mos.csv', identities)
-    with (PROJECT/'results/01_predictions.csv').open(encoding='utf-8', newline='') as stream:
+    with (PROJECT/'reference_results/01_predictions.csv').open(encoding='utf-8', newline='') as stream:
         reader = csv.DictReader(stream)
         if reader.fieldnames != ['sample_id','target_MOS','predicted_MOS']:
             raise ValueError('Prediction columns differ')
@@ -59,7 +60,7 @@ def build():
         raise ValueError('Predictions and input identities differ')
     np.testing.assert_array_equal([float(row['target_MOS']) for row in rows], targets)
     score = float(spearmanr([float(row['predicted_MOS']) for row in rows], targets).statistic)
-    metrics = json.loads((PROJECT/'results/02_metrics.json').read_text('utf-8'))
+    metrics = json.loads((PROJECT/'reference_results/02_metrics.json').read_text('utf-8'))
     if metrics != dict(videos=558, SRCC=score) or not .795 <= score <= .799:
         raise ValueError('Result summary or target SRCC range differs')
     expected_input = '65209b7381614cf28d08cbdd537a0a61db51b91a0fde2dc20a9d40e18bc0acd5'

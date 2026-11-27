@@ -311,10 +311,12 @@ class PublicInferenceTests(unittest.TestCase):
             with patch('sys.argv', arguments), \
                     patch.object(public_infer, 'load_lightgen2', return_value=(None, None)), \
                     patch.object(public_infer, 'evaluate', return_value=([], {'videos': 2, 'SRCC': .79})), \
+                    patch.object(public_infer, 'compare_reference_results') as compare, \
                     patch.object(visualize, 'configure_figures'), \
                     patch.object(Path, 'write_text', new=legacy_write_text):
                 public_infer.main()
                 public_infer.main()
+                self.assertEqual(compare.call_count, 2)
             metrics = json.loads((root / '02_metrics.json').read_text('utf-8'))
             self.assertEqual(metrics['videos'], 2)
             self.assertEqual(metrics['SRCC'], .79)

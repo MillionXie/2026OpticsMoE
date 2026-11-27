@@ -24,19 +24,19 @@ def verify(reference):
     document = Document(PROJECT/'README.docx')
     expected = [
         'data/input_for_review.npz', 'data/reference_mos.csv', 'weights/LightGen2.pt',
-        'model.py', 'infer.py', 'visualize.py', 'requirements.txt', 'README.pdf',
+        'model.py', 'infer.py', 'visualize.py', 'requirements.txt', 'README.pdf', 'reference_results/',
     ]
     first = [row.cells[0].text for row in document.tables[0].rows]
     if first != expected:
         raise ValueError('The Files table differs from the actual project')
     for name in first:
-        if not (PROJECT/name).is_file():
+        if not (PROJECT/name).exists():
             raise FileNotFoundError(name)
     results = [row.cells[0].text for row in document.tables[1].rows]
-    actual = sorted(path.name for path in (PROJECT/'results').iterdir())
+    actual = sorted(path.name for path in (PROJECT/'reference_results').iterdir())
     if results != actual or len(results) != 3:
         raise ValueError('The results table differs from the result folder')
-    metrics = json.loads((PROJECT/'results/02_metrics.json').read_text('utf-8'))
+    metrics = json.loads((PROJECT/'reference_results/02_metrics.json').read_text('utf-8'))
     if not .795 <= metrics['SRCC'] <= .799:
         raise ValueError('The finalized rounded score is not supported')
     reader = PdfReader(PROJECT/'README.pdf')
@@ -80,7 +80,7 @@ def verify(reference):
                 if canonical(old[table_index].find(part, NS)) != canonical(new[table_index].find(part, NS)):
                     raise ValueError('A table layout differs '+str(table_index))
         media = [name for name in current.namelist() if name.startswith('word/media/')]
-        if len(media) != 1 or current.read(media[0]) != (PROJECT/'results/03_input_frames.png').read_bytes():
+        if len(media) != 1 or current.read(media[0]) != (PROJECT/'reference_results/03_input_frames.png').read_bytes():
             raise ValueError('The guide image differs from the actual input preview')
         fields = current.read('word/footer1.xml')
         if b'PAGE' not in fields:

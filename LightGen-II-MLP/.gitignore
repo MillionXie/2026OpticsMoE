@@ -1,6 +1,7 @@
 weights/
 data/
 results/
+reference_results/
 README.docx
 README.pdf
 __pycache__/

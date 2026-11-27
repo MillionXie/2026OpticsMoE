@@ -83,6 +83,74 @@ def evaluate(model,archive,names,targets,device,directory,preview_batch=1):
     return records,metrics
 
 
+def check_output_directory(directory, reference=None):
+    directory = Path(directory).resolve()
+    reference = Path(reference if reference is not None else PROJECT/'reference_results').resolve()
+    if directory == reference or reference in directory.parents or directory in reference.parents:
+        raise ValueError('The output directory must not overlap reference_results.')
+    for name in ('01_predictions.csv', '02_metrics.json'):
+        if not (reference/name).is_file():
+            raise FileNotFoundError('Missing supplied reference file: ' + str(reference/name))
+    identities = {(path.stat().st_dev, path.stat().st_ino)
+                  for path in reference.rglob('*') if path.is_file()}
+    if directory.exists():
+        if not directory.is_dir():
+            raise ValueError('The output path must be a directory.')
+        for path in directory.iterdir():
+            resolved = path.resolve()
+            if resolved == reference or reference in resolved.parents:
+                raise ValueError('An output path points into reference_results: ' + str(path))
+            if path.is_file() and (path.stat().st_dev, path.stat().st_ino) in identities:
+                raise ValueError('An output file aliases a supplied reference: ' + str(path))
+    return directory
+
+
+def compare_reference_results(records, metrics, reference=None):
+    from scipy.stats import spearmanr
+
+    reference = Path(reference if reference is not None else PROJECT/'reference_results')
+    with (reference/'01_predictions.csv').open(encoding='utf-8-sig', newline='') as stream:
+        reader = csv.DictReader(stream)
+        if reader.fieldnames != ['sample_id', 'target_MOS', 'predicted_MOS']:
+            raise ValueError('Supplied reference prediction columns differ.')
+        expected_rows = list(reader)
+    expected = {row['sample_id']: row for row in expected_rows}
+    observed = {row['sample_id']: row for row in records}
+    if (not expected or len(expected) != len(expected_rows) or len(observed) != len(records)
+            or set(expected) != set(observed)):
+        raise ValueError('Generated and supplied reference video identities differ.')
+    names = list(expected)
+    expected_values = np.asarray([[float(expected[name][key]) for key in ('target_MOS', 'predicted_MOS')]
+                                  for name in names], dtype=np.float64)
+    observed_values = np.asarray([[float(observed[name][key]) for key in ('target_MOS', 'predicted_MOS')]
+                                  for name in names], dtype=np.float64)
+    if not np.isfinite(expected_values).all() or not np.isfinite(observed_values).all():
+        raise ValueError('Generated and reference scores must be finite.')
+    if not np.array_equal(expected_values[:, 0], observed_values[:, 0]):
+        raise ValueError('Generated and reference human MOS labels differ.')
+    expected_metrics = json.loads((reference/'02_metrics.json').read_text('utf-8'))
+    if metrics['videos'] != len(records) or expected_metrics['videos'] != len(records):
+        raise ValueError('Generated and reference video counts differ.')
+    expected_srcc = float(expected_metrics['SRCC'])
+    observed_srcc = float(metrics['SRCC'])
+    for values, score in ((expected_values, expected_srcc), (observed_values, observed_srcc)):
+        computed = float(spearmanr(values[:, 0], values[:, 1]).statistic)
+        if not np.isfinite(score) or not np.isclose(computed, score, rtol=0, atol=1e-12):
+            raise ValueError('A reported SRCC differs from its per-video predictions.')
+    maximum_mos_difference = float(np.max(np.abs(observed_values[:, 1] - expected_values[:, 1])))
+    srcc_difference = abs(observed_srcc - expected_srcc)
+    passed = maximum_mos_difference <= 1e-3 and srcc_difference <= 1e-4
+    print('Reference comparison: ' + ('PASS' if passed else 'FAIL'), flush=True)
+    print(f'Compared {len(records)} videos with {reference / "01_predictions.csv"} '
+          f'and {reference / "02_metrics.json"}.', flush=True)
+    print(f'Maximum MOS difference: {maximum_mos_difference:.6g} (tolerance 0.001); '
+          f'SRCC difference: {srcc_difference:.6g} (tolerance 0.0001).', flush=True)
+    if not passed:
+        raise RuntimeError('Generated predictions or SRCC exceed the reference comparison tolerances.')
+    return {'videos': len(records), 'maximum_MOS_difference': maximum_mos_difference,
+            'SRCC_difference': srcc_difference, 'passed': True}
+
+
 def main():
     parser=argparse.ArgumentParser(description='Run LightGen-II video quality inference.')
     parser.add_argument('--weights',type=Path,default=PROJECT/'weights/LightGen2.pt')
@@ -93,13 +161,14 @@ def main():
     parser.add_argument('--visualize-field','--preview-batch',dest='preview_batch',type=int,default=1,
                         help='One-based batch number used for the input-frame preview')
     args=parser.parse_args()
+    args.output=check_output_directory(args.output)
     torch.set_num_threads(4)
     configure_figures()
     model,_=load_lightgen2(args.weights,args.device)
     with np.load(args.input,allow_pickle=False) as archive:
         names=read_input_metadata(archive)
         targets=read_reference_scores(args.reference_scores,names)
-        _,metrics=evaluate(model,archive,names,targets,args.device,args.output,args.preview_batch)
+        records,metrics=evaluate(model,archive,names,targets,args.device,args.output,args.preview_batch)
     target=args.output/'02_metrics.json'
     temporary=target.with_suffix('.json.tmp')
     with temporary.open('w',encoding='utf-8',newline='\n') as stream:
@@ -108,6 +177,7 @@ def main():
     temporary.replace(target)
     print(f"SRCC {metrics['SRCC']:.2f} over {metrics['videos']} videos",flush=True)
     print(f'Saved results to {args.output}',flush=True)
+    compare_reference_results(records,metrics)
 
 
 if __name__=='__main__':main()

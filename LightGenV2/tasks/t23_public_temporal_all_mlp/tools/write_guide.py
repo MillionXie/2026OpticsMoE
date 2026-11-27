@@ -74,7 +74,7 @@ def build(args):
     elements = list(body)
     if text(elements[0]) != 'Codes for LightGen-II' or len(elements) != 28:
         raise ValueError('The finalized reference structure has changed')
-    metrics = json.loads((PROJECT/'results/02_metrics.json').read_text('utf-8'))
+    metrics = json.loads((PROJECT/'reference_results/02_metrics.json').read_text('utf-8'))
     if metrics['videos'] != 558 or not .795 <= metrics['SRCC'] <= .799:
         raise ValueError('The finalized MLP score must be verified before publishing')
     score = format(metrics['SRCC'], '.2f')
@@ -89,8 +89,8 @@ def build(args):
     for index, value in changes.items():
         replace_text(elements[index], value)
     rows = elements[9].findall('w:tr', NS)
-    if len(rows) != 8:
-        raise ValueError('Expected the eight finalized source-file rows')
+    if len(rows) != 9:
+        raise ValueError('Expected the nine finalized source-file rows')
     replace_text(rows[3].findall('w:tc', NS)[1], 'The network definition.')
     replace_text(rows[5].findall('w:tc', NS)[1],
                  'The functions to save predictions and visualize the input frames.')
@@ -110,7 +110,7 @@ def build(args):
     image = image_paragraph.find('.//w:drawing', NS)
     blip = image.find('.//a:blip', NS)
     image_id = blip.get(tag('r:embed'))
-    preview = PROJECT/'results/03_input_frames.png'
+    preview = PROJECT/'reference_results/03_input_frames.png'
     with Image.open(preview) as picture:
         width, height = picture.size
     extent_width = int(5.2*914400)

@@ -115,7 +115,7 @@ def build_guide(path, project=PUBLIC):
     for branch, number in (('vision',5),('language',8)):
         ordered = []
         for offset, kind in enumerate(('input_field','mask','output_field')):
-            source = project/'results'/f'{number+offset:02d}_{branch}_{kind}.png'
+            source = project/'reference_results'/f'{number+offset:02d}_{branch}_{kind}.png'
             digest = hashlib.sha256(source.read_bytes()).hexdigest()
             if digest not in drawings:
                 raise ValueError('The embedded figure differs from its source ' + source.name)

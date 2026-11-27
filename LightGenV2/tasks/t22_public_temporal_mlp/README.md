@@ -182,6 +182,11 @@ Poisson前向实际采样，反向采用恒等直通梯度估计。该反向为�
 `runs/smoke/storage_relocation_20261116/migration_manifest.json`。
 发布暂存和镜像备份分别在`releases`和`runs/archives/release_mirrors`中建立。
 
+随包提供的参考结果保存在`reference_results/`；运行`infer.py`后在`results/`生成本次输出。
+推理结束后按视频ID核对预测和SRCC，在终端显示`Reference comparison: PASS`或报错。
+MOS绝对误差容差为0.001，SRCC绝对误差容差为0.0001；输出路径不得覆盖或链接到参考目录。
+ZIP仅收集参考结果，不包含`results/`中的本次输出。参考文件及模型、数据保持原样。
+
 公开结果按文件前缀顺序阅读，01为全部预测，02为完整精度SRCC与视频数量，
 04为所选光场视频帧，05–07为vision输入、mask和输出，08–10为language输入、mask和输出。
 2026-11-24按作者要求取消散点图输出，兼容清理结果目录中遗留的03文件。

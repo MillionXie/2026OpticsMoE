@@ -41,7 +41,7 @@ RESULT_FILES = (
           for suffix in ('npz', 'png'))
 ARTIFACT_FILES = ('weights/LightGen2.pt', 'README.pdf', 'data/input_for_review.npz',
                   'data/reference_mos.csv') + tuple(
-    'results/' + name for name in RESULT_FILES)
+    'reference_results/' + name for name in RESULT_FILES)
 
 
 def write_json(path, value):
@@ -160,7 +160,7 @@ def build_release():
             raise ValueError('Tail normalized RGB geometry differs')
     targets = public_infer.read_reference_scores(PUBLIC / 'data/reference_mos.csv', sample_ids)
     np.testing.assert_array_equal(targets, [float(row['temporal']) for row in rows])
-    result_dir = PUBLIC / 'results'
+    result_dir = PUBLIC / 'reference_results'
     with (result_dir / '01_predictions.csv').open(encoding='utf-8', newline='') as stream:
         predictions = list(csv.DictReader(stream))
     if [row['sample_id'] for row in predictions] != sample_ids:
@@ -182,7 +182,8 @@ def build_release():
                 raise ValueError('Expected one trainable phase tile in ' + branch)
     replay = verify_optical_arrays(result_dir, predictions, shared_phase=shared_phase)
     names = SOURCE_FILES + ARTIFACT_FILES
-    actual = {path.relative_to(PUBLIC).as_posix() for path in PUBLIC.rglob('*') if path.is_file()}
+    actual = {path.relative_to(PUBLIC).as_posix() for path in PUBLIC.rglob('*')
+              if path.is_file() and not path.relative_to(PUBLIC).as_posix().startswith('results/')}
     author_files = {'README.docx', PACKAGE_NAME + '.zip'}
     unexpected = actual - set(names) - author_files
     missing = set(names) - actual
