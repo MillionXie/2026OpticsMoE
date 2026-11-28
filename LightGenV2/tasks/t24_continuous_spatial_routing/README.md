@@ -16,3 +16,5 @@
 ```bash
 python -m LightGenV2.tasks.t24_continuous_spatial_routing.train --config LightGenV2/tasks/t24_continuous_spatial_routing/configs/kather2016.json --seed SEED --mode MODE --out LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/kather_sSEED_MODE
 ```
+
+第二个数据集为 BloodMNIST128 血细胞八分类，使用 T17 的完整原划分 11948/1712/3421。原划分的训练/测试间有 5 个相同像素哈希，验证/测试间有 1 个。第一组测试准确率揭晓前确定这一数据集及相同预算。使用 configs/bloodmnist128.json，将输出命名前缀 kather 改为 blood。运行 compare 模块时用 --dataset kather 或 --dataset blood。

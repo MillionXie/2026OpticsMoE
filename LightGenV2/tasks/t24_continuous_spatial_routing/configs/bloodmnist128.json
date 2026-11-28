@@ -1,0 +1,18 @@
+{
+  "dataset": "bloodmnist128",
+  "num_classes": 8,
+  "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128",
+  "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128/bloodmnist_128.npz",
+  "expected_counts": {"train": 11948, "val": 1712, "test": 3421},
+  "source_archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+  "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+  "manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+  "index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+  "authorized_gpu_uuids": ["GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d", "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"],
+  "seed": 17,
+  "epochs": 8,
+  "batch": 32,
+  "phase_lr": 0.003,
+  "head_lr": 0.001,
+  "label_smoothing": 0.02
+}

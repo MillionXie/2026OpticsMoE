@@ -1,4 +1,4 @@
-"""Compare both matched Kather runs per seed and plot TEST placement densities."""
+"""Compare both matched routing modes per seed and plot TEST placement densities."""
 import argparse
 import hashlib
 import json
@@ -9,6 +9,10 @@ import numpy as np
 
 MODES = ('fixed', 'continuous')
 SPLITS = ('train', 'val', 'test')
+DATASETS = {
+    'kather': ('Kather2016', (3496, 752, 752)),
+    'blood': ('BloodMNIST128', (11948, 1712, 3421)),
+}
 EXTENT = 254
 COPY_SIDE = 224
 
@@ -46,7 +50,7 @@ def location_metrics(positions):
     }
 
 
-def inspect_run(run, seed, mode):
+def inspect_run(run, seed, mode, dataset):
     manifest = read_json(run / 'manifest.json')
     required = {'metadata.json', 'history.json', 'selection_lock.json', 'result.json',
                 'best_checkpoint.pt', 'last_checkpoint.pt', *(f'predictions_{s}.npz' for s in SPLITS)}
@@ -66,6 +70,9 @@ def inspect_run(run, seed, mode):
             and lock['source_commit'] == metadata['source_commit']
             and lock['best_checkpoint_sha256'] == manifest['best_checkpoint.pt'], f'{run} selection lock')
     counts = config['expected_counts']
+    title, expected_counts = DATASETS[dataset]
+    require(config['dataset'] == title.lower() and config['num_classes'] == 8
+            and counts == dict(zip(SPLITS, expected_counts)), f'{run} unexpected dataset or split sizes')
     steps = (counts['train'] + config['batch'] - 1) // config['batch']
     require(len(history) == config['epochs'] and
             all(r['epoch'] == i + 1 and r['train_steps'] == steps for i, r in enumerate(history)),
@@ -109,7 +116,7 @@ def pair_outcomes(fixed, continuous):
                 delta_pp=100 * (new_correct - lost_correct) / len(a))
 
 
-def plot_positions(samples, out):
+def plot_positions(samples, out, title):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -133,25 +140,32 @@ def plot_positions(samples, out):
             ax.set(title=f'{mode.capitalize()}, seed {seed}', xlabel='Placement x (px)',
                    ylabel='Placement y (px)', xticks=[0, 127, 254], yticks=[0, 127, 254])
     fig.colorbar(im, ax=axes.ravel().tolist(), shrink=.65, label='Selected positions per bin (log scale)')
-    fig.suptitle('Kather2016 TEST placements (two per image)')
+    fig.suptitle(f'{title} TEST placements (two per image)')
     fig.savefig(out)
     plt.close(fig)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--runs', type=Path, required=True, help='Parent of kather_s{seed}_{mode}')
+    parser.add_argument('--dataset', choices=DATASETS, default='kather')
+    parser.add_argument('--runs', type=Path, required=True, help='Parent of {dataset}_s{seed}_{mode}')
     parser.add_argument('--out', type=Path, required=True, help='Report directory')
     parser.add_argument('--seeds', type=int, nargs='+', default=[17, 29])
     args = parser.parse_args()
     require(len(set(args.seeds)) == len(args.seeds), 'Seeds must be distinct')
     pairs, samples, reference_ids = [], {}, {}
+    reference_protocol = None
     for seed in args.seeds:
-        runs = [inspect_run(args.runs / f'kather_s{seed}_{mode}', seed, mode) for mode in MODES]
+        runs = [inspect_run(args.runs / f'{args.dataset}_s{seed}_{mode}', seed, mode, args.dataset)
+                for mode in MODES]
         a, b = runs
         for field in ('initial_state_sha256', 'config', 'config_file_sha256', 'source_commit',
                       'source_sha256', 'parameter_count', 'data', 'selection'):
             require(a[0][field] == b[0][field], f'Seed {seed} mismatched paired {field}')
+        protocol = {key: value for key, value in a[0]['config'].items() if key != 'seed'}
+        if reference_protocol is None:
+            reference_protocol = protocol
+        require(protocol == reference_protocol, 'Training configuration differs across seeds')
         require([r['minibatch_order_sha256'] for r in a[1]] == [r['minibatch_order_sha256'] for r in b[1]],
                 f'Seed {seed} mismatched shuffle order')
         for split in SPLITS:
@@ -164,7 +178,8 @@ def main():
                       'paired': {split: pair_outcomes(a[2][split], b[2][split]) for split in SPLITS}})
         for mode, run in zip(MODES, runs):
             samples[seed, mode] = run[2]['test'][3]
-    summary = {'dataset': 'Kather2016', 'protocol': 'TRAIN fit, VAL checkpoint, original TEST once per run',
+    title = DATASETS[args.dataset][0]
+    summary = {'dataset': title, 'protocol': 'TRAIN fit, VAL checkpoint, original TEST once per run',
                'coordinate_convention': 'top-left y,x in the 478-pixel active plane',
                'paired_difference': 'continuous minus fixed, same original cases within each seed',
                'runs': pairs, 'mean_over_seeds': {}}
@@ -174,7 +189,7 @@ def main():
         row['delta_pp'] = float(np.mean([p['paired'][split]['delta_pp'] for p in pairs]))
         summary['mean_over_seeds'][split] = row
     args.out.mkdir(parents=True, exist_ok=True)
-    plot_positions(samples, args.out / 'positions.svg')
+    plot_positions(samples, args.out / 'positions.svg', title)
     (args.out / 'results.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(summary['mean_over_seeds']))
 

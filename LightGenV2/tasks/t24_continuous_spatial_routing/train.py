@@ -52,7 +52,7 @@ def load_inputs(config, device):
     raw, identity = load_raw(Path(config['data_root']), config)
     for field in ('manifest_sha256', 'index_sha256'):
         if identity[field] != config[field]:
-            raise ValueError(f'Original Kather {field} differs from the frozen split')
+            raise ValueError(f'{config["dataset"]} {field} differs from the frozen split')
     inputs = {}
     for split, part in raw.items():
         images = part.pop('images')
@@ -139,7 +139,7 @@ def run(args, config):
         'gpu_model': torch.cuda.get_device_name(device) if gpu_uuid else None,
         'python': platform.python_version(), 'torch': str(torch.__version__), 'cuda': torch.version.cuda,
         'selection': 'highest original VAL correct count, then lowest VAL CE; earlier exact tie',
-        'role': 'T24 TRAIN-only fit, VAL selection. T17 previously exposed original Kather TEST in development.',
+        'role': f"T24 TRAIN-only fit, VAL selection. T17 previously exposed original {config['dataset']} TEST in development.",
     }
     write(args.out / 'metadata.json', metadata)
     inputs, identity = load_inputs(config, device)
