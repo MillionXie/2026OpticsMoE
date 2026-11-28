@@ -5,7 +5,38 @@ from pathlib import Path
 
 import numpy as np
 
-from .report import CORNERS, optical_usage
+from .report import ARMS, CORNERS, PROFILE, SPLITS, optical_usage, read_json, section_summary, verified_gpu
+
+
+class GPUAssignmentTests(unittest.TestCase):
+    def test_actual_config_and_profile_all_match(self):
+        profile = read_json(PROFILE)
+        expected = profile['gpu_uuids']['37']
+        other = profile['gpu_uuids']['53']
+        config = {'assigned_gpu_uuid': expected}
+        self.assertEqual(verified_gpu({'gpu_uuid': expected}, config, profile, 37), expected)
+        for actual, assignment in ((other, expected), (expected, other), (other, other), (None, None)):
+            with self.subTest(actual=actual, assignment=assignment), self.assertRaisesRegex(ValueError, 'GPU UUID'):
+                verified_gpu({'gpu_uuid': actual}, {'assigned_gpu_uuid': assignment}, profile, 37)
+
+    def test_two_gpu_cohort_checks_within_each_seed(self):
+        profile = read_json(PROFILE)
+        predictions, runs = {}, []
+        scores = {s: {'correct': 1, 'accuracy_percent': 100.} for s in SPLITS}
+        arrays = {s: (np.array(['a']), np.array([0]), np.array([True])) for s in SPLITS}
+        for seed in (37, 53):
+            for arm in ARMS:
+                name = f'{seed}_{arm}'
+                predictions[name] = arrays
+                runs.append(dict(run=name, arm=arm, seed=seed, locked=scores, final=scores, data={},
+                                 optimizer={}, optimizer_steps=1, source_commit='test', source_sha256={},
+                                 initial_state_sha256=str(seed), minibatch_orders_sha256=str(seed),
+                                 gpu_uuid=profile['gpu_uuids'][str(seed)]))
+        result = section_summary(runs, predictions, (37,53))
+        self.assertEqual(result['matched_gpu_uuid_by_seed'], {int(s): uuid for s,uuid in profile['gpu_uuids'].items()})
+        runs[-1]['gpu_uuid'] = profile['gpu_uuids']['37']
+        with self.assertRaisesRegex(ValueError, 'Seed 53: paired arms used different GPU UUIDs'):
+            section_summary(runs, predictions, (37,53))
 
 
 class OpticalReportTests(unittest.TestCase):

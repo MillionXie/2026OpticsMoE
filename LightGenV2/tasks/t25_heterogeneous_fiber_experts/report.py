@@ -34,6 +34,14 @@ def source_matches(path, expected):
     return any(hashlib.sha256(b).hexdigest() == expected for b in (content, content.replace(b'\r\n', b'\n')))
 
 
+def verified_gpu(meta, config, profile, seed):
+    actual = meta.get('gpu_uuid')
+    require(isinstance(actual, str) and actual.startswith('GPU-')
+            and actual == config.get('assigned_gpu_uuid') == profile['gpu_uuids'].get(str(seed)),
+            f'Seed {seed}: observed GPU UUID differs from configuration or protocol assignment')
+    return actual
+
+
 def optical_usage(path, fibers, n):
     with np.load(path, allow_pickle=False) as z:
         positions, rank, raw, dense = (z[k] for k in ('positions', 'slot_indices', 'router_port_energy', 'dense_power'))
@@ -87,6 +95,7 @@ def checked_run(directory, dataset, seed, arm, profile):
     for name, digest in manifest.items():
         require(Path(name).name == name and sha(directory/name) == digest, f'{directory.name}/{name}: bad manifest')
     result, config = read_json(directory/'result.json'), read_json(directory/'config.json')
+    gpu_uuid = verified_gpu(meta, config, profile, seed)
     expected_fibers = profile['fiber_slots_zero_based'][arm]
     if arm == 'mixed':
         expected_fibers = expected_fibers[str(seed)]
@@ -130,7 +139,7 @@ def checked_run(directory, dataset, seed, arm, profile):
     for s in SPLITS:
         require(rows[best-1][s]['correct'] == result[s]['correct'], f'{directory.name}/{s}: locked outcome mismatch')
     usage = {s: optical_usage(directory/f'predictions_{s}.npz', expected_fibers, n[s]) for s in SPLITS}
-    metadata = {'run': directory.name, 'source_commit': meta['source_commit'], 'arm': arm, 'seed': seed,
+    metadata = {'run': directory.name, 'source_commit': meta['source_commit'], 'arm': arm, 'seed': seed, 'gpu_uuid': gpu_uuid,
                 'fiber_slots_zero_based': expected_fibers, 'fiber_core_counts': cores, 'parameter_count': meta['parameter_count'],
                 'initial_state_sha256': meta['initial_state_sha256'], 'data': meta['data'],
                 'optimizer': meta['optimizer'], 'source_sha256': meta['source_sha256'],
@@ -155,10 +164,14 @@ def section_summary(runs, predictions, seeds):
                 and r['optimizer_steps'] == runs[0]['optimizer_steps'] and r['source_commit'] == runs[0]['source_commit']
                 and r['source_sha256'] == runs[0]['source_sha256'] for r in runs), 'Unmatched data, optimizer, code, or budget')
     differences = []
+    gpu_by_seed = {}
     for seed in seeds:
         rows = {r['arm']: r for r in runs if r['seed'] == seed}
         require(set(rows) == set(ARMS) and all(len({r[k] for r in rows.values()}) == 1 for k in
                 ('initial_state_sha256','minibatch_orders_sha256')), f'Seed {seed} mismatched initialization/order')
+        gpus = {r['gpu_uuid'] for r in rows.values()}
+        require(len(gpus) == 1, f'Seed {seed}: paired arms used different GPU UUIDs')
+        gpu_by_seed[seed] = gpus.pop()
     for candidate, reference in CONTRASTS:
         per_seed = {}
         for seed in seeds:
@@ -181,7 +194,7 @@ def section_summary(runs, predictions, seeds):
         group = [r for r in runs if r['arm']==arm]
         mean[arm] = {stage: {s: float(np.mean([r[stage][s]['accuracy_percent'] for r in group])) for s in SPLITS}
                      for stage in ('locked','final')}
-    return {'equal_weight_seed_means_percent': mean, 'paired_differences': differences}
+    return {'equal_weight_seed_means_percent': mean, 'paired_differences': differences, 'matched_gpu_uuid_by_seed': gpu_by_seed}
 
 
 def save(fig, root):
