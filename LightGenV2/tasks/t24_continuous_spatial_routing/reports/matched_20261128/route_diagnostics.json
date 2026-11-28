@@ -1,0 +1,741 @@
+{
+  "seeds": [
+    37,
+    53
+  ],
+  "noise_seeds": [
+    1069,
+    1999
+  ],
+  "permutation_seeds": [
+    3701,
+    4423,
+    5701
+  ],
+  "averaging": "Equal-weight mean over the two training seeds; list entries retain intervention replicate order. The p90 reported across seeds is the mean of the two within-seed percentiles.",
+  "distance": "Minimum of the two assignments of the unordered copy pair. Each assignment uses the mean of the two Euclidean top-left displacements measured in expert-plane pixels.",
+  "jitter": "Same image: two independent Poisson router CCD acquisitions. Different images: clean placements compared with three validation-index derangements.",
+  "accuracy": "Percent; intervention changes in percentage points relative to the same locked clean VAL.",
+  "footprint_overlap": "Fraction of one 224 x 224 footprint area shared by the two placements on TEST.",
+  "datasets": {
+    "Kather2016": {
+      "fixed": {
+        "per_training_seed": {
+          "37": {
+            "test_correct": 495,
+            "test_n": 752,
+            "val_n": 752,
+            "metrics": {
+              "test_accuracy_pct": 65.82446808510637,
+              "test_mean_footprint_overlap_fraction": 0.0,
+              "test_max_footprint_overlap_fraction": 0.0,
+              "clean_val_accuracy_pct": 63.696808510638306,
+              "noise_val_accuracy_pct": [
+                63.696808510638306,
+                63.696808510638306
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.0,
+              "same_image_noise_pair_distance_p90_px": 0.0,
+              "same_image_noise_pair_fraction_over_16px": 0.0,
+              "different_image_distance_mean_px": 3.780407508214315,
+              "shuffled_val_accuracy_pct": [
+                53.98936170212766,
+                53.45744680851063,
+                54.25531914893617
+              ],
+              "shuffled_minus_clean_pp": [
+                -9.707446808510639,
+                -10.23936170212766,
+                -9.441489361702128
+              ],
+              "clean_mean_effective_illuminated_pixels": 49846.05859375,
+              "clean_population_effective_illuminated_pixels": 69740.43814631655,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.0,
+              "router_tile_shift_val_accuracy_pct": 63.696808510638306,
+              "router_tile_shift_minus_clean_pp": 0.0,
+              "router_tile_shift_mean_position_change_px": 0.23883658647537231,
+              "integer_actuator_val_accuracy_pct": 63.696808510638306,
+              "integer_actuator_minus_clean_pp": 0.0,
+              "integer_actuator_mean_position_change_px": 0.0
+            },
+            "best_checkpoint_sha256": "0b179f2738c492085b03049ff7d5ea6ff7225e5c7b0ee367c673d6a6ca5f441f",
+            "audit_result_sha256": "169b4edb1e7ba26a9a4444ba4864907308a8a59ac27820af75fcfe7be92e8d3b",
+            "photons_per_unit_incident_energy": 1000000.0
+          },
+          "53": {
+            "test_correct": 456,
+            "test_n": 752,
+            "val_n": 752,
+            "metrics": {
+              "test_accuracy_pct": 60.63829787234043,
+              "test_mean_footprint_overlap_fraction": 0.0,
+              "test_max_footprint_overlap_fraction": 0.0,
+              "clean_val_accuracy_pct": 61.96808510638297,
+              "noise_val_accuracy_pct": [
+                62.5,
+                61.96808510638297
+              ],
+              "same_image_noise_pair_distance_mean_px": 1.0132979154586792,
+              "same_image_noise_pair_distance_p90_px": 0.0,
+              "same_image_noise_pair_fraction_over_16px": 0.007978723404255319,
+              "different_image_distance_mean_px": 52.691490173339844,
+              "shuffled_val_accuracy_pct": [
+                48.005319148936174,
+                47.6063829787234,
+                47.340425531914896
+              ],
+              "shuffled_minus_clean_pp": [
+                -13.962765957446809,
+                -14.361702127659575,
+                -14.627659574468085
+              ],
+              "clean_mean_effective_illuminated_pixels": 45382.265625,
+              "clean_population_effective_illuminated_pixels": 68631.88525976962,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.0,
+              "router_tile_shift_val_accuracy_pct": 61.569148936170215,
+              "router_tile_shift_minus_clean_pp": -0.39893617021276595,
+              "router_tile_shift_mean_position_change_px": 1.519946813583374,
+              "integer_actuator_val_accuracy_pct": 61.96808510638297,
+              "integer_actuator_minus_clean_pp": 0.0,
+              "integer_actuator_mean_position_change_px": 0.0
+            },
+            "best_checkpoint_sha256": "caf145d2b7432bae401f658cd18ff08042c4fe0dade0ffe8cfadbcb1bccb679b",
+            "audit_result_sha256": "078209751621554945e02424181ef1e8192f07d70677549bc59b469a89402555",
+            "photons_per_unit_incident_energy": 1000000.0
+          }
+        },
+        "mean_over_training_seeds": {
+          "test_accuracy_pct": 63.2313829787234,
+          "test_mean_footprint_overlap_fraction": 0.0,
+          "test_max_footprint_overlap_fraction": 0.0,
+          "clean_val_accuracy_pct": 62.83244680851064,
+          "noise_val_accuracy_pct": [
+            63.09840425531915,
+            62.83244680851064
+          ],
+          "same_image_noise_pair_distance_mean_px": 0.5066489577293396,
+          "same_image_noise_pair_distance_p90_px": 0.0,
+          "same_image_noise_pair_fraction_over_16px": 0.003989361702127659,
+          "different_image_distance_mean_px": 28.23594884077708,
+          "shuffled_val_accuracy_pct": [
+            50.99734042553192,
+            50.531914893617014,
+            50.79787234042553
+          ],
+          "shuffled_minus_clean_pp": [
+            -11.835106382978724,
+            -12.300531914893618,
+            -12.034574468085108
+          ],
+          "clean_mean_effective_illuminated_pixels": 47614.162109375,
+          "clean_population_effective_illuminated_pixels": 69186.1617030431,
+          "clean_mean_power_fraction_in_old_cross_gap": 0.0,
+          "router_tile_shift_val_accuracy_pct": 62.632978723404264,
+          "router_tile_shift_minus_clean_pp": -0.19946808510638298,
+          "router_tile_shift_mean_position_change_px": 0.8793917000293732,
+          "integer_actuator_val_accuracy_pct": 62.83244680851064,
+          "integer_actuator_minus_clean_pp": 0.0,
+          "integer_actuator_mean_position_change_px": 0.0
+        }
+      },
+      "continuous": {
+        "per_training_seed": {
+          "37": {
+            "test_correct": 414,
+            "test_n": 752,
+            "val_n": 752,
+            "metrics": {
+              "test_accuracy_pct": 55.053191489361694,
+              "test_mean_footprint_overlap_fraction": 0.6271979212760925,
+              "test_max_footprint_overlap_fraction": 0.7456089854240417,
+              "clean_val_accuracy_pct": 53.45744680851063,
+              "noise_val_accuracy_pct": [
+                53.058510638297875,
+                53.191489361702125
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.5264206528663635,
+              "same_image_noise_pair_distance_p90_px": 0.0378678947687149,
+              "same_image_noise_pair_fraction_over_16px": 0.007978723404255319,
+              "different_image_distance_mean_px": 34.27299372355143,
+              "shuffled_val_accuracy_pct": [
+                30.319148936170215,
+                31.515957446808514,
+                30.71808510638298
+              ],
+              "shuffled_minus_clean_pp": [
+                -23.138297872340427,
+                -21.94148936170213,
+                -22.73936170212766
+              ],
+              "clean_mean_effective_illuminated_pixels": 28408.69140625,
+              "clean_population_effective_illuminated_pixels": 41957.934035037935,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.17965018639823976,
+              "router_tile_shift_val_accuracy_pct": 53.058510638297875,
+              "router_tile_shift_minus_clean_pp": -0.39893617021276595,
+              "router_tile_shift_mean_position_change_px": 0.6357319951057434,
+              "integer_actuator_val_accuracy_pct": 53.32446808510638,
+              "integer_actuator_minus_clean_pp": -0.13297872340425532,
+              "integer_actuator_mean_position_change_px": 0.40919211506843567
+            },
+            "best_checkpoint_sha256": "def286baeaf2898b3d1059d17ad941d6bc7e1275192520c56ef04b1e69772ea8",
+            "audit_result_sha256": "722a80828c5c730b9bfc25ae6be533b6179616e1494c39335bf6ea67b5f034ff",
+            "photons_per_unit_incident_energy": 1000000.0
+          },
+          "53": {
+            "test_correct": 405,
+            "test_n": 752,
+            "val_n": 752,
+            "metrics": {
+              "test_accuracy_pct": 53.8563829787234,
+              "test_mean_footprint_overlap_fraction": 0.5948920845985413,
+              "test_max_footprint_overlap_fraction": 0.7407854795455933,
+              "clean_val_accuracy_pct": 56.38297872340425,
+              "noise_val_accuracy_pct": [
+                56.11702127659575,
+                55.71808510638297
+              ],
+              "same_image_noise_pair_distance_mean_px": 1.1684253215789795,
+              "same_image_noise_pair_distance_p90_px": 0.03981563970446586,
+              "same_image_noise_pair_fraction_over_16px": 0.015957446808510637,
+              "different_image_distance_mean_px": 36.64891815185547,
+              "shuffled_val_accuracy_pct": [
+                32.180851063829785,
+                32.71276595744681,
+                33.111702127659576
+              ],
+              "shuffled_minus_clean_pp": [
+                -24.20212765957447,
+                -23.670212765957448,
+                -23.27127659574468
+              ],
+              "clean_mean_effective_illuminated_pixels": 28560.1484375,
+              "clean_population_effective_illuminated_pixels": 42688.10134796245,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.18174311059519577,
+              "router_tile_shift_val_accuracy_pct": 56.25,
+              "router_tile_shift_minus_clean_pp": -0.13297872340425532,
+              "router_tile_shift_mean_position_change_px": 0.750270426273346,
+              "integer_actuator_val_accuracy_pct": 56.78191489361703,
+              "integer_actuator_minus_clean_pp": 0.39893617021276595,
+              "integer_actuator_mean_position_change_px": 0.3958837687969208
+            },
+            "best_checkpoint_sha256": "73f48b7c5f5b71c92b9d4a77e4e4ad3715b2049b1cf9c3a205d1e18871d9ce7a",
+            "audit_result_sha256": "94b7a436be50ad0cb1fe4f00db23c06045bda138463d9a98969348866329c4bf",
+            "photons_per_unit_incident_energy": 1000000.0
+          }
+        },
+        "mean_over_training_seeds": {
+          "test_accuracy_pct": 54.45478723404255,
+          "test_mean_footprint_overlap_fraction": 0.6110450029373169,
+          "test_max_footprint_overlap_fraction": 0.7431972324848175,
+          "clean_val_accuracy_pct": 54.920212765957444,
+          "noise_val_accuracy_pct": [
+            54.58776595744681,
+            54.45478723404255
+          ],
+          "same_image_noise_pair_distance_mean_px": 0.8474229872226715,
+          "same_image_noise_pair_distance_p90_px": 0.038841767236590385,
+          "same_image_noise_pair_fraction_over_16px": 0.011968085106382979,
+          "different_image_distance_mean_px": 35.460955937703446,
+          "shuffled_val_accuracy_pct": [
+            31.25,
+            32.11436170212767,
+            31.914893617021278
+          ],
+          "shuffled_minus_clean_pp": [
+            -23.670212765957448,
+            -22.805851063829788,
+            -23.00531914893617
+          ],
+          "clean_mean_effective_illuminated_pixels": 28484.419921875,
+          "clean_population_effective_illuminated_pixels": 42323.017691500194,
+          "clean_mean_power_fraction_in_old_cross_gap": 0.18069664849671777,
+          "router_tile_shift_val_accuracy_pct": 54.65425531914894,
+          "router_tile_shift_minus_clean_pp": -0.26595744680851063,
+          "router_tile_shift_mean_position_change_px": 0.6930012106895447,
+          "integer_actuator_val_accuracy_pct": 55.05319148936171,
+          "integer_actuator_minus_clean_pp": 0.13297872340425532,
+          "integer_actuator_mean_position_change_px": 0.4025379419326782
+        }
+      },
+      "constrained": {
+        "per_training_seed": {
+          "37": {
+            "test_correct": 416,
+            "test_n": 752,
+            "val_n": 752,
+            "metrics": {
+              "test_accuracy_pct": 55.319148936170215,
+              "test_mean_footprint_overlap_fraction": 0.23946739733219147,
+              "test_max_footprint_overlap_fraction": 0.24985440075397491,
+              "clean_val_accuracy_pct": 60.77127659574468,
+              "noise_val_accuracy_pct": [
+                59.97340425531915,
+                61.170212765957444
+              ],
+              "same_image_noise_pair_distance_mean_px": 3.1802239418029785,
+              "same_image_noise_pair_distance_p90_px": 0.024518427997827528,
+              "same_image_noise_pair_fraction_over_16px": 0.04654255319148936,
+              "different_image_distance_mean_px": 39.13821283976237,
+              "shuffled_val_accuracy_pct": [
+                31.117021276595747,
+                32.71276595744681,
+                31.117021276595747
+              ],
+              "shuffled_minus_clean_pp": [
+                -29.654255319148938,
+                -28.05851063829787,
+                -29.654255319148938
+              ],
+              "clean_mean_effective_illuminated_pixels": 33491.85546875,
+              "clean_population_effective_illuminated_pixels": 58981.779538248105,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.21943514755802676,
+              "router_tile_shift_val_accuracy_pct": 60.90425531914894,
+              "router_tile_shift_minus_clean_pp": 0.13297872340425532,
+              "router_tile_shift_mean_position_change_px": 1.536657452583313,
+              "integer_actuator_val_accuracy_pct": 60.63829787234043,
+              "integer_actuator_minus_clean_pp": -0.13297872340425532,
+              "integer_actuator_mean_position_change_px": 0.30363139510154724
+            },
+            "best_checkpoint_sha256": "1d7c064bcce9d09b6253903991582730ecb28d3df99be1b3765f7a3ffead874b",
+            "audit_result_sha256": "745a8fdd4c49d08fa52ba8eeb088755ed820a1fb02f41eda985d28d4f8074831",
+            "photons_per_unit_incident_energy": 1000000.0
+          },
+          "53": {
+            "test_correct": 470,
+            "test_n": 752,
+            "val_n": 752,
+            "metrics": {
+              "test_accuracy_pct": 62.5,
+              "test_mean_footprint_overlap_fraction": 0.2398301213979721,
+              "test_max_footprint_overlap_fraction": 0.24994231760501862,
+              "clean_val_accuracy_pct": 64.09574468085107,
+              "noise_val_accuracy_pct": [
+                63.03191489361703,
+                63.696808510638306
+              ],
+              "same_image_noise_pair_distance_mean_px": 1.1497641801834106,
+              "same_image_noise_pair_distance_p90_px": 0.02479254715144634,
+              "same_image_noise_pair_fraction_over_16px": 0.02925531914893617,
+              "different_image_distance_mean_px": 35.96699905395508,
+              "shuffled_val_accuracy_pct": [
+                29.920212765957448,
+                29.388297872340424,
+                31.78191489361702
+              ],
+              "shuffled_minus_clean_pp": [
+                -34.17553191489362,
+                -34.70744680851064,
+                -32.31382978723404
+              ],
+              "clean_mean_effective_illuminated_pixels": 33310.046875,
+              "clean_population_effective_illuminated_pixels": 58065.80680791781,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.2235246864838257,
+              "router_tile_shift_val_accuracy_pct": 64.22872340425532,
+              "router_tile_shift_minus_clean_pp": 0.13297872340425532,
+              "router_tile_shift_mean_position_change_px": 1.1629784107208252,
+              "integer_actuator_val_accuracy_pct": 63.96276595744681,
+              "integer_actuator_minus_clean_pp": -0.13297872340425532,
+              "integer_actuator_mean_position_change_px": 0.320311963558197
+            },
+            "best_checkpoint_sha256": "86c68f96b3935425d4fbb50315a6f97cfdca1c2c0500462e2bb6a0774d0e6253",
+            "audit_result_sha256": "f2f973d70f29cca3646b43255ff126f9a1706abb2de2eb056d22c6e593e85459",
+            "photons_per_unit_incident_energy": 1000000.0
+          }
+        },
+        "mean_over_training_seeds": {
+          "test_accuracy_pct": 58.90957446808511,
+          "test_mean_footprint_overlap_fraction": 0.2396487593650818,
+          "test_max_footprint_overlap_fraction": 0.24989835917949677,
+          "clean_val_accuracy_pct": 62.433510638297875,
+          "noise_val_accuracy_pct": [
+            61.50265957446809,
+            62.433510638297875
+          ],
+          "same_image_noise_pair_distance_mean_px": 2.1649940609931946,
+          "same_image_noise_pair_distance_p90_px": 0.024655487574636932,
+          "same_image_noise_pair_fraction_over_16px": 0.03789893617021277,
+          "different_image_distance_mean_px": 37.55260594685872,
+          "shuffled_val_accuracy_pct": [
+            30.518617021276597,
+            31.050531914893618,
+            31.449468085106382
+          ],
+          "shuffled_minus_clean_pp": [
+            -31.914893617021278,
+            -31.382978723404257,
+            -30.98404255319149
+          ],
+          "clean_mean_effective_illuminated_pixels": 33400.951171875,
+          "clean_population_effective_illuminated_pixels": 58523.79317308296,
+          "clean_mean_power_fraction_in_old_cross_gap": 0.22147991702092623,
+          "router_tile_shift_val_accuracy_pct": 62.566489361702125,
+          "router_tile_shift_minus_clean_pp": 0.13297872340425532,
+          "router_tile_shift_mean_position_change_px": 1.349817931652069,
+          "integer_actuator_val_accuracy_pct": 62.300531914893625,
+          "integer_actuator_minus_clean_pp": -0.13297872340425532,
+          "integer_actuator_mean_position_change_px": 0.31197167932987213
+        }
+      }
+    },
+    "BloodMNIST128": {
+      "fixed": {
+        "per_training_seed": {
+          "37": {
+            "test_correct": 2703,
+            "test_n": 3421,
+            "val_n": 1712,
+            "metrics": {
+              "test_accuracy_pct": 79.01198479976615,
+              "test_mean_footprint_overlap_fraction": 0.0,
+              "test_max_footprint_overlap_fraction": 0.0,
+              "clean_val_accuracy_pct": 79.43925233644859,
+              "noise_val_accuracy_pct": [
+                79.78971962616822,
+                79.61448598130842
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.07418224215507507,
+              "same_image_noise_pair_distance_p90_px": 0.0,
+              "same_image_noise_pair_fraction_over_16px": 0.0005841121495327102,
+              "different_image_distance_mean_px": 0.2967289686203003,
+              "shuffled_val_accuracy_pct": [
+                75.64252336448598,
+                74.76635514018692,
+                74.64953271028037
+              ],
+              "shuffled_minus_clean_pp": [
+                -3.796728971962617,
+                -4.672897196261682,
+                -4.789719626168225
+              ],
+              "clean_mean_effective_illuminated_pixels": 60594.9609375,
+              "clean_population_effective_illuminated_pixels": 66952.43238521568,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.0,
+              "router_tile_shift_val_accuracy_pct": 79.61448598130842,
+              "router_tile_shift_minus_clean_pp": 0.17523364485981308,
+              "router_tile_shift_mean_position_change_px": 0.0,
+              "integer_actuator_val_accuracy_pct": 79.43925233644859,
+              "integer_actuator_minus_clean_pp": 0.0,
+              "integer_actuator_mean_position_change_px": 0.0
+            },
+            "best_checkpoint_sha256": "935ad85044f1ccc4097fd60b132aea6fab02d519de508b5e4cd9b029ea2927df",
+            "audit_result_sha256": "d51ad56c9f0f6b9eef4540b77b88d17ced288b7387f6265359496dc50cdf4471",
+            "photons_per_unit_incident_energy": 1000000.0
+          },
+          "53": {
+            "test_correct": 2690,
+            "test_n": 3421,
+            "val_n": 1712,
+            "metrics": {
+              "test_accuracy_pct": 78.63197895352236,
+              "test_mean_footprint_overlap_fraction": 0.0,
+              "test_max_footprint_overlap_fraction": 0.0,
+              "clean_val_accuracy_pct": 80.78271028037383,
+              "noise_val_accuracy_pct": [
+                81.01635514018692,
+                81.01635514018692
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.20981906354427338,
+              "same_image_noise_pair_distance_p90_px": 0.0,
+              "same_image_noise_pair_fraction_over_16px": 0.0011682242990654205,
+              "different_image_distance_mean_px": 3.077346404393514,
+              "shuffled_val_accuracy_pct": [
+                80.37383177570094,
+                80.54906542056075,
+                80.4322429906542
+              ],
+              "shuffled_minus_clean_pp": [
+                -0.4088785046728972,
+                -0.2336448598130841,
+                -0.35046728971962615
+              ],
+              "clean_mean_effective_illuminated_pixels": 48733.9921875,
+              "clean_population_effective_illuminated_pixels": 53363.53151406385,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.0,
+              "router_tile_shift_val_accuracy_pct": 81.01635514018692,
+              "router_tile_shift_minus_clean_pp": 0.2336448598130841,
+              "router_tile_shift_mean_position_change_px": 0.20981906354427338,
+              "integer_actuator_val_accuracy_pct": 80.78271028037383,
+              "integer_actuator_minus_clean_pp": 0.0,
+              "integer_actuator_mean_position_change_px": 0.0
+            },
+            "best_checkpoint_sha256": "b89da56b386632192b7e25c8259ee1627ba31b50ef55423cc2e216f76cd87ffe",
+            "audit_result_sha256": "8dd211c07e1bdd9c21131a07e4cd0d795459a9245ad3ecaf3da3d68080e14615",
+            "photons_per_unit_incident_energy": 1000000.0
+          }
+        },
+        "mean_over_training_seeds": {
+          "test_accuracy_pct": 78.82198187664426,
+          "test_mean_footprint_overlap_fraction": 0.0,
+          "test_max_footprint_overlap_fraction": 0.0,
+          "clean_val_accuracy_pct": 80.11098130841121,
+          "noise_val_accuracy_pct": [
+            80.40303738317758,
+            80.31542056074767
+          ],
+          "same_image_noise_pair_distance_mean_px": 0.14200065284967422,
+          "same_image_noise_pair_distance_p90_px": 0.0,
+          "same_image_noise_pair_fraction_over_16px": 0.0008761682242990653,
+          "different_image_distance_mean_px": 1.6870376865069072,
+          "shuffled_val_accuracy_pct": [
+            78.00817757009347,
+            77.65771028037383,
+            77.54088785046729
+          ],
+          "shuffled_minus_clean_pp": [
+            -2.102803738317757,
+            -2.453271028037383,
+            -2.5700934579439254
+          ],
+          "clean_mean_effective_illuminated_pixels": 54664.4765625,
+          "clean_population_effective_illuminated_pixels": 60157.98194963977,
+          "clean_mean_power_fraction_in_old_cross_gap": 0.0,
+          "router_tile_shift_val_accuracy_pct": 80.31542056074767,
+          "router_tile_shift_minus_clean_pp": 0.2044392523364486,
+          "router_tile_shift_mean_position_change_px": 0.10490953177213669,
+          "integer_actuator_val_accuracy_pct": 80.11098130841121,
+          "integer_actuator_minus_clean_pp": 0.0,
+          "integer_actuator_mean_position_change_px": 0.0
+        }
+      },
+      "continuous": {
+        "per_training_seed": {
+          "37": {
+            "test_correct": 2575,
+            "test_n": 3421,
+            "val_n": 1712,
+            "metrics": {
+              "test_accuracy_pct": 75.27038877521193,
+              "test_mean_footprint_overlap_fraction": 0.5625205039978027,
+              "test_max_footprint_overlap_fraction": 0.7344464659690857,
+              "clean_val_accuracy_pct": 76.28504672897196,
+              "noise_val_accuracy_pct": [
+                76.05140186915888,
+                76.57710280373831
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.9460697174072266,
+              "same_image_noise_pair_distance_p90_px": 0.043417255580425265,
+              "same_image_noise_pair_fraction_over_16px": 0.019275700934579438,
+              "different_image_distance_mean_px": 13.963675816853842,
+              "shuffled_val_accuracy_pct": [
+                49.76635514018692,
+                49.824766355140184,
+                49.649532710280376
+              ],
+              "shuffled_minus_clean_pp": [
+                -26.518691588785046,
+                -26.460280373831775,
+                -26.635514018691588
+              ],
+              "clean_mean_effective_illuminated_pixels": 33094.2109375,
+              "clean_population_effective_illuminated_pixels": 37462.133057237465,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.23035571830315466,
+              "router_tile_shift_val_accuracy_pct": 76.28504672897196,
+              "router_tile_shift_minus_clean_pp": 0.0,
+              "router_tile_shift_mean_position_change_px": 1.2804676294326782,
+              "integer_actuator_val_accuracy_pct": 75.46728971962617,
+              "integer_actuator_minus_clean_pp": -0.8177570093457944,
+              "integer_actuator_mean_position_change_px": 0.3620527684688568
+            },
+            "best_checkpoint_sha256": "1afb1448345ce441c45a0c0e59466b5083ce3772163c889fb61a5db7d629745f",
+            "audit_result_sha256": "7d4ff24292a17273fdcfca049b7abc72a29b5ea0d3d29c9667c903d684c342b4",
+            "photons_per_unit_incident_energy": 1000000.0
+          },
+          "53": {
+            "test_correct": 2543,
+            "test_n": 3421,
+            "val_n": 1712,
+            "metrics": {
+              "test_accuracy_pct": 74.33498976907337,
+              "test_mean_footprint_overlap_fraction": 0.5371161699295044,
+              "test_max_footprint_overlap_fraction": 0.7449943423271179,
+              "clean_val_accuracy_pct": 74.88317757009347,
+              "noise_val_accuracy_pct": [
+                74.76635514018692,
+                75.0
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.8285251259803772,
+              "same_image_noise_pair_distance_p90_px": 0.04273647591471672,
+              "same_image_noise_pair_fraction_over_16px": 0.018107476635514017,
+              "different_image_distance_mean_px": 20.046092987060547,
+              "shuffled_val_accuracy_pct": [
+                48.773364485981304,
+                48.65654205607476,
+                47.72196261682243
+              ],
+              "shuffled_minus_clean_pp": [
+                -26.10981308411215,
+                -26.226635514018692,
+                -27.161214953271028
+              ],
+              "clean_mean_effective_illuminated_pixels": 33328.5078125,
+              "clean_population_effective_illuminated_pixels": 38672.127200311406,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.22935458142041176,
+              "router_tile_shift_val_accuracy_pct": 75.23364485981308,
+              "router_tile_shift_minus_clean_pp": 0.35046728971962615,
+              "router_tile_shift_mean_position_change_px": 1.0595189332962036,
+              "integer_actuator_val_accuracy_pct": 75.58411214953271,
+              "integer_actuator_minus_clean_pp": 0.7009345794392523,
+              "integer_actuator_mean_position_change_px": 0.36952388286590576
+            },
+            "best_checkpoint_sha256": "1e4ba1c1da68a062952885856fc8a6e8b37615a3c63e6ef29e4d5514a118f8e3",
+            "audit_result_sha256": "aa3b7e4b13b9309470242a852a7b2930e83d538e9aa8fc6e3097332b6b80a1c6",
+            "photons_per_unit_incident_energy": 1000000.0
+          }
+        },
+        "mean_over_training_seeds": {
+          "test_accuracy_pct": 74.80268927214266,
+          "test_mean_footprint_overlap_fraction": 0.5498183369636536,
+          "test_max_footprint_overlap_fraction": 0.7397204041481018,
+          "clean_val_accuracy_pct": 75.58411214953271,
+          "noise_val_accuracy_pct": [
+            75.4088785046729,
+            75.78855140186916
+          ],
+          "same_image_noise_pair_distance_mean_px": 0.8872974216938019,
+          "same_image_noise_pair_distance_p90_px": 0.043076865747571,
+          "same_image_noise_pair_fraction_over_16px": 0.018691588785046728,
+          "different_image_distance_mean_px": 17.004884401957195,
+          "shuffled_val_accuracy_pct": [
+            49.26985981308411,
+            49.24065420560747,
+            48.6857476635514
+          ],
+          "shuffled_minus_clean_pp": [
+            -26.314252336448597,
+            -26.343457943925234,
+            -26.898364485981308
+          ],
+          "clean_mean_effective_illuminated_pixels": 33211.359375,
+          "clean_population_effective_illuminated_pixels": 38067.130128774435,
+          "clean_mean_power_fraction_in_old_cross_gap": 0.2298551498617832,
+          "router_tile_shift_val_accuracy_pct": 75.75934579439252,
+          "router_tile_shift_minus_clean_pp": 0.17523364485981308,
+          "router_tile_shift_mean_position_change_px": 1.169993281364441,
+          "integer_actuator_val_accuracy_pct": 75.52570093457945,
+          "integer_actuator_minus_clean_pp": -0.05841121495327106,
+          "integer_actuator_mean_position_change_px": 0.3657883256673813
+        }
+      },
+      "constrained": {
+        "per_training_seed": {
+          "37": {
+            "test_correct": 2607,
+            "test_n": 3421,
+            "val_n": 1712,
+            "metrics": {
+              "test_accuracy_pct": 76.20578778135048,
+              "test_mean_footprint_overlap_fraction": 0.23807132244110107,
+              "test_max_footprint_overlap_fraction": 0.2469450682401657,
+              "clean_val_accuracy_pct": 78.67990654205607,
+              "noise_val_accuracy_pct": [
+                78.6214953271028,
+                78.67990654205607
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.5815829038619995,
+              "same_image_noise_pair_distance_p90_px": 0.025787675380706792,
+              "same_image_noise_pair_fraction_over_16px": 0.02102803738317757,
+              "different_image_distance_mean_px": 10.983935674031576,
+              "shuffled_val_accuracy_pct": [
+                70.67757009345794,
+                70.61915887850468,
+                71.84579439252336
+              ],
+              "shuffled_minus_clean_pp": [
+                -8.00233644859813,
+                -8.060747663551401,
+                -6.83411214953271
+              ],
+              "clean_mean_effective_illuminated_pixels": 38614.484375,
+              "clean_population_effective_illuminated_pixels": 43506.68664233745,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.24715734066079825,
+              "router_tile_shift_val_accuracy_pct": 78.6214953271028,
+              "router_tile_shift_minus_clean_pp": -0.05841121495327103,
+              "router_tile_shift_mean_position_change_px": 1.0828089714050293,
+              "integer_actuator_val_accuracy_pct": 76.81074766355141,
+              "integer_actuator_minus_clean_pp": -1.8691588785046729,
+              "integer_actuator_mean_position_change_px": 0.4325803220272064
+            },
+            "best_checkpoint_sha256": "22cc95cb3bc03f389c01065e0b071a7db3026fffc0f9b2d290513dc443e2be04",
+            "audit_result_sha256": "f6da588aad634fffe77f486f86a1fe6e47dad3acd356d9349fd4b3769ecdf85c",
+            "photons_per_unit_incident_energy": 1000000.0
+          },
+          "53": {
+            "test_correct": 2660,
+            "test_n": 3421,
+            "val_n": 1712,
+            "metrics": {
+              "test_accuracy_pct": 77.75504238526747,
+              "test_mean_footprint_overlap_fraction": 0.2383376955986023,
+              "test_max_footprint_overlap_fraction": 0.2465205043554306,
+              "clean_val_accuracy_pct": 78.44626168224299,
+              "noise_val_accuracy_pct": [
+                78.32943925233646,
+                78.27102803738318
+              ],
+              "same_image_noise_pair_distance_mean_px": 0.6350885033607483,
+              "same_image_noise_pair_distance_p90_px": 0.025617000088095667,
+              "same_image_noise_pair_fraction_over_16px": 0.02161214953271028,
+              "different_image_distance_mean_px": 10.814364115397135,
+              "shuffled_val_accuracy_pct": [
+                70.73598130841121,
+                70.21028037383178,
+                70.44392523364486
+              ],
+              "shuffled_minus_clean_pp": [
+                -7.710280373831775,
+                -8.235981308411215,
+                -8.00233644859813
+              ],
+              "clean_mean_effective_illuminated_pixels": 38995.34375,
+              "clean_population_effective_illuminated_pixels": 44194.42559662588,
+              "clean_mean_power_fraction_in_old_cross_gap": 0.2466607533403511,
+              "router_tile_shift_val_accuracy_pct": 77.92056074766354,
+              "router_tile_shift_minus_clean_pp": -0.5257009345794392,
+              "router_tile_shift_mean_position_change_px": 1.02827787399292,
+              "integer_actuator_val_accuracy_pct": 75.75934579439252,
+              "integer_actuator_minus_clean_pp": -2.6869158878504673,
+              "integer_actuator_mean_position_change_px": 0.41590771079063416
+            },
+            "best_checkpoint_sha256": "caf95ee35416d7c0fff9211acfe1dcf66e86c80582b57db27e124ab9cffde79a",
+            "audit_result_sha256": "4de19653e952bc03d69b1c068b1079ee14fdfd90590893d81c362d6717c7ae00",
+            "photons_per_unit_incident_energy": 1000000.0
+          }
+        },
+        "mean_over_training_seeds": {
+          "test_accuracy_pct": 76.98041508330897,
+          "test_mean_footprint_overlap_fraction": 0.23820450901985168,
+          "test_max_footprint_overlap_fraction": 0.24673278629779816,
+          "clean_val_accuracy_pct": 78.56308411214954,
+          "noise_val_accuracy_pct": [
+            78.47546728971963,
+            78.47546728971963
+          ],
+          "same_image_noise_pair_distance_mean_px": 0.6083357036113739,
+          "same_image_noise_pair_distance_p90_px": 0.02570233773440123,
+          "same_image_noise_pair_fraction_over_16px": 0.021320093457943924,
+          "different_image_distance_mean_px": 10.899149894714355,
+          "shuffled_val_accuracy_pct": [
+            70.70677570093457,
+            70.41471962616822,
+            71.14485981308411
+          ],
+          "shuffled_minus_clean_pp": [
+            -7.856308411214953,
+            -8.148364485981308,
+            -7.41822429906542
+          ],
+          "clean_mean_effective_illuminated_pixels": 38804.9140625,
+          "clean_population_effective_illuminated_pixels": 43850.55611948167,
+          "clean_mean_power_fraction_in_old_cross_gap": 0.24690904700057467,
+          "router_tile_shift_val_accuracy_pct": 78.27102803738318,
+          "router_tile_shift_minus_clean_pp": -0.29205607476635514,
+          "router_tile_shift_mean_position_change_px": 1.0555434226989746,
+          "integer_actuator_val_accuracy_pct": 76.28504672897196,
+          "integer_actuator_minus_clean_pp": -2.27803738317757,
+          "integer_actuator_mean_position_change_px": 0.4242440164089203
+        }
+      }
+    }
+  },
+  "photons_per_unit_incident_energy": 1000000.0
+}

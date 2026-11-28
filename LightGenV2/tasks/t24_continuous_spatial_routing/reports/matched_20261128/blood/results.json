@@ -1,0 +1,689 @@
+{
+  "dataset": "BloodMNIST128",
+  "config": {
+    "dataset": "bloodmnist128",
+    "num_classes": 8,
+    "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128",
+    "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128/bloodmnist_128.npz",
+    "expected_counts": {
+      "train": 11948,
+      "val": 1712,
+      "test": 3421
+    },
+    "source_archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+    "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+    "manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+    "index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+    "authorized_gpu_uuids": [
+      "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+    ],
+    "epochs": 8,
+    "batch": 32,
+    "phase_lr": 0.003,
+    "head_lr": 0.001,
+    "label_smoothing": 0.02
+  },
+  "runs": [
+    {
+      "seed": 37,
+      "source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+      "common_initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "common_parameter_count": 513416,
+      "minibatch_order_sha256_per_epoch": [
+        "f074eca5b707506b0535d4b677b2b27729a7e28d5352bf194a7c8986f10e6275",
+        "9f4d84a1ceec51d0c0af68fe33e736a3fac5b98bed4ce1afe58497f672b9c7af",
+        "36c7cd27e19976b78379d6c777a12b09ca6f8184139c2f88c94860550d65a4b6",
+        "46b404c3fc943252ac8e86b4cf68d31ab4c0811d7eb402b2a43d9f4a1c509676",
+        "e60753c8df4645e26d8a7ede64c84998b73cb25c9fea75356f4d410cb9e0b29e",
+        "b813d9c3eb3e822927c88faf1f10b95c6b4df0c45c294b3498648df5260cd544",
+        "13283cd2afbe91fdfd9e201ea6e9550eabbca930c3adce76d3cae971c694ca51",
+        "c9cd9fed8124c344ca00127a5661d2d6211c68f25afb05173e3380e6d559bef3"
+      ],
+      "train_steps_per_arm": 2992,
+      "train_presentations_per_arm": 95584,
+      "budget_validation_passes_per_arm": 8,
+      "post_lock_test_passes_per_arm": 1,
+      "data": {
+        "manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+        "archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+        "classes": [
+          "basophil",
+          "eosinophil",
+          "erythroblast",
+          "immature_granulocytes",
+          "lymphocyte",
+          "monocyte",
+          "neutrophil",
+          "platelet"
+        ],
+        "counts": {
+          "train": 11948,
+          "val": 1712,
+          "test": 3421
+        },
+        "pixel_hash_overlap_counts": {
+          "train_val": 0,
+          "train_test": 5,
+          "val_test": 1
+        },
+        "duplicate_hashes_within_split": {
+          "train": 0,
+          "val": 0,
+          "test": 0
+        },
+        "patient_independence_verified": false,
+        "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+        "raw_pixel_and_label_alignment_checked": true
+      },
+      "arms": {
+        "fixed": {
+          "run": "blood_s37_fixed",
+          "selected_epoch": 7,
+          "best_checkpoint_sha256": "935ad85044f1ccc4097fd60b132aea6fab02d519de508b5e4cd9b029ea2927df",
+          "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+          "splits": {
+            "train": {
+              "n": 11948,
+              "correct": 9511,
+              "accuracy": 0.7960328088382993,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 3,
+                "distinct_unordered_pairs_at_nearest_pixel": 2,
+                "most_common_pair_image_fraction": 0.9999163039839304,
+                "strict_interior_placement_fraction": 0.0,
+                "mean_distance_from_nearest_fixed_corner_px": 0.0,
+                "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+                "mean_pair_distance_px": 254.00880432128906,
+                "any_footprint_overlap_image_fraction": 0.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.0,
+                "max_overlap_fraction": 0.0
+              }
+            },
+            "val": {
+              "n": 1712,
+              "correct": 1360,
+              "accuracy": 0.794392523364486,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 3,
+                "distinct_unordered_pairs_at_nearest_pixel": 2,
+                "most_common_pair_image_fraction": 0.9988317757009346,
+                "strict_interior_placement_fraction": 0.0,
+                "mean_distance_from_nearest_fixed_corner_px": 0.0,
+                "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+                "mean_pair_distance_px": 254.1229248046875,
+                "any_footprint_overlap_image_fraction": 0.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.0,
+                "max_overlap_fraction": 0.0
+              }
+            },
+            "test": {
+              "n": 3421,
+              "correct": 2703,
+              "accuracy": 0.7901198479976616,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 3,
+                "distinct_unordered_pairs_at_nearest_pixel": 3,
+                "most_common_pair_image_fraction": 0.9994153756211634,
+                "strict_interior_placement_fraction": 0.0,
+                "mean_distance_from_nearest_fixed_corner_px": 0.0,
+                "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+                "mean_pair_distance_px": 254.03076171875,
+                "any_footprint_overlap_image_fraction": 0.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.0,
+                "max_overlap_fraction": 0.0
+              }
+            }
+          }
+        },
+        "continuous": {
+          "run": "blood_s37_continuous",
+          "selected_epoch": 8,
+          "best_checkpoint_sha256": "1afb1448345ce441c45a0c0e59466b5083ce3772163c889fb61a5db7d629745f",
+          "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+          "splits": {
+            "train": {
+              "n": 11948,
+              "correct": 9245,
+              "accuracy": 0.7737696685637764,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 159,
+                "distinct_unordered_pairs_at_nearest_pixel": 463,
+                "most_common_pair_image_fraction": 0.15944091061265483,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 141.56060791015625,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 85.36705017089844,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.5624038577079773,
+                "max_overlap_fraction": 0.7354059815406799
+              }
+            },
+            "val": {
+              "n": 1712,
+              "correct": 1306,
+              "accuracy": 0.7628504672897196,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 89,
+                "distinct_unordered_pairs_at_nearest_pixel": 207,
+                "most_common_pair_image_fraction": 0.16647196261682243,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 141.60377502441406,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 85.44827270507812,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.5618636608123779,
+                "max_overlap_fraction": 0.7335741519927979
+              }
+            },
+            "test": {
+              "n": 3421,
+              "correct": 2575,
+              "accuracy": 0.7527038877521193,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 111,
+                "distinct_unordered_pairs_at_nearest_pixel": 291,
+                "most_common_pair_image_fraction": 0.15463314820228002,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 141.86419677734375,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 85.24092102050781,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.5625205039978027,
+                "max_overlap_fraction": 0.7344464659690857
+              }
+            }
+          }
+        },
+        "constrained": {
+          "run": "blood_s37_constrained",
+          "selected_epoch": 8,
+          "best_checkpoint_sha256": "22cc95cb3bc03f389c01065e0b071a7db3026fffc0f9b2d290513dc443e2be04",
+          "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+          "splits": {
+            "train": {
+              "n": 11948,
+              "correct": 9352,
+              "accuracy": 0.7827251422832273,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 62,
+                "distinct_unordered_pairs_at_nearest_pixel": 125,
+                "most_common_pair_image_fraction": 0.15015065282892534,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 109.8108901977539,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 162.63775634765625,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.23811571300029755,
+                "max_overlap_fraction": 0.24865950644016266
+              }
+            },
+            "val": {
+              "n": 1712,
+              "correct": 1347,
+              "accuracy": 0.7867990654205608,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 36,
+                "distinct_unordered_pairs_at_nearest_pixel": 75,
+                "most_common_pair_image_fraction": 0.16355140186915887,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 109.7732925415039,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 162.66139221191406,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.23803386092185974,
+                "max_overlap_fraction": 0.24900276958942413
+              }
+            },
+            "test": {
+              "n": 3421,
+              "correct": 2607,
+              "accuracy": 0.7620578778135049,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 44,
+                "distinct_unordered_pairs_at_nearest_pixel": 87,
+                "most_common_pair_image_fraction": 0.14674071908798597,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 109.79468536376953,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 162.64840698242188,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.23807132244110107,
+                "max_overlap_fraction": 0.2469450682401657
+              }
+            }
+          }
+        }
+      },
+      "paired": {
+        "continuous_minus_fixed": {
+          "train": {
+            "both_correct": 8646,
+            "both_wrong": 1838,
+            "only_second_correct": 599,
+            "only_first_correct": 865,
+            "delta_correct": -266,
+            "delta_pp": -2.2263140274522932
+          },
+          "val": {
+            "both_correct": 1222,
+            "both_wrong": 268,
+            "only_second_correct": 84,
+            "only_first_correct": 138,
+            "delta_correct": -54,
+            "delta_pp": -3.1542056074766354
+          },
+          "test": {
+            "both_correct": 2427,
+            "both_wrong": 570,
+            "only_second_correct": 148,
+            "only_first_correct": 276,
+            "delta_correct": -128,
+            "delta_pp": -3.741596024554224
+          }
+        },
+        "constrained_minus_fixed": {
+          "train": {
+            "both_correct": 8829,
+            "both_wrong": 1914,
+            "only_second_correct": 523,
+            "only_first_correct": 682,
+            "delta_correct": -159,
+            "delta_pp": -1.3307666555071977
+          },
+          "val": {
+            "both_correct": 1265,
+            "both_wrong": 270,
+            "only_second_correct": 82,
+            "only_first_correct": 95,
+            "delta_correct": -13,
+            "delta_pp": -0.7593457943925234
+          },
+          "test": {
+            "both_correct": 2470,
+            "both_wrong": 581,
+            "only_second_correct": 137,
+            "only_first_correct": 233,
+            "delta_correct": -96,
+            "delta_pp": -2.806197018415668
+          }
+        },
+        "constrained_minus_continuous": {
+          "train": {
+            "both_correct": 8688,
+            "both_wrong": 2039,
+            "only_second_correct": 664,
+            "only_first_correct": 557,
+            "delta_correct": 107,
+            "delta_pp": 0.8955473719450954
+          },
+          "val": {
+            "both_correct": 1235,
+            "both_wrong": 294,
+            "only_second_correct": 112,
+            "only_first_correct": 71,
+            "delta_correct": 41,
+            "delta_pp": 2.3948598130841123
+          },
+          "test": {
+            "both_correct": 2409,
+            "both_wrong": 648,
+            "only_second_correct": 198,
+            "only_first_correct": 166,
+            "delta_correct": 32,
+            "delta_pp": 0.935399006138556
+          }
+        }
+      }
+    },
+    {
+      "seed": 53,
+      "source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+      "common_initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "common_parameter_count": 513416,
+      "minibatch_order_sha256_per_epoch": [
+        "0e976e9921a0661ad64ec3ac6f58b596b50de6a6383ae9fa702c265ad29f4df5",
+        "ce3016ffff510cf3dbdb0e230a3895965bb9efaf460026f9f65dbfdecce3b14f",
+        "f4d46e82e54fc41e10b995720787cd2252a187045fa0786764aebb80c316af4d",
+        "a0b3cf86ce8a49b3535b619faafbbfdd8f1ebe182f446c7d292063a05cf0608f",
+        "28f698a227cc6070a130aa3e76ba7f0707165ab68eb3815ab3ad76f4bb460e6c",
+        "a7a14551ac0358a8b2cd5fe7c94bd5eea92550696cfc820cfc77694ebcfc7969",
+        "116b40235692bddd046aa16797f485786f00b7f008b8fad45821a7d4e4dacfa3",
+        "c31f145f14ff6ef7ab3315053233241f3281821fa538630aa70463642feccb35"
+      ],
+      "train_steps_per_arm": 2992,
+      "train_presentations_per_arm": 95584,
+      "budget_validation_passes_per_arm": 8,
+      "post_lock_test_passes_per_arm": 1,
+      "data": {
+        "manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+        "archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+        "classes": [
+          "basophil",
+          "eosinophil",
+          "erythroblast",
+          "immature_granulocytes",
+          "lymphocyte",
+          "monocyte",
+          "neutrophil",
+          "platelet"
+        ],
+        "counts": {
+          "train": 11948,
+          "val": 1712,
+          "test": 3421
+        },
+        "pixel_hash_overlap_counts": {
+          "train_val": 0,
+          "train_test": 5,
+          "val_test": 1
+        },
+        "duplicate_hashes_within_split": {
+          "train": 0,
+          "val": 0,
+          "test": 0
+        },
+        "patient_independence_verified": false,
+        "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+        "raw_pixel_and_label_alignment_checked": true
+      },
+      "arms": {
+        "fixed": {
+          "run": "blood_s53_fixed",
+          "selected_epoch": 7,
+          "best_checkpoint_sha256": "b89da56b386632192b7e25c8259ee1627ba31b50ef55423cc2e216f76cd87ffe",
+          "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+          "splits": {
+            "train": {
+              "n": 11948,
+              "correct": 9643,
+              "accuracy": 0.8070806829594911,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 3,
+                "distinct_unordered_pairs_at_nearest_pixel": 2,
+                "most_common_pair_image_fraction": 0.9868597254770672,
+                "strict_interior_placement_fraction": 0.0,
+                "mean_distance_from_nearest_fixed_corner_px": 0.0,
+                "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+                "mean_pair_distance_px": 254.0,
+                "any_footprint_overlap_image_fraction": 0.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.0,
+                "max_overlap_fraction": 0.0
+              }
+            },
+            "val": {
+              "n": 1712,
+              "correct": 1383,
+              "accuracy": 0.8078271028037384,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 3,
+                "distinct_unordered_pairs_at_nearest_pixel": 2,
+                "most_common_pair_image_fraction": 0.9912383177570093,
+                "strict_interior_placement_fraction": 0.0,
+                "mean_distance_from_nearest_fixed_corner_px": 0.0,
+                "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+                "mean_pair_distance_px": 254.0,
+                "any_footprint_overlap_image_fraction": 0.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.0,
+                "max_overlap_fraction": 0.0
+              }
+            },
+            "test": {
+              "n": 3421,
+              "correct": 2690,
+              "accuracy": 0.7863197895352236,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 3,
+                "distinct_unordered_pairs_at_nearest_pixel": 2,
+                "most_common_pair_image_fraction": 0.9842151417714119,
+                "strict_interior_placement_fraction": 0.0,
+                "mean_distance_from_nearest_fixed_corner_px": 0.0,
+                "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+                "mean_pair_distance_px": 254.0,
+                "any_footprint_overlap_image_fraction": 0.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.0,
+                "max_overlap_fraction": 0.0
+              }
+            }
+          }
+        },
+        "continuous": {
+          "run": "blood_s53_continuous",
+          "selected_epoch": 8,
+          "best_checkpoint_sha256": "1e4ba1c1da68a062952885856fc8a6e8b37615a3c63e6ef29e4d5514a118f8e3",
+          "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+          "splits": {
+            "train": {
+              "n": 11948,
+              "correct": 9143,
+              "accuracy": 0.7652326749246736,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 153,
+                "distinct_unordered_pairs_at_nearest_pixel": 498,
+                "most_common_pair_image_fraction": 0.113073317710077,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 136.61395263671875,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 91.11198425292969,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.534505307674408,
+                "max_overlap_fraction": 0.7430742383003235
+              }
+            },
+            "val": {
+              "n": 1712,
+              "correct": 1282,
+              "accuracy": 0.7488317757009346,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 102,
+                "distinct_unordered_pairs_at_nearest_pixel": 235,
+                "most_common_pair_image_fraction": 0.12032710280373832,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 136.55992126464844,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 91.13160705566406,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.5346072316169739,
+                "max_overlap_fraction": 0.7447601556777954
+              }
+            },
+            "test": {
+              "n": 3421,
+              "correct": 2543,
+              "accuracy": 0.7433498976907337,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 117,
+                "distinct_unordered_pairs_at_nearest_pixel": 308,
+                "most_common_pair_image_fraction": 0.11546331482022801,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 136.82203674316406,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 90.5508804321289,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.5371161699295044,
+                "max_overlap_fraction": 0.7449943423271179
+              }
+            }
+          }
+        },
+        "constrained": {
+          "run": "blood_s53_constrained",
+          "selected_epoch": 8,
+          "best_checkpoint_sha256": "caf95ee35416d7c0fff9211acfe1dcf66e86c80582b57db27e124ab9cffde79a",
+          "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+          "splits": {
+            "train": {
+              "n": 11948,
+              "correct": 9406,
+              "accuracy": 0.7872447271509876,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 52,
+                "distinct_unordered_pairs_at_nearest_pixel": 119,
+                "most_common_pair_image_fraction": 0.20170739872782056,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 109.22388458251953,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 162.421142578125,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.2385578602552414,
+                "max_overlap_fraction": 0.24859774112701416
+              }
+            },
+            "val": {
+              "n": 1712,
+              "correct": 1343,
+              "accuracy": 0.7844626168224299,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 28,
+                "distinct_unordered_pairs_at_nearest_pixel": 70,
+                "most_common_pair_image_fraction": 0.2207943925233645,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 109.17745971679688,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 162.48806762695312,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.23832029104232788,
+                "max_overlap_fraction": 0.24637864530086517
+              }
+            },
+            "test": {
+              "n": 3421,
+              "correct": 2660,
+              "accuracy": 0.7775504238526747,
+              "routing": {
+                "distinct_positions_at_nearest_pixel": 39,
+                "distinct_unordered_pairs_at_nearest_pixel": 88,
+                "most_common_pair_image_fraction": 0.20315697164571764,
+                "strict_interior_placement_fraction": 1.0,
+                "mean_distance_from_nearest_fixed_corner_px": 109.22526550292969,
+                "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+                "mean_pair_distance_px": 162.4863739013672,
+                "any_footprint_overlap_image_fraction": 1.0,
+                "mean_overlapping_area_fraction_of_one_copy": 0.2383376955986023,
+                "max_overlap_fraction": 0.2465205043554306
+              }
+            }
+          }
+        }
+      },
+      "paired": {
+        "continuous_minus_fixed": {
+          "train": {
+            "both_correct": 8314,
+            "both_wrong": 1476,
+            "only_second_correct": 829,
+            "only_first_correct": 1329,
+            "delta_correct": -500,
+            "delta_pp": -4.184800803481754
+          },
+          "val": {
+            "both_correct": 1168,
+            "both_wrong": 215,
+            "only_second_correct": 114,
+            "only_first_correct": 215,
+            "delta_correct": -101,
+            "delta_pp": -5.899532710280374
+          },
+          "test": {
+            "both_correct": 2309,
+            "both_wrong": 497,
+            "only_second_correct": 234,
+            "only_first_correct": 381,
+            "delta_correct": -147,
+            "delta_pp": -4.296989184448991
+          }
+        },
+        "constrained_minus_fixed": {
+          "train": {
+            "both_correct": 8567,
+            "both_wrong": 1466,
+            "only_second_correct": 839,
+            "only_first_correct": 1076,
+            "delta_correct": -237,
+            "delta_pp": -1.9835955808503516
+          },
+          "val": {
+            "both_correct": 1228,
+            "both_wrong": 214,
+            "only_second_correct": 115,
+            "only_first_correct": 155,
+            "delta_correct": -40,
+            "delta_pp": -2.336448598130841
+          },
+          "test": {
+            "both_correct": 2391,
+            "both_wrong": 462,
+            "only_second_correct": 269,
+            "only_first_correct": 299,
+            "delta_correct": -30,
+            "delta_pp": -0.8769365682548962
+          }
+        },
+        "constrained_minus_continuous": {
+          "train": {
+            "both_correct": 8583,
+            "both_wrong": 1982,
+            "only_second_correct": 823,
+            "only_first_correct": 560,
+            "delta_correct": 263,
+            "delta_pp": 2.201205222631403
+          },
+          "val": {
+            "both_correct": 1206,
+            "both_wrong": 293,
+            "only_second_correct": 137,
+            "only_first_correct": 76,
+            "delta_correct": 61,
+            "delta_pp": 3.5630841121495327
+          },
+          "test": {
+            "both_correct": 2378,
+            "both_wrong": 596,
+            "only_second_correct": 282,
+            "only_first_correct": 165,
+            "delta_correct": 117,
+            "delta_pp": 3.4200526161940954
+          }
+        }
+      }
+    }
+  ],
+  "mean_over_seeds": {
+    "train": {
+      "fixed_accuracy": 0.8015567458988953,
+      "fixed_mean_overlap_fraction": 0.0,
+      "continuous_accuracy": 0.769501171744225,
+      "continuous_mean_overlap_fraction": 0.5484545826911926,
+      "constrained_accuracy": 0.7849849347171074,
+      "constrained_mean_overlap_fraction": 0.23833678662776947,
+      "continuous_minus_fixed_pp": -3.2055574154670237,
+      "constrained_minus_fixed_pp": -1.6571811181787748,
+      "constrained_minus_continuous_pp": 1.548376297288249
+    },
+    "val": {
+      "fixed_accuracy": 0.8011098130841121,
+      "fixed_mean_overlap_fraction": 0.0,
+      "continuous_accuracy": 0.7558411214953271,
+      "continuous_mean_overlap_fraction": 0.5482354462146759,
+      "constrained_accuracy": 0.7856308411214954,
+      "constrained_mean_overlap_fraction": 0.2381770759820938,
+      "continuous_minus_fixed_pp": -4.526869158878505,
+      "constrained_minus_fixed_pp": -1.5478971962616823,
+      "constrained_minus_continuous_pp": 2.9789719626168223
+    },
+    "test": {
+      "fixed_accuracy": 0.7882198187664426,
+      "fixed_mean_overlap_fraction": 0.0,
+      "continuous_accuracy": 0.7480268927214264,
+      "continuous_mean_overlap_fraction": 0.5498183369636536,
+      "constrained_accuracy": 0.7698041508330897,
+      "constrained_mean_overlap_fraction": 0.23820450901985168,
+      "continuous_minus_fixed_pp": -4.019292604501608,
+      "constrained_minus_fixed_pp": -1.8415667933352822,
+      "constrained_minus_continuous_pp": 2.177725811166326
+    }
+  },
+  "interpretation": "Each seed sees the same original test set."
+}

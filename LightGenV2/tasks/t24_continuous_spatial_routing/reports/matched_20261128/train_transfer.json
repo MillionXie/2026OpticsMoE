@@ -1,0 +1,197 @@
+{
+  "server_tar_sha256": "991a62debc304929799af7f152708304666da9e4ad1642a8a0a524b7db6715fe",
+  "matching_local_artifacts": {
+    "kather_s37_fixed": {
+      "pid": 347579,
+      "artifacts": {
+        "best_checkpoint.pt": "0b179f2738c492085b03049ff7d5ea6ff7225e5c7b0ee367c673d6a6ca5f441f",
+        "history.json": "5b19c37358b44a7798d5898a9f4ce690df868020c412898bf265025ac55e5d82",
+        "last_checkpoint.pt": "0ed0049b0bd6e81018ad982c1b5441c0294144a289f31b489f9162db1218b03d",
+        "manifest.json": "68c2d85fa0fcab2936207edbaa84a23e7c93a392774907c5932aba025f3b258a",
+        "metadata.json": "e484377a5c9ded3c4a89415af69f0ac223446e4ed11d3b9d65c6cac9d5dd1ee8",
+        "predictions_test.npz": "3b1dbadf0fb4420c670d7c640de7fa5841deb8c1ef320756c8f772b913739bc1",
+        "predictions_train.npz": "46c401a6f8a545cacda5fd508e07edb01d2d7e672aaf6578b0c39b2d0551df26",
+        "predictions_val.npz": "270c91cc9e8c9023c2835eec6bcfef4578b97e964c4a528ac8a60c7a1c102ae1",
+        "result.json": "e6b0645861620f160b22ea5516be4923dedea7d660847f867db6876cdafe1f96",
+        "selection_lock.json": "91d4b72ba8a519dab3705f92ad60249c09ec43127e75b3bd1af1b98bd95b527c",
+        "status.json": "7c9c1b5ece58f2abfe3304bafc4f173584b2495c4ff4dab5b12f19928452e6ea"
+      }
+    },
+    "kather_s37_continuous": {
+      "pid": 348403,
+      "artifacts": {
+        "best_checkpoint.pt": "def286baeaf2898b3d1059d17ad941d6bc7e1275192520c56ef04b1e69772ea8",
+        "history.json": "8bd1199afb65d2e1a78b73176c8e8c4b8f39888ef0bffb875b565ac64e9ce90e",
+        "last_checkpoint.pt": "9d69ce7bdea7fa22855d1f5b71a6e1b1910853e479e1f672bb6016603a73b0b6",
+        "manifest.json": "ab07d4d2ab18896742ae0a75b7e84351b49e99a2050f291ff1d8beb9a5ce72ac",
+        "metadata.json": "06bfa3e9aded3f2656f7922ad25a5c4b09c5af5528abaeecb2c4b4c7d13c84f5",
+        "predictions_test.npz": "6e63c2f083f5d1bc62b89442614bd0fe91cfcc0692e09de3f05ce76bc638ad43",
+        "predictions_train.npz": "71dc8b7e306bd6a9a7135923c1377cad3507463ee6e2254f3348c9a5a6671e7d",
+        "predictions_val.npz": "89819b11c5a77912dc444d381278bc048793cc005671e4d5d2f35df30e108cde",
+        "result.json": "711537fd66024c00f392c1453669a9e0b205e7f06a8bb67646f885644d3b0ab9",
+        "selection_lock.json": "f13d9d87fbf27d3ba16226aea8eb81b079fd159f2355a16d94562e4554d72fe5",
+        "status.json": "20d3e7753abef21c5a130eb88872e0659957f8197812966756912f9c5c19ab83"
+      }
+    },
+    "kather_s37_constrained": {
+      "pid": 348949,
+      "artifacts": {
+        "best_checkpoint.pt": "1d7c064bcce9d09b6253903991582730ecb28d3df99be1b3765f7a3ffead874b",
+        "history.json": "2c5845bd53b92511852f79a4650c275baa06b15746b4a1d7e9220d16e0d5e0f2",
+        "last_checkpoint.pt": "653979fb6895a9794105d2c32d0462f4c7c1709c9b8adc6d472daa41040eaba7",
+        "manifest.json": "0e56d984060bcbe9e0ed1230ca5b7eadf1b24dd8d3c3e9a580aa4392c2f2916f",
+        "metadata.json": "770e39222455195e7b5d09537a1684fe4d1bde70f607527031be172596d43a8e",
+        "predictions_test.npz": "45e331a417a65825e96347742471371751da598c93192a0a7b323be66d6539bc",
+        "predictions_train.npz": "756b5503d05f0b3271fbaa947f2f8a6b920eaeb54b74e7686c214dec9aa3cee8",
+        "predictions_val.npz": "579d8a86eeec6996326dea736740748693bf2ef8383bfd43f7befea5b681afd2",
+        "result.json": "2b1114234252581d7930636f92a03cda06eac74eaebe907dc195e23dfd3e56c0",
+        "selection_lock.json": "4ca015732f3863a623d3142cd58b5b68386a64604662d1765577cf160d9c573e",
+        "status.json": "ecce230ba726aa3e32a21370fcbbec37b3d575f7250f37be7d8152af88308413"
+      }
+    },
+    "blood_s37_fixed": {
+      "pid": 349626,
+      "artifacts": {
+        "best_checkpoint.pt": "935ad85044f1ccc4097fd60b132aea6fab02d519de508b5e4cd9b029ea2927df",
+        "history.json": "c34c0efd0046c686ac7eecf1cf821458763b53eed414b78e28d83d7981336f1a",
+        "last_checkpoint.pt": "5b62427b7763f39b95d64c0d1f71b70506fdff87bff56dd2f6451ca57b6b085d",
+        "manifest.json": "7f45d7fbf553f6f5f663913506cab4f452d24b3319505addfa2dfec431af4b7d",
+        "metadata.json": "60757bb1e441d5042df55a446a31bac2289dc50af281dadfb24f6ee0dc22e71e",
+        "predictions_test.npz": "396d6de849dedd5efcbffe11f0a1532209b549c9da6e857bcf4e30dedb04fa1f",
+        "predictions_train.npz": "359e2dbe6288273624d1fcf611329042c956ad8b0a7181aabec9f86c883a5b88",
+        "predictions_val.npz": "25f2a3e7548b6898feca03afd0b3857aae3fe0f04311ddf7992e14c41f069a05",
+        "result.json": "199e72d5e632972f0f663125d8c24ed2d97bcc9f0c8e924ef81809ae11ae4bb9",
+        "selection_lock.json": "a614864931bb92aa37769f017d7e001a1c359baa9c44138cd07006733328b8a8",
+        "status.json": "256eeff0fca832a549f63d05c4bce7a419bd42c3c3d40d65f1b8a0b2b7507e7e"
+      }
+    },
+    "blood_s37_continuous": {
+      "pid": 351295,
+      "artifacts": {
+        "best_checkpoint.pt": "1afb1448345ce441c45a0c0e59466b5083ce3772163c889fb61a5db7d629745f",
+        "history.json": "513cfbc03dffe683924edfc997319c40cf0c7dcb69a5d848dcf47220770d5337",
+        "last_checkpoint.pt": "05f13ff7dde12565cb4e109166a5227fdcbc6e72beb94e84f55f521c5590fa9f",
+        "manifest.json": "2b066e8c18ff3bfcc4a734fe470f1a4742a6bb13141f755b1473527573cb2bf7",
+        "metadata.json": "87e1bf8fe4136dd7072076fcdd0db0985f86840e806589831268a6f6337d94c8",
+        "predictions_test.npz": "f909a2f1a118f51e2f3d293fda37c30108b784e20480a916fedd10c7940259ba",
+        "predictions_train.npz": "734e48214d37a2bf4c8e6d5722f646d2e98b43c167ab1dadb872749ae0950d63",
+        "predictions_val.npz": "fa069b2877f4afc9f0d0b51816e62928dc4ebcbc6d5ab9ce132693241a1b8e4c",
+        "result.json": "b02b94f9729b7f64621fbd26e45470a938e149f48113660cd95cce32195976d0",
+        "selection_lock.json": "6e98779cec3bf258255ab2db004cbfa59ee986418757a13337e1376b6ad88936",
+        "status.json": "67530dd37e3acb46ce542a6ff674d050884fd1fd82142b248475ea453e275dce"
+      }
+    },
+    "blood_s37_constrained": {
+      "pid": 347562,
+      "artifacts": {
+        "best_checkpoint.pt": "22cc95cb3bc03f389c01065e0b071a7db3026fffc0f9b2d290513dc443e2be04",
+        "history.json": "4c1bb1ef95098011e4f797c2eb5c11dcab010ccf075d691914acded12b04382a",
+        "last_checkpoint.pt": "be75ca0d19732cf4d0e4bde50c4d1949ae038ed5bc05d3ffeb88c05ed1cdad23",
+        "manifest.json": "c804786b86f7ada0f74953674742a6b3e08c7dbd9de3f526312da51e7cd16404",
+        "metadata.json": "bd12515c865b1039f7311e13b6951e9c05b61f251cc1a741511fd88e3b7be1d6",
+        "predictions_test.npz": "12b8cf22e3d8e0a7773d09f16c6a36e47365b7aca42473b4e8c6bedf8dd01f5a",
+        "predictions_train.npz": "1b644fe3252c3403fe7b67543e567a0e0ae2107b436cf3cfd490605f2b757721",
+        "predictions_val.npz": "89731132a5ecf46ec24fa1731d90c3848887af56b18f20fda30f769d77e520e5",
+        "result.json": "4f098105b92a0e43286468444d55ece30eb3b7d47c87afdc4e1c384877da2404",
+        "selection_lock.json": "6b5174feb433572ba46ef6b894d4f5d1f6a02bae2d4bb7f8e33e54aa4c65c718",
+        "status.json": "79baa9809645857e65606ccbc3b2ca6fcfd5cc4a47bdaf09f8c082d274751cbd"
+      }
+    },
+    "kather_s53_constrained": {
+      "pid": 347582,
+      "artifacts": {
+        "best_checkpoint.pt": "86c68f96b3935425d4fbb50315a6f97cfdca1c2c0500462e2bb6a0774d0e6253",
+        "history.json": "6a091e8022bac169574ba94dd9878faeef4dabb52d3446f2bdf53986097ea241",
+        "last_checkpoint.pt": "860fa0f86fafdae3e74c9c52e74d5d08c14708cac38101508b006382b4117fa8",
+        "manifest.json": "9c18f7f1e2e5acb531a1485199cdcd13345319ae71530c4e2dee9ca124991b25",
+        "metadata.json": "65606d509be963085ecf308f91016d9e497b87fa128f7e6ce5b256239f710419",
+        "predictions_test.npz": "0d50322cff34c404d7a1a5ad94ffb5b2d0fa225a667638550173e4ba6fae7835",
+        "predictions_train.npz": "4d1db2b1cbff63fde1931f7e5aa7b085b0e64433e6ac9844511841a37a9ad8b2",
+        "predictions_val.npz": "d30a4d516f86d588e3f42282698d9f5d70e56fbd4d46fb2a986295bc07522fd6",
+        "result.json": "6255dca171046ee84bbf76f9012dad4f5bd12b6fab9af86607a4a5d3884e9f7f",
+        "selection_lock.json": "1fde25a2f7065474b3352f6abe68c41849dadd60253662cb15cbe77c660633a1",
+        "status.json": "2402bcd34ae03e5ad14e106482a4e9b886534b089f8617281cc836d6b19c6334"
+      }
+    },
+    "kather_s53_continuous": {
+      "pid": 348495,
+      "artifacts": {
+        "best_checkpoint.pt": "73f48b7c5f5b71c92b9d4a77e4e4ad3715b2049b1cf9c3a205d1e18871d9ce7a",
+        "history.json": "4c9c127176d3ae1180841555d14b82e6a3fadf6c1c9c6f25721e3aaab2c764d0",
+        "last_checkpoint.pt": "7e8faff8d62bd64591e2df83088a21237757db1e5be2367eec1d68e23f55c343",
+        "manifest.json": "2a9393ebbb918cee91c1afb397a04d6cc9a5b30390892f800e3d9ee1f7124576",
+        "metadata.json": "d10f5b9763e290485583a82de568c1f07a60620fbe7d5cc5a87dbf1fda01c85c",
+        "predictions_test.npz": "522ad428274b1ee3c46a616cc8b4bd46cc67154a095c9fdd772c97cc2581c490",
+        "predictions_train.npz": "56ef57bddb575df7b699774ce794ef4ba2878222912d47df9092c4e1bea2a6b9",
+        "predictions_val.npz": "25ec2d542a1dea341ea337f4003957f3a0e754ec8406d09e524013792311f626",
+        "result.json": "0dcc06cfec8ad26ba209b5885184dcdbefb8570426df845b20925a933a42a8a9",
+        "selection_lock.json": "6a037c44379562beaa3b19df6f9f78d1b9c89629b781c3922c71925bc3dd6dc0",
+        "status.json": "b9f36813fdbfc33fc8ffe55bdd6add3f74d857e269726db64987983b30fb75cc"
+      }
+    },
+    "kather_s53_fixed": {
+      "pid": 349249,
+      "artifacts": {
+        "best_checkpoint.pt": "caf145d2b7432bae401f658cd18ff08042c4fe0dade0ffe8cfadbcb1bccb679b",
+        "history.json": "c11ddb9b5800ee10a4c06cdca5d20c18a22763febba33a990a78b3a0ab88478c",
+        "last_checkpoint.pt": "9ba6a41f656112ce1d2a4f40356627ca58f2dcf9008078b3e3f76e9b6c7e5556",
+        "manifest.json": "ed4ca5a57156f7f285fc214fea28eb7bfc1941b761ac1ccd54e5a6aa7aac258a",
+        "metadata.json": "d900d471275e640686c07d79870413b1309f987e11e44bd3f03ca0b85a189cda",
+        "predictions_test.npz": "4daff116865416f30f0828041757ffc957822c1891c906dcc57de1dffc52b708",
+        "predictions_train.npz": "6047033f94b933cf20a7b87e14a2df5ca883a0557279345f5d5e5d9ef2d34313",
+        "predictions_val.npz": "85c859157e8e6cb6491e80847760dc60f082ec1450ad1321648a9417231b4f21",
+        "result.json": "bcc1201c6da2716e3930914f1553caddc62319f2b638c0a0b39126610b2cf235",
+        "selection_lock.json": "6316c994d3ed0620e04de1393ee9322e9dd1275db0c07a4821afd9a0c490bbc3",
+        "status.json": "57bf5638d974496224b918c4bbf7b80390595886ab88ba455e04d48c43ce98f4"
+      }
+    },
+    "blood_s53_constrained": {
+      "pid": 350269,
+      "artifacts": {
+        "best_checkpoint.pt": "caf95ee35416d7c0fff9211acfe1dcf66e86c80582b57db27e124ab9cffde79a",
+        "history.json": "e99b86f51b2c7ab08513f1a610ac3530cafa0c4dcc463b28c9aa66ee4363d4a4",
+        "last_checkpoint.pt": "a4c3871a257d1420c03ed66b3ab39545e126d1d172f5d49c00c6e6313ca6fdf2",
+        "manifest.json": "cbad6e7e01fcf14df149277d5f1f811462e61b305ac7d722ca4260a99f0aba4e",
+        "metadata.json": "22472eaf7af565ff12f4818aa5ada88f950d7c0aafad5c66b2712fcbb094a2cb",
+        "predictions_test.npz": "4e62ff1ea1296124e1b2d87acd5de0ab5c0aafbe7829fb33a5ef79cadeb07a99",
+        "predictions_train.npz": "c36c1db25a49d8515e49e9cd20045dfb25be55bf7cdf4af715181716bb8ead6d",
+        "predictions_val.npz": "11964e711619a52910bb7f15f9c0fe1fe0d9f5c358b80af74997221491975d55",
+        "result.json": "2e6a0c436b6fa4ac182db42d590a125e59c0ff8d38225f2eedecf5327458b100",
+        "selection_lock.json": "bec6c51692a2f84fc94421930b9a1b48c93b099c50482cd1bc1dd489cc908738",
+        "status.json": "47f60c30b39c9f1b643351801186869ba3a6bc281d3cb111f0c0951f4f8e73ca"
+      }
+    },
+    "blood_s53_continuous": {
+      "pid": 352049,
+      "artifacts": {
+        "best_checkpoint.pt": "1e4ba1c1da68a062952885856fc8a6e8b37615a3c63e6ef29e4d5514a118f8e3",
+        "history.json": "7841527390a098a9d60cb5d8a23e026f25265d95596cdf5e030a3ab5c1908a6c",
+        "last_checkpoint.pt": "8f7354c636623e525a1537b1f33bc6d8cc1be42d1f0c359848c52400343ba0d4",
+        "manifest.json": "ac407d2076abf368f85a2ce92c91b9b51b0bd36dc65e7dbbbc5cc7fb9ad374f6",
+        "metadata.json": "a7f1e103594cdf858e624519727e19260ae890c786e9d18eb4529f08d95aed65",
+        "predictions_test.npz": "ae6f9e2479d752dc4034241eda4e9646f46e42f5134c1481b8f0cb2d3e99eaec",
+        "predictions_train.npz": "6f345b08f4be6be9364ca8b269ad28d5676ba6573ced160d8d03056623fd8308",
+        "predictions_val.npz": "c384350481e852c73473ee53cd91cdfa6a2f7ef4a5145d40922a64d0da982f7b",
+        "result.json": "e7fa8c0fa0986959d5c45150761d06bce7cd6dd301e57365a960103d09a86e31",
+        "selection_lock.json": "0414c06e06d8cac70b7a4e13dd44b4951131f0215d391f97f4dc4a0ff0e534db",
+        "status.json": "308213e74dc8610bfcf4c39fad879bf5caa94193368c7375ce4f179c028a89ca"
+      }
+    },
+    "blood_s53_fixed": {
+      "pid": 347574,
+      "artifacts": {
+        "best_checkpoint.pt": "b89da56b386632192b7e25c8259ee1627ba31b50ef55423cc2e216f76cd87ffe",
+        "history.json": "ff6227db18c32e2e325424b920e07d0d9baa0cc3c7c289dec2ea56c43643b911",
+        "last_checkpoint.pt": "02b97cf5bb331838b252aad270594ee0952c237ecd3656d6d9531096bbe66e06",
+        "manifest.json": "5cfc6b78e1ec4d4fd4a11da14e7fd44550eb2a79c5a52983945a3cae62f99278",
+        "metadata.json": "c7b5019204779d532aa3458ec8c11efcc4fbf4a7c99b8667ce799062d30439a5",
+        "predictions_test.npz": "b022fba7ea77aaf5677b7d0ac0df814662fbd2979cecb3be5243c6afe71c8a88",
+        "predictions_train.npz": "beddf4789247c20e43b4a3a56b8f94dff5d113b6fe1fb41a1e8088da54297350",
+        "predictions_val.npz": "60052522497aebd96343b7dc41a979db43f279e01c483bab3d3e14baa3e0d92f",
+        "result.json": "c67e227182ae6bd51672315694d2b865a073e1b36a8691935014bb8b62a4e043",
+        "selection_lock.json": "a5472fa21d54f10df05ac186b066f8565bf08d4fa9aab25373843aff2ac2ba8b",
+        "status.json": "a69928cbaae61163735ae14ac624b8cfd2ff0e9f6a60fe6fa35b866d79d038b5"
+      }
+    }
+  }
+}
