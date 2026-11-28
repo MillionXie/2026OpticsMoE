@@ -318,6 +318,45 @@ def draw_test_overview(datasets, out):
     save_figure(fig, out)
 
 
+def write_html(out, report):
+    endpoint = report['decision_history'][-1]
+    passed = sum(run['plateau'] for run in endpoint['runs'].values())
+    methods = {'fixed': '四区域', 'continuous': '原连续', 'constrained': '加约束连续'}
+    rows = []
+    panels = []
+    for dataset, record in report['datasets'].items():
+        title = DATASETS[dataset][0]
+        summary = record['summary']
+        for mode, label in methods.items():
+            end = summary['common_endpoint']['by_mode'][mode]
+            splits = end['final_mean_percent']
+            locked = summary['mean_percentage_over_two_seeds'][mode]
+            values = [splits['train'], splits['val'], splits['test'], end['last10_test_mean_percent'], locked['test']]
+            rows.append(f'<tr><th scope="row">{title}</th><td>{label}</td>' +
+                        ''.join(f'<td>{value:.2f}%</td>' for value in values) + '</tr>')
+        panels.append(f'<section><h2>{title} 的训练、验证和测试曲线</h2>'
+                      f'<a href="{dataset}_longrun.svg"><img src="{dataset}_longrun.svg" '
+                      f'alt="{title} 三种路由、两个种子的逐轮准确率与训练损失"></a></section>')
+    content = f'''<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>连续空间路由的等预算比较</title>
+<style>body{{font:16px/1.55 system-ui,sans-serif;color:#182920;margin:32px auto;padding:0 20px;max-width:1160px}}
+h1,h2{{line-height:1.25}}section{{margin:32px 0}}.scroll{{overflow:auto}}table{{border-collapse:collapse;width:100%;white-space:nowrap}}
+th,td{{padding:7px 12px;text-align:right;border-bottom:1px solid #cdd6cf;font-variant-numeric:tabular-nums}}
+th:first-child,td:nth-child(2){{text-align:left}}p{{max-width:78ch}}img{{max-width:100%;height:auto}}a{{color:#126957}}</style>
+<h1>连续空间路由的等预算比较</h1>
+<p>两个数据集，三种路由，配对种子 37 和 53。实验室服务器共同完成第 {endpoint['epoch']} 轮，
+{passed}/12 组达到预设验证准确率平台标准。每个数据集内三种路由使用相同的样本顺序、更新次数和学习率。</p>
+<div class="scroll"><table><thead><tr><th>数据集</th><th>路由</th><th>末轮 TRAIN</th><th>末轮 VAL</th>
+<th>末轮 TEST</th><th>末 10 轮平均 TEST</th><th>最佳 VAL 权重的 TEST</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>
+<p>百分比是两个种子的等权平均。按完整 VAL 正确数选权重，同分时取交叉熵更小、轮次更早者。测试集用于逐轮观察和最终比较。</p>
+<section><h2>三种路由的测试轨迹</h2><a href="mean_test_overview.svg"><img src="mean_test_overview.svg" alt="两个数据集上三种路由的平均测试准确率轨迹"></a></section>
+{''.join(panels)}
+<p>逐轮图中绿色为 TRAIN，蓝色为 VAL，橙色为 TEST，下方为训练损失。前 8 轮的 TRAIN 和 TEST 点线取自单独回放，第 8 轮锚点来自原权重，第 9 轮起为实际续训记录。</p>
+<p>两个原测试划分在此前 T17 开发中已有暴露。Blood 的原始划分中有 5 个相同像素哈希跨 TRAIN 与 TEST、1 个跨 VAL 与 TEST。本轮沿用固定划分，两个种子共用相同测试样本。</p>
+<p><a href="results.json">逐轮数值、各个种子的结果与停训判据</a> · <a href="model_route_audit.json">权重与落点核验</a> · <a href="route_diagnostics.svg">验证集上的坐标扰动与互换实验</a></p></html>'''
+    (out / 'results.html').write_text(content, encoding='utf8')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for key, help_text in [('runs', 'Original E1–8 runs'), ('replays', 'Companion E1–8 diagnostics'),
@@ -367,6 +406,7 @@ def main():
               'selection': 'Best VAL correct count, then minimum VAL cross entropy, then earliest exact tie.',
               'plot_source_sha256': sha(Path(__file__))}
     (args.out / 'results.json').write_bytes((json.dumps(report, indent=2, allow_nan=False)+'\n').encode('utf-8'))
+    write_html(args.out, report)
 
 
 if __name__ == '__main__':

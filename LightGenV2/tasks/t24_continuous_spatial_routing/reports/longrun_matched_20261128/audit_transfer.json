@@ -1,0 +1,209 @@
+{
+  "remote_archive_sha256": "a7398871b67c9dff2c486bb49a6c44878da4a06c7f609099f8a90a7ecfe29e6e",
+  "verified": {
+    "kather_s37_fixed": {
+      "pid": 755130,
+      "sha256": {
+        "canonical.npz": "7a28d14f1ffcaabb50dbf10b27fa1480a3531212cc2f239905af830ac0986473",
+        "integer_actuator.npz": "ad2f6109e0c0452ee4253d9f8d72574a628e1f76df15d6bdc0ca6003da35ac20",
+        "manifest.json": "7f5b7ec7400847efaad5d4b3a2971426af568798c493d2545c44df3e00e1db11",
+        "noise_1069.npz": "266f8e058bf533d5333085c292bb5b800705ed5efd49d3f2c7c8ece8317ac8c6",
+        "noise_1999.npz": "d5d7571f3a620acff0bfc50881e0a00cdfe423612a092061045da425af38b326",
+        "result.json": "646716b62f1723b86ae869eb740973191f6e4d3178b1ee84de7ae9854df92071",
+        "router_tile_shift.npz": "21f7c9105760b58a2256817db5f31c2cd08095fbd4f2ba57f51750e2467e0cc0",
+        "shuffle_3701.npz": "e3b799b9678e2dce8588708854f11a884408424b2ccf0cc921cb99ec5d7182fa",
+        "shuffle_4423.npz": "4eb5ecf3ae79c246492f39fbb115038ca30f69941fd3c5499c5315360a75f77e",
+        "shuffle_5701.npz": "fb6b253eff9ffdeff153844c3e80956bf59ea829c1599602a7efc7158e951c62",
+        "status.json": "59d677f5f291fec8d7b437dc56fdbf5b060dbf2836337e3c87480ccf509c4dd1"
+      },
+      "selected_checkpoint": "9e3b1a9ab06c81a77581f34258ff95c796087fe9853bdc82fa7226ae4ae94db5"
+    },
+    "kather_s37_continuous": {
+      "pid": 755418,
+      "sha256": {
+        "canonical.npz": "192f3ad78c91f757a9e30abcaaa66d057ac3ec565da22454b0fb7df53553781a",
+        "integer_actuator.npz": "ccd17b41bbde49d8a8008fda75e470d6e471d5ca91921710e4552d0bc0597932",
+        "manifest.json": "4f65afabd72e8d1a975f0e275cff657605abf4468791dede95f67ca9040b4c99",
+        "noise_1069.npz": "8deae21d39e30e3287c370ed25f73551c29bfb44238a0cfb6b764e33f1e97e52",
+        "noise_1999.npz": "815d768fae394b5ed686a5260a944458305870e141be7c721aea06244fd26c5f",
+        "result.json": "9fa22107b05678f9b638621e8c8f8d8245fd48461ecc1c3879bc36a4c5dbfedf",
+        "router_tile_shift.npz": "0cab58e80570edee9e5d08b905bba2ea45eed2010e813a5be9e14efb46538da0",
+        "shuffle_3701.npz": "86c8fbde446a78f299a521960d9d014d102319cea0f757894468a24e93dec855",
+        "shuffle_4423.npz": "fffbf0e7fb65688e53b02afec12197885f31e4ea3a939b3c7eb032a10f4cf5fd",
+        "shuffle_5701.npz": "c5be913247e771aea72572070594a84a4cec8240a853d661d9ea31ff17c2b50d",
+        "status.json": "a5188d567ee5a511648972296bc5ce4a5d9ff225a4959b5390bb7a86dd3f8329"
+      },
+      "selected_checkpoint": "988378c164c9478ac92af98dc84c747a137ebe3ca3d799d5e4b017363eb41a95"
+    },
+    "kather_s37_constrained": {
+      "pid": 755868,
+      "sha256": {
+        "canonical.npz": "30481d2739c984f71b9ae5c25adcc52c62a1a952e72bf1959642b125ae3b68c3",
+        "integer_actuator.npz": "1020eb933e2ce8de4e57fcfcdcf9f7a9f6bce24921be451de120f3051981a1aa",
+        "manifest.json": "fb254c62f808fce9beba4b62d1888f4ffee8f74b9e73dc145140883ace791bdc",
+        "noise_1069.npz": "45668bbe840da03dd4d9789710ed32355da0fffbc710c5c39a16b53f2e628a39",
+        "noise_1999.npz": "f5c526e749d1a79e215d5c819e99469f49c53517a91be443bceb8e984d9275f1",
+        "result.json": "36b36fffa5b41a1f40ba2679d9d8476a95157f43cf0c6d6b01a4ef77a0696ee0",
+        "router_tile_shift.npz": "5ff58cdbb1d26165a1b2566ca2cc2290a4cb6e6017be4dff8ec3a83b04d8408f",
+        "shuffle_3701.npz": "40b010bf551ee76659dc21958e0a6470b00ec6fb55e9553bd274116fa7939297",
+        "shuffle_4423.npz": "40fafdec91d1e11415bcedd0e559149cce47e1ef21f1b5bce97f00ddd694084e",
+        "shuffle_5701.npz": "08287d749f412f4193d12803b42e3332ebf9c26584f8d252e46c2e4b48d139e5",
+        "status.json": "42c07010cfa935f90942a597a49fd5fa794aff1f9a4d5bb3dafb24419f4b02e5"
+      },
+      "selected_checkpoint": "658f0fcb8592f16de76cbb20f80f2ae5fc3c1166eaea3875ad950a8da486337e"
+    },
+    "blood_s37_fixed": {
+      "pid": 756099,
+      "sha256": {
+        "canonical.npz": "d9d0c4d0006215133b67c4d1baf70f5cfc93b7b1361c1fd9ade628062f13206c",
+        "integer_actuator.npz": "c89478376e9646bdb8635360ffd95cee29d6cf6b10d811bb7bf99c12572da3ec",
+        "manifest.json": "1fbcc59ef749134dd9f06690cb5e13bb6d911e2d91ca2f2b91ed287ae3ba833c",
+        "noise_1069.npz": "8dcc0da8f1fbd2b558818707d3790822131b3269009d4c48c38e50c82819bf07",
+        "noise_1999.npz": "e333446830b9762bb3e12b3fb995db3de166d170e0167fd7087e2c05eff56af6",
+        "result.json": "91e91d77c89e4047338127d406b9a7ddee2febb9b89be609fbfc549fba59f828",
+        "router_tile_shift.npz": "ecaa515695b81a6e50be233f4537a0f6d57fd649ff38aa39a3bc1549a3b5fb56",
+        "shuffle_3701.npz": "21295861f933ebeb7bb02e01078d80a742775be0912c5b501006032c262e1a0f",
+        "shuffle_4423.npz": "d5c696bb404258f542c978c557a8ae8781a0052ebb2f0715fceb50b2b9545a98",
+        "shuffle_5701.npz": "a282abd87c367236cedb35576ddb6b191c77dd47ccfa2cba67f70748d9a9dd10",
+        "status.json": "d93cf94286a6a4edd466896ce338897ab587e1ce883890ee8d4e6afe96aedb6c"
+      },
+      "selected_checkpoint": "8992489fe67dac2226d49180a688e0cb2402f55f9fc4213473a4b6b8872b94fd"
+    },
+    "blood_s37_continuous": {
+      "pid": 756950,
+      "sha256": {
+        "canonical.npz": "fb0f588a7fdb360ed1dc4c3549bd4efcb2518e021241396712ccfc08510dec8d",
+        "integer_actuator.npz": "dba9380ea7b7ea9c5dcdfda55c7ef08040b8ea30ca323f4dfe6d62f57287af81",
+        "manifest.json": "a6a5ba192643afcce6abb9f19445c80be73fb7bac365aa20acb7e237c78b9f45",
+        "noise_1069.npz": "9b9a7b444b988281facca95a964b718bd5d710fe27c7deacc6e33ea32d8c8e57",
+        "noise_1999.npz": "ca7544f01cc8a702db9a244b1780586347baf793d5b0e704a37882a0d385abb9",
+        "result.json": "4cc6e2c756bb10e1101758e4a5db418d82afafc31c69ce840c005db73b89b991",
+        "router_tile_shift.npz": "591b8c4ef17f5ae03ff09f8dead3cb4468050bc63f9c2e3ff6f015c2417a9d23",
+        "shuffle_3701.npz": "9567e9d14d657718eeca35a7edcdd16641b2d27411316298a15b09ba005b06df",
+        "shuffle_4423.npz": "ad5e0c26eccf89e4cf39a0109f047b2b3cfba1c93fbe85bebc87e300fc4bf940",
+        "shuffle_5701.npz": "1ca4bb1c2782200f356a2f34637b0f89459d3259750d0a115e64310d7b5a4ad6",
+        "status.json": "8b769c019f091048665c11475862f5ac45b1e0cb5909faaee6c08eb1befd32c2"
+      },
+      "selected_checkpoint": "06ca9f6c0ae765708eb3b98564a460a5775c0bec5cf46d00be991ba77a8de94a"
+    },
+    "blood_s37_constrained": {
+      "pid": 757586,
+      "sha256": {
+        "canonical.npz": "1de23d2fb099f4cfa73b8972e41ee025a46a4553905f339d749704f24ffc26bf",
+        "integer_actuator.npz": "8eff49334b72cf5b8b0921d450009a79c0140aa1e26e538c8cf501e7a0ac1325",
+        "manifest.json": "5be39bf82bb977cd93d19c7718ad686ec447f18450e3086529dc34f421f1dd3e",
+        "noise_1069.npz": "57d0cff5efc0488e8332a38e1b17778a4dd09ef9c6771754b884456f1e800c60",
+        "noise_1999.npz": "a0a9db92fdaec6660231338c0d7388fc36f31448b1f704115014a4fc5345d103",
+        "result.json": "2d645cf6c6678153b4cd59f68cb6b8933c2d7142819db97ee691c3340f4bc7e9",
+        "router_tile_shift.npz": "0dfcd488ea237450def5c25a9b6226dd42aafca68878134a5addd37ea1856a6f",
+        "shuffle_3701.npz": "99ca6b199a9891e96ab08b7ff52d858a49821be86165fded7c23570aada91d28",
+        "shuffle_4423.npz": "56dd920e452b53bb1c2df80728ef06dfd852a6896126acd9adf1bcf71dd815cf",
+        "shuffle_5701.npz": "2055b3938ce9e62d9415c5246bc97aa283375adfcc3f090d749f2f28ecc0c94e",
+        "status.json": "d68147ffd5be249b7ec40b46f32f2ad2037e9cd876394c7f3e10970134bee65f"
+      },
+      "selected_checkpoint": "4e264c5d2373e9f1ae8d2357515fc4bd0de3924490b56fc2124efb1818c2a690"
+    },
+    "kather_s53_constrained": {
+      "pid": 755133,
+      "sha256": {
+        "canonical.npz": "748301030c22b929e8a82529c1521c0078f1942a7a4fb0aef61ead57923276ec",
+        "integer_actuator.npz": "d0504c216df7361a2dcc2126cfbede040fe34847688de6c6e45b3cedaa99be06",
+        "manifest.json": "b9091d0ef5d293c35f9f25524630230f740cc58529340ceb63d8b03bc6fcd48a",
+        "noise_1069.npz": "90a2abdba6cd8180d235de5cfd58bb09b3aee6bc6ae3f48ff329365b90bb0d0e",
+        "noise_1999.npz": "d673c256a8614389c7921f7ad73aa1f7be6eb85daacd6774ccfe7bc2d930c787",
+        "result.json": "7ea6609bbd3b05f9b3ddd6826f1688d6d34c48e23d0f1bd28b12f96e69bc0c82",
+        "router_tile_shift.npz": "678aa8e4b90b2b6f484028a20b304fcb3d279d442d30fdfbcc83345b7d6f31b7",
+        "shuffle_3701.npz": "972eecb36d93b0d1ae3470de918db69ab0735df6c3b28ce10ae7f1fe923b49d5",
+        "shuffle_4423.npz": "02b254a17ace7d5fab657b1a5dd2b7f15f1d63cce767be36fd400e9abb7ca33c",
+        "shuffle_5701.npz": "9004e97719526d147743dad4e3195ca5b017518772e81c1d3e13f9dd2b633321",
+        "status.json": "c6bcaec5734c982f8eec7d13d12c922de04e5323396d875dd5d1cce8943d3d39"
+      },
+      "selected_checkpoint": "582f84705fd6a8239d1e2032d36028cafeb792160e15529f7d02b9317e17ffa4"
+    },
+    "kather_s53_continuous": {
+      "pid": 755439,
+      "sha256": {
+        "canonical.npz": "30943e587e257547c8929ebc7495abc4ab50743f50299e640e1158b804e2359c",
+        "integer_actuator.npz": "96f1346b77530ad9a9394017f02b5c6ba621078be549b8011c716dd66fe4c498",
+        "manifest.json": "e3a6c05de5b0698df4e1167d61ea8d79b8e3a7444d0dc3f941e018ec603a48a7",
+        "noise_1069.npz": "a1a8cc09dc87e4b5a090d27eec1778df4775a6db3ec98c94348545dcb280d508",
+        "noise_1999.npz": "32b017f7f5d3a7c250ef07f8f07882bf627544e6866b074647199ddeb59821b6",
+        "result.json": "f1f42f295ba93d7e89e8b395ace362f6e772616afdd8c949b9a4561b48c519ac",
+        "router_tile_shift.npz": "b6befff39ca46cb7c3554da5027b0ea9a40704ab3c928fa1de875abb578ea763",
+        "shuffle_3701.npz": "65cb45648353b86d055b0c850ee283531f242eca564446aead833d5575174e4b",
+        "shuffle_4423.npz": "1ab1808b3338ce86a89caa9afe31f1877a3d21522a4ba44261dcae9fd6c35a7f",
+        "shuffle_5701.npz": "f1bc5c61a5826dcb9b61fe84f944652799039394f17965dacfa286335e4d23d0",
+        "status.json": "61a0fac006bd3fdb62fa89e1fbcad7d7e2cc5182e104612a87644dda3a64c34e"
+      },
+      "selected_checkpoint": "b41d29cc98ba5382e54f4994ebf4209963e350926ad634d81d7822e6e39c5736"
+    },
+    "kather_s53_fixed": {
+      "pid": 755889,
+      "sha256": {
+        "canonical.npz": "10b63cfa12ce651ca6e095e5bc8363c23153b4ede4da5c5703f9327b746eaf25",
+        "integer_actuator.npz": "08e2b5d277167d02470b051d6605c14ac355644aa62950ba87c3b629f0329593",
+        "manifest.json": "342b971aeb243cf58132f21d975e8623d5a4d2fd062c648bcc496e479cb056fd",
+        "noise_1069.npz": "89a2b9c1bd616b4d31fc5609cbcdce0d77c15e9be8e2542f123bdadf75b37567",
+        "noise_1999.npz": "ec3168d1fd3085dd58bdcb1cb71a4a7c518908d2226aac8972dae944133605fb",
+        "result.json": "bc1e25e1f0eb75d34c155e3ef82e8838ceda904cf6b042e4ffe7ce1b59278a5c",
+        "router_tile_shift.npz": "1974c9b7bc1724336504c0eefaf162d0a68795e8c0e64d81d8cacaec658e659b",
+        "shuffle_3701.npz": "0f197216a33a6756eb10f20af1787554fb83a5f58b460ae7dc3a9f5b438f6a8f",
+        "shuffle_4423.npz": "56cb14ee1b18a790bc2bf5532bfc7d9df868c0a9c9b6b626b541f6fcbebad108",
+        "shuffle_5701.npz": "08737ad6016c5d6804d1bafb4c2f9d1cc252aaea1bfdfc7f0f0b8e6828a819cf",
+        "status.json": "4ab00d70396722a82652fafdc9cdaff3b1f85366839324f3e6a4edf563d5ab44"
+      },
+      "selected_checkpoint": "14ac7a2c8e7aa3f64bda1b90174d1890bb7f315b11cb8687e73bca0b9af2bb28"
+    },
+    "blood_s53_constrained": {
+      "pid": 756119,
+      "sha256": {
+        "canonical.npz": "23db22f83111c61ba6ccfd3491ecd8fcbfda7444ee9d849a9b87d0393358cfb2",
+        "integer_actuator.npz": "9e94ee66b1e762e1dc8385370b30b312c7927705a21a9be508dccef7f3b12696",
+        "manifest.json": "340efb6214e7c734641966a82691db9c3a371c258a0d09f4b1cf55fe781f1b5c",
+        "noise_1069.npz": "c5eaa32b7e69b04d78c8e9de204058b2ff27499a97cf467cb03126cf510f8c23",
+        "noise_1999.npz": "6d3ef8e9576f74fc8ff953377c3858e66d7795f64b46207d0f1202ea769969d9",
+        "result.json": "e89d8ad02038e82ab6d39b77487b6d4e2b427e75bb1ab09bb97b9e30ec82ad70",
+        "router_tile_shift.npz": "03d5409457a1b8f3d49f13dc5267aa8958ed8ca4fc087944d0c460fda942891a",
+        "shuffle_3701.npz": "84b43e0e6b60b76a3588aecb8a67aea731e41483e1adfbd8d78f36b8103dc666",
+        "shuffle_4423.npz": "57dfe47b84cd2f2c2686c4a6e61d6abc9ac34cccfc84c2a85efff206fd44c1f9",
+        "shuffle_5701.npz": "f5c0209710387d2fb0b20a8c79d428db0cb872ed3d74a40d580402a48a6dcea9",
+        "status.json": "218ee157bdea739b1ee9f0650f7aacc40a9629878e23581198ffc8e2c6dd64cb"
+      },
+      "selected_checkpoint": "2bad9e6a090b632dedf68c429acb52a72c354951ac5edaf8ac1841345235ee07"
+    },
+    "blood_s53_continuous": {
+      "pid": 757006,
+      "sha256": {
+        "canonical.npz": "001361647703d34043ab5eb973a4c1b0c87a6363772464fc5b50cf1a8a083879",
+        "integer_actuator.npz": "b1c0c8e9e3a03971a6739ea0fbbf32357391a765f8ba7a23fb9febd34424fa90",
+        "manifest.json": "1400ea3c58081072bde609e939d93b99024d603b4d99cd9812b839866c519c9f",
+        "noise_1069.npz": "b31f5dacc4b3b259c2bbad228e2cc8e6f407f43c3babe94d709cb8e212d1651e",
+        "noise_1999.npz": "a328013b7435415c17fd959fbe45419994f929f2a8e8cc7a2d84f635b7b1e974",
+        "result.json": "84b40789ca7496db8cf9a7d60da271606ec6d5cf3997e6e300762287f9131499",
+        "router_tile_shift.npz": "b4c26396292aeb1970e44488e0e268a3444d1c5a898e37c2de62e51aa39baa29",
+        "shuffle_3701.npz": "4b455539d5b619c87939e7bd23c4e807a51f7aca19d8d6dc48ad04391971e2e0",
+        "shuffle_4423.npz": "c1d9d42f04db53d0423311abc0975ee420bfa29f027aecb685130798b981cb39",
+        "shuffle_5701.npz": "7fffede249995370a59c6622f12e240ee147135704484165ff4c392f3f1df944",
+        "status.json": "bb58263e5fb797e225352b53f602b7ef4e7351aa985e33b6481ee66e687ebc92"
+      },
+      "selected_checkpoint": "9bb37da7cb6952c7a6bb4ab121c48cd7f1fd87d5091c4a118a92c2064b23fd8a"
+    },
+    "blood_s53_fixed": {
+      "pid": 757591,
+      "sha256": {
+        "canonical.npz": "22d3a193c92f289374781658a186414d6ebf34e7f1c8d41018b13fe5a0b89b8a",
+        "integer_actuator.npz": "c72734ac662d84901af6cad0a4605508798196036fb095cb06625c8fc47874b6",
+        "manifest.json": "84772ef15f011e68280bd100fab6e4f495b29d4c38cbd5fb897e70fb2fcdb34f",
+        "noise_1069.npz": "a31dd99c64e67067d94e073deaf4ec25e09adebc0096c786f6d8d8d1f57035a4",
+        "noise_1999.npz": "6641269421c9f0bfdf2140ba7333e463e2908d939c9e9132d6d96dcdad1310d8",
+        "result.json": "7868986e310d5d874ac3bebf57349954b0a62f28f132401dd2af4df867c196e0",
+        "router_tile_shift.npz": "e2a149b450241f8070d0c18fd669910fddd276d7bde575b7472caf571c679412",
+        "shuffle_3701.npz": "c984cf2ff895b87dd5aabac60d79f61dc19e826a2f1f4ef3836e8211ea566362",
+        "shuffle_4423.npz": "c8ada642d009c616e77df1565aeb8748765612ea89be1d381ccef84991ea7b71",
+        "shuffle_5701.npz": "437e3bfd96bce09f12d280de313074e8fafd8722fa4c2d642bbe4f07dcd6fa4a",
+        "status.json": "98bb9edd5df8a5983f6451fcd1f2fcb2a959e0335b85963902ceb6dde64e4877"
+      },
+      "selected_checkpoint": "9b2533a1bd5bdddda6468156e94f57ae3d65918b734189aeb52d9312c7eedb98"
+    }
+  }
+}

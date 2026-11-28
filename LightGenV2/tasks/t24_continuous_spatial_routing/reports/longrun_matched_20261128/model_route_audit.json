@@ -1,0 +1,668 @@
+{
+  "status": "verified",
+  "scope": "Offline checkpoint/state and archived per-image outputs, including geometry and powers of both placements. No new inference or training.",
+  "audit_script_sha256": "baee34ea416dc3069b88b75864253fb8ad4780cc8babf7d3112cf7ad01528555",
+  "runs": [
+    {
+      "name": "kather_s37_fixed",
+      "dataset": "kather",
+      "mode": "fixed",
+      "seed": 37,
+      "epochs": 180,
+      "selected_epoch": 111,
+      "parameter_updates": 19800,
+      "data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "data_index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+      "minibatch_order_sequence_sha256": "38c87ecde932ee75f0e220a804b4d39e4a25d51b082a090860176279867d1773",
+      "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "best_checkpoint_sha256": "9e3b1a9ab06c81a77581f34258ff95c796087fe9853bdc82fa7226ae4ae94db5",
+      "manifest_sha256": "99acc5fa3a1e5b8aae9002c82abe713ff2661b67eaefc509d15e62464838bd84",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 3.5345458984375,
+        "global_phase": 5.863920211791992,
+        "router_phase": 2.8008873462677,
+        "shared_head.weight": 1.5679192543029785
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3436,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.047091323882341385,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "val": {
+          "n": 752,
+          "correct": 559,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.07761971652507782,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "test": {
+          "n": 752,
+          "correct": 536,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.06463147699832916,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        }
+      }
+    },
+    {
+      "name": "kather_s37_continuous",
+      "dataset": "kather",
+      "mode": "continuous",
+      "seed": 37,
+      "epochs": 180,
+      "selected_epoch": 70,
+      "parameter_updates": 19800,
+      "data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "data_index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+      "minibatch_order_sequence_sha256": "38c87ecde932ee75f0e220a804b4d39e4a25d51b082a090860176279867d1773",
+      "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "best_checkpoint_sha256": "988378c164c9478ac92af98dc84c747a137ebe3ca3d799d5e4b017363eb41a95",
+      "manifest_sha256": "224b45a93632a0e75f180629fa91cef50d58c47e176350b9fc2a156d6dc0f8ef",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 11.340849876403809,
+        "global_phase": 7.771480083465576,
+        "router_phase": 3.4972305297851562,
+        "shared_head.weight": 2.643075466156006
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3317,
+          "mean_footprint_overlap": 0.6562843322753906,
+          "max_footprint_overlap": 0.7504175305366516,
+          "min_selected_gate_power": 0.1708853542804718,
+          "min_top_left_px": 19.535852432250977,
+          "max_top_left_px": 222.08126831054688
+        },
+        "val": {
+          "n": 752,
+          "correct": 561,
+          "mean_footprint_overlap": 0.6581098437309265,
+          "max_footprint_overlap": 0.751857340335846,
+          "min_selected_gate_power": 0.16911150515079498,
+          "min_top_left_px": 20.078706741333008,
+          "max_top_left_px": 221.95330810546875
+        },
+        "test": {
+          "n": 752,
+          "correct": 548,
+          "mean_footprint_overlap": 0.6547719240188599,
+          "max_footprint_overlap": 0.7470280528068542,
+          "min_selected_gate_power": 0.17762431502342224,
+          "min_top_left_px": 19.714099884033203,
+          "max_top_left_px": 221.7903594970703
+        }
+      }
+    },
+    {
+      "name": "kather_s37_constrained",
+      "dataset": "kather",
+      "mode": "constrained",
+      "seed": 37,
+      "epochs": 180,
+      "selected_epoch": 107,
+      "parameter_updates": 19800,
+      "data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "data_index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+      "minibatch_order_sequence_sha256": "38c87ecde932ee75f0e220a804b4d39e4a25d51b082a090860176279867d1773",
+      "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "best_checkpoint_sha256": "658f0fcb8592f16de76cbb20f80f2ae5fc3c1166eaea3875ad950a8da486337e",
+      "manifest_sha256": "384daa8dd131e30db5fb0886313d842cdacb2356c875f7f9666a534f77aa4306",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 9.01824951171875,
+        "global_phase": 5.522617340087891,
+        "router_phase": 3.0475943088531494,
+        "shared_head.weight": 1.9585617780685425
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3441,
+          "mean_footprint_overlap": 0.2396416962146759,
+          "max_footprint_overlap": 0.24997851252555847,
+          "min_selected_gate_power": 0.06456553936004639,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 236.2205810546875
+        },
+        "val": {
+          "n": 752,
+          "correct": 563,
+          "mean_footprint_overlap": 0.2396308034658432,
+          "max_footprint_overlap": 0.24913464486598969,
+          "min_selected_gate_power": 0.08354979753494263,
+          "min_top_left_px": 16.745716094970703,
+          "max_top_left_px": 221.466552734375
+        },
+        "test": {
+          "n": 752,
+          "correct": 538,
+          "mean_footprint_overlap": 0.2396446317434311,
+          "max_footprint_overlap": 0.24938073754310608,
+          "min_selected_gate_power": 0.07942268252372742,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 236.8917999267578
+        }
+      }
+    },
+    {
+      "name": "kather_s53_fixed",
+      "dataset": "kather",
+      "mode": "fixed",
+      "seed": 53,
+      "epochs": 180,
+      "selected_epoch": 136,
+      "parameter_updates": 19800,
+      "data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "data_index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+      "minibatch_order_sequence_sha256": "7b4d6d6aaa44e2c01ab1cd373e4d2c4ebdd6937106b8a310909befa129fc92a2",
+      "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "best_checkpoint_sha256": "14ac7a2c8e7aa3f64bda1b90174d1890bb7f315b11cb8687e73bca0b9af2bb28",
+      "manifest_sha256": "11075f533732cdf5cf4e128a9f228939508216cd6a022e9b45f263a7f38b7a13",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 3.093925952911377,
+        "global_phase": 6.000968933105469,
+        "router_phase": 3.3754773139953613,
+        "shared_head.weight": 1.5250970125198364
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3465,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.05397752672433853,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "val": {
+          "n": 752,
+          "correct": 582,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.05326518043875694,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "test": {
+          "n": 752,
+          "correct": 546,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.053371328860521317,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        }
+      }
+    },
+    {
+      "name": "kather_s53_continuous",
+      "dataset": "kather",
+      "mode": "continuous",
+      "seed": 53,
+      "epochs": 180,
+      "selected_epoch": 138,
+      "parameter_updates": 19800,
+      "data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "data_index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+      "minibatch_order_sequence_sha256": "7b4d6d6aaa44e2c01ab1cd373e4d2c4ebdd6937106b8a310909befa129fc92a2",
+      "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "best_checkpoint_sha256": "b41d29cc98ba5382e54f4994ebf4209963e350926ad634d81d7822e6e39c5736",
+      "manifest_sha256": "034b9fe619f413cf8111a8c69402bf40da883ffa6ecc83804655687320910dc9",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 8.813677787780762,
+        "global_phase": 6.2679762840271,
+        "router_phase": 3.2998037338256836,
+        "shared_head.weight": 2.2642579078674316
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3418,
+          "mean_footprint_overlap": 0.6039456725120544,
+          "max_footprint_overlap": 0.7488970756530762,
+          "min_selected_gate_power": 0.24044133722782135,
+          "min_top_left_px": 19.0926570892334,
+          "max_top_left_px": 222.11090087890625
+        },
+        "val": {
+          "n": 752,
+          "correct": 549,
+          "mean_footprint_overlap": 0.6067290902137756,
+          "max_footprint_overlap": 0.7463991641998291,
+          "min_selected_gate_power": 0.24950282275676727,
+          "min_top_left_px": 18.753067016601562,
+          "max_top_left_px": 208.04623413085938
+        },
+        "test": {
+          "n": 752,
+          "correct": 537,
+          "mean_footprint_overlap": 0.6027288436889648,
+          "max_footprint_overlap": 0.747260570526123,
+          "min_selected_gate_power": 0.2551683783531189,
+          "min_top_left_px": 20.276226043701172,
+          "max_top_left_px": 221.220947265625
+        }
+      }
+    },
+    {
+      "name": "kather_s53_constrained",
+      "dataset": "kather",
+      "mode": "constrained",
+      "seed": 53,
+      "epochs": 180,
+      "selected_epoch": 89,
+      "parameter_updates": 19800,
+      "data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "data_index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+      "minibatch_order_sequence_sha256": "7b4d6d6aaa44e2c01ab1cd373e4d2c4ebdd6937106b8a310909befa129fc92a2",
+      "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "best_checkpoint_sha256": "582f84705fd6a8239d1e2032d36028cafeb792160e15529f7d02b9317e17ffa4",
+      "manifest_sha256": "79af6cebe0c9d8cfca32bf435234eb28c524e837b19ba436f9ec75a90a165a0e",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 6.131441593170166,
+        "global_phase": 5.067519664764404,
+        "router_phase": 3.68220591545105,
+        "shared_head.weight": 1.9648014307022095
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3384,
+          "mean_footprint_overlap": 0.24000084400177002,
+          "max_footprint_overlap": 0.24978289008140564,
+          "min_selected_gate_power": 0.05974461883306503,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 221.6411590576172
+        },
+        "val": {
+          "n": 752,
+          "correct": 567,
+          "mean_footprint_overlap": 0.23983174562454224,
+          "max_footprint_overlap": 0.24958892166614532,
+          "min_selected_gate_power": 0.08583584427833557,
+          "min_top_left_px": 16.73479652404785,
+          "max_top_left_px": 221.5442657470703
+        },
+        "test": {
+          "n": 752,
+          "correct": 542,
+          "mean_footprint_overlap": 0.23989415168762207,
+          "max_footprint_overlap": 0.24949601292610168,
+          "min_selected_gate_power": 0.07249625772237778,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 221.71421813964844
+        }
+      }
+    },
+    {
+      "name": "blood_s37_fixed",
+      "dataset": "blood",
+      "mode": "fixed",
+      "seed": 37,
+      "epochs": 180,
+      "selected_epoch": 103,
+      "parameter_updates": 67320,
+      "data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+      "data_index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+      "minibatch_order_sequence_sha256": "90824fc3d97d3a55058a379de87fe87f38f1530f7e56a1a5faba3db44b9d648e",
+      "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "best_checkpoint_sha256": "8992489fe67dac2226d49180a688e0cb2402f55f9fc4213473a4b6b8872b94fd",
+      "manifest_sha256": "dcb3cd8ff635904f18f7992c7f0a80335e3b2ad0071845dbcfa4a110dff8ca41",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 9.222661972045898,
+        "global_phase": 8.361486434936523,
+        "router_phase": 8.57079029083252,
+        "shared_head.weight": 2.0682718753814697
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 11948,
+          "correct": 11666,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.24956493079662323,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1558,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.2787926495075226,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "test": {
+          "n": 3421,
+          "correct": 3094,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.27977532148361206,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        }
+      }
+    },
+    {
+      "name": "blood_s37_continuous",
+      "dataset": "blood",
+      "mode": "continuous",
+      "seed": 37,
+      "epochs": 180,
+      "selected_epoch": 167,
+      "parameter_updates": 67320,
+      "data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+      "data_index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+      "minibatch_order_sequence_sha256": "90824fc3d97d3a55058a379de87fe87f38f1530f7e56a1a5faba3db44b9d648e",
+      "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "best_checkpoint_sha256": "06ca9f6c0ae765708eb3b98564a460a5775c0bec5cf46d00be991ba77a8de94a",
+      "manifest_sha256": "e3f5cff9f7bff833b0de0f4fd47a86cd4c4ec5bf61c15867087879a6f09aba27",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 8.162447929382324,
+        "global_phase": 9.687745094299316,
+        "router_phase": 10.22619342803955,
+        "shared_head.weight": 6.115035533905029
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 11948,
+          "correct": 11746,
+          "mean_footprint_overlap": 0.5465338230133057,
+          "max_footprint_overlap": 0.7645403146743774,
+          "min_selected_gate_power": 0.05515185743570328,
+          "min_top_left_px": 7.59565544128418,
+          "max_top_left_px": 246.18197631835938
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1551,
+          "mean_footprint_overlap": 0.5458880066871643,
+          "max_footprint_overlap": 0.763826310634613,
+          "min_selected_gate_power": 0.05670332908630371,
+          "min_top_left_px": 7.656839370727539,
+          "max_top_left_px": 246.05918884277344
+        },
+        "test": {
+          "n": 3421,
+          "correct": 3051,
+          "mean_footprint_overlap": 0.5466643571853638,
+          "max_footprint_overlap": 0.7642976641654968,
+          "min_selected_gate_power": 0.055924512445926666,
+          "min_top_left_px": 7.594423294067383,
+          "max_top_left_px": 246.18072509765625
+        }
+      }
+    },
+    {
+      "name": "blood_s37_constrained",
+      "dataset": "blood",
+      "mode": "constrained",
+      "seed": 37,
+      "epochs": 180,
+      "selected_epoch": 42,
+      "parameter_updates": 67320,
+      "data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+      "data_index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+      "minibatch_order_sequence_sha256": "90824fc3d97d3a55058a379de87fe87f38f1530f7e56a1a5faba3db44b9d648e",
+      "initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "best_checkpoint_sha256": "4e264c5d2373e9f1ae8d2357515fc4bd0de3924490b56fc2124efb1818c2a690",
+      "manifest_sha256": "d7a74bdaf4ddb3db7036b8ae2276af608294ffcc7fa9365d0658e6031f5bfdb8",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 9.698650360107422,
+        "global_phase": 10.596113204956055,
+        "router_phase": 12.081204414367676,
+        "shared_head.weight": 3.3037798404693604
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 11948,
+          "correct": 10666,
+          "mean_footprint_overlap": 0.23442843556404114,
+          "max_footprint_overlap": 0.24919280409812927,
+          "min_selected_gate_power": 0.111209437251091,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 222.02304077148438
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1481,
+          "mean_footprint_overlap": 0.23441126942634583,
+          "max_footprint_overlap": 0.24993297457695007,
+          "min_selected_gate_power": 0.11699928343296051,
+          "min_top_left_px": 16.819717407226562,
+          "max_top_left_px": 222.17462158203125
+        },
+        "test": {
+          "n": 3421,
+          "correct": 2882,
+          "mean_footprint_overlap": 0.23423592746257782,
+          "max_footprint_overlap": 0.2481224089860916,
+          "min_selected_gate_power": 0.11119760572910309,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 222.04432678222656
+        }
+      }
+    },
+    {
+      "name": "blood_s53_fixed",
+      "dataset": "blood",
+      "mode": "fixed",
+      "seed": 53,
+      "epochs": 180,
+      "selected_epoch": 152,
+      "parameter_updates": 67320,
+      "data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+      "data_index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+      "minibatch_order_sequence_sha256": "6b1c0292dc07f6a2bed620e0438a8c292689b08c582397b0b59b8cc2c59d6c0c",
+      "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "best_checkpoint_sha256": "9b2533a1bd5bdddda6468156e94f57ae3d65918b734189aeb52d9312c7eedb98",
+      "manifest_sha256": "adbc1198808ad391375f18990b90d820452bb41c9e67bb59b260a47a5938a9f0",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 5.641384124755859,
+        "global_phase": 10.174120903015137,
+        "router_phase": 5.552093029022217,
+        "shared_head.weight": 1.8626341819763184
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 11948,
+          "correct": 11855,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.07909142225980759,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1555,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.08485071361064911,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "test": {
+          "n": 3421,
+          "correct": 3070,
+          "mean_footprint_overlap": 0.0,
+          "max_footprint_overlap": 0.0,
+          "min_selected_gate_power": 0.08380252122879028,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        }
+      }
+    },
+    {
+      "name": "blood_s53_continuous",
+      "dataset": "blood",
+      "mode": "continuous",
+      "seed": 53,
+      "epochs": 180,
+      "selected_epoch": 172,
+      "parameter_updates": 67320,
+      "data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+      "data_index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+      "minibatch_order_sequence_sha256": "6b1c0292dc07f6a2bed620e0438a8c292689b08c582397b0b59b8cc2c59d6c0c",
+      "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "best_checkpoint_sha256": "9bb37da7cb6952c7a6bb4ab121c48cd7f1fd87d5091c4a118a92c2064b23fd8a",
+      "manifest_sha256": "95b229f9a85c14f70474a67ea36c4f4c77056461c2881de7e6ff8db6938d57d6",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 9.813666343688965,
+        "global_phase": 9.02627182006836,
+        "router_phase": 10.644350051879883,
+        "shared_head.weight": 2.418665885925293
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 11948,
+          "correct": 11790,
+          "mean_footprint_overlap": 0.5393008589744568,
+          "max_footprint_overlap": 0.7681562304496765,
+          "min_selected_gate_power": 0.04049357771873474,
+          "min_top_left_px": 7.350645065307617,
+          "max_top_left_px": 246.22650146484375
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1552,
+          "mean_footprint_overlap": 0.5382542014122009,
+          "max_footprint_overlap": 0.7665289044380188,
+          "min_selected_gate_power": 0.041102949529886246,
+          "min_top_left_px": 7.384671211242676,
+          "max_top_left_px": 246.20291137695312
+        },
+        "test": {
+          "n": 3421,
+          "correct": 3065,
+          "mean_footprint_overlap": 0.5420413017272949,
+          "max_footprint_overlap": 0.7671804428100586,
+          "min_selected_gate_power": 0.041017234325408936,
+          "min_top_left_px": 7.350637435913086,
+          "max_top_left_px": 246.2267303466797
+        }
+      }
+    },
+    {
+      "name": "blood_s53_constrained",
+      "dataset": "blood",
+      "mode": "constrained",
+      "seed": 53,
+      "epochs": 180,
+      "selected_epoch": 164,
+      "parameter_updates": 67320,
+      "data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+      "data_index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+      "minibatch_order_sequence_sha256": "6b1c0292dc07f6a2bed620e0438a8c292689b08c582397b0b59b8cc2c59d6c0c",
+      "initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "best_checkpoint_sha256": "2bad9e6a090b632dedf68c429acb52a72c354951ac5edaf8ac1841345235ee07",
+      "manifest_sha256": "1ec7e0116432da50eb7548e51b328fc7e46b1143dd0025babf715aa94ba474db",
+      "max_abs_parameter_change_since_parent": {
+        "first_phase": 8.134882926940918,
+        "global_phase": 7.5739336013793945,
+        "router_phase": 11.244682312011719,
+        "shared_head.weight": 1.9801141023635864
+      },
+      "local_source_CRLF_normalized_paths": [
+        "LightGenV2/tasks/t17_router_classification/test_exposed_data.py",
+        "LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py",
+        "LightGenV2/tasks/t17_router_classification/train_optical_four_ccd.py"
+      ],
+      "splits": {
+        "train": {
+          "n": 11948,
+          "correct": 10781,
+          "mean_footprint_overlap": 0.2242126315832138,
+          "max_footprint_overlap": 0.2486037015914917,
+          "min_selected_gate_power": 0.24139338731765747,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1460,
+          "mean_footprint_overlap": 0.22433415055274963,
+          "max_footprint_overlap": 0.2483341097831726,
+          "min_selected_gate_power": 0.24113726615905762,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 237.179931640625
+        },
+        "test": {
+          "n": 3421,
+          "correct": 2829,
+          "mean_footprint_overlap": 0.22419552505016327,
+          "max_footprint_overlap": 0.2484784871339798,
+          "min_selected_gate_power": 0.24236582219600677,
+          "min_top_left_px": 0.0,
+          "max_top_left_px": 254.0
+        }
+      }
+    }
+  ],
+  "total_optimizer_updates": 522720
+}

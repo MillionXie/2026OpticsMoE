@@ -1,0 +1,17 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>连续空间路由的等预算比较</title>
+<style>body{font:16px/1.55 system-ui,sans-serif;color:#182920;margin:32px auto;padding:0 20px;max-width:1160px}
+h1,h2{line-height:1.25}section{margin:32px 0}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;white-space:nowrap}
+th,td{padding:7px 12px;text-align:right;border-bottom:1px solid #cdd6cf;font-variant-numeric:tabular-nums}
+th:first-child,td:nth-child(2){text-align:left}p{max-width:78ch}img{max-width:100%;height:auto}a{color:#126957}</style>
+<h1>连续空间路由的等预算比较</h1>
+<p>两个数据集，三种路由，配对种子 37 和 53。实验室服务器共同完成第 180 轮，
+12/12 组达到预设验证准确率平台标准。每个数据集内三种路由使用相同的样本顺序、更新次数和学习率。</p>
+<div class="scroll"><table><thead><tr><th>数据集</th><th>路由</th><th>末轮 TRAIN</th><th>末轮 VAL</th>
+<th>末轮 TEST</th><th>末 10 轮平均 TEST</th><th>最佳 VAL 权重的 TEST</th></tr></thead><tbody><tr><th scope="row">Kather2016</th><td>四区域</td><td>98.93%</td><td>72.81%</td><td>70.21%</td><td>69.50%</td><td>71.94%</td></tr><tr><th scope="row">Kather2016</th><td>原连续</td><td>97.93%</td><td>71.21%</td><td>69.41%</td><td>69.06%</td><td>72.14%</td></tr><tr><th scope="row">Kather2016</th><td>加约束连续</td><td>94.97%</td><td>67.29%</td><td>66.09%</td><td>69.11%</td><td>71.81%</td></tr><tr><th scope="row">BloodMNIST128</th><td>四区域</td><td>98.84%</td><td>89.31%</td><td>89.21%</td><td>89.54%</td><td>90.09%</td></tr><tr><th scope="row">BloodMNIST128</th><td>原连续</td><td>97.25%</td><td>88.52%</td><td>87.56%</td><td>88.29%</td><td>89.39%</td></tr><tr><th scope="row">BloodMNIST128</th><td>加约束连续</td><td>88.14%</td><td>82.30%</td><td>81.01%</td><td>81.39%</td><td>83.47%</td></tr></tbody></table></div>
+<p>百分比是两个种子的等权平均。按完整 VAL 正确数选权重，同分时取交叉熵更小、轮次更早者。测试集用于逐轮观察和最终比较。</p>
+<section><h2>三种路由的测试轨迹</h2><a href="mean_test_overview.svg"><img src="mean_test_overview.svg" alt="两个数据集上三种路由的平均测试准确率轨迹"></a></section>
+<section><h2>Kather2016 的训练、验证和测试曲线</h2><a href="kather_longrun.svg"><img src="kather_longrun.svg" alt="Kather2016 三种路由、两个种子的逐轮准确率与训练损失"></a></section><section><h2>BloodMNIST128 的训练、验证和测试曲线</h2><a href="blood_longrun.svg"><img src="blood_longrun.svg" alt="BloodMNIST128 三种路由、两个种子的逐轮准确率与训练损失"></a></section>
+<p>逐轮图中绿色为 TRAIN，蓝色为 VAL，橙色为 TEST，下方为训练损失。前 8 轮的 TRAIN 和 TEST 点线取自单独回放，第 8 轮锚点来自原权重，第 9 轮起为实际续训记录。</p>
+<p>两个原测试划分在此前 T17 开发中已有暴露。Blood 的原始划分中有 5 个相同像素哈希跨 TRAIN 与 TEST、1 个跨 VAL 与 TEST。本轮沿用固定划分，两个种子共用相同测试样本。</p>
+<p><a href="results.json">逐轮数值、各个种子的结果与停训判据</a> · <a href="model_route_audit.json">权重与落点核验</a> · <a href="route_diagnostics.svg">验证集上的坐标扰动与互换实验</a></p></html>
