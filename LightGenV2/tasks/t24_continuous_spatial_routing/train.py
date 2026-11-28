@@ -18,11 +18,18 @@ from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 from LightGenV2.tasks.t17_router_classification.gpu_policy import require_authorized_gpu
 from LightGenV2.tasks.t17_router_classification.readout_data import load_raw
 from LightGenV2.tasks.t17_router_classification.train import write
+from .constrained_routing import FootprintRoutingLG
 from .model import SpatialRoutingLG
 
 
 TASK = Path(__file__).resolve().parent
 REPO = TASK.parents[2]
+
+
+def build_model(mode, num_classes):
+    if mode == 'constrained':
+        return FootprintRoutingLG(num_classes=num_classes)
+    return SpatialRoutingLG(mode=mode, num_classes=num_classes)
 
 
 def state_digest(model):
@@ -126,7 +133,7 @@ def run(args, config):
     seed = config['seed']
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
-    model = SpatialRoutingLG(mode=args.mode, num_classes=config['num_classes'])
+    model = build_model(args.mode, config['num_classes'])
     source_commit = os.environ.get('T24_SOURCE_COMMIT') or subprocess.check_output(
         ['git', '-C', str(REPO), 'rev-parse', 'HEAD'], text=True).strip()
     metadata = {
@@ -138,6 +145,8 @@ def run(args, config):
         'gpu_uuid': gpu_uuid, 'device': str(device),
         'gpu_model': torch.cuda.get_device_name(device) if gpu_uuid else None,
         'python': platform.python_version(), 'torch': str(torch.__version__), 'cuda': torch.version.cuda,
+        'optimizer': {'name': 'Adam', 'weight_decay': 0., 'gradient_clip_norm': 5.,
+                      'phase_lr': config['phase_lr'], 'head_lr': config['head_lr']},
         'selection': 'highest original VAL correct count, then lowest VAL CE; earlier exact tie',
         'role': f"T24 TRAIN-only fit, VAL selection. T17 previously exposed original {config['dataset']} TEST in development.",
     }
@@ -206,7 +215,7 @@ def run(args, config):
 def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument('--config', type=Path, required=True)
-    parser.add_argument('--mode', choices=('fixed', 'continuous'), required=True)
+    parser.add_argument('--mode', choices=('fixed', 'continuous', 'constrained'), required=True)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--seed', type=int)
     parser.add_argument('--device', choices=('cpu', 'cuda'), default='cuda')

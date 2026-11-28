@@ -1,0 +1,16 @@
+{
+  "datasets": {"kather": "kather2016.json", "blood": "bloodmnist128.json"},
+  "seeds": [37, 53],
+  "modes": ["fixed", "continuous", "constrained"],
+  "initialization": "Fresh initialization for all arms; within each dataset and seed hash every trainable tensor before first update",
+  "training": "Reuse the pilot dataset configs: 8 full TRAIN traversals, batch 32, no augmentation, identical paired shuffles, Adam phase 0.003 and head 0.001",
+  "selection": "Maximize original VAL correct count, tie-break lower VAL cross entropy, one final TEST per arm",
+  "constrained": "Binomial smoothing of integrated optical detector responses and joint peak selection subject to a 25% maximum area overlap of the two continuous 224x224 input placements",
+  "coordinate_audit": {
+    "split": "VAL after locking each checkpoint",
+    "expected_counts_per_detector_frame": 1000000,
+    "noise": "Two independent Poisson detector exposures, simulation sensitivity only",
+    "shuffle": "Three seeded whole-pair derangements, recipient's image and gate powers retained",
+    "outcomes": ["unordered pair jitter in pixels versus other images", "accuracy and prediction changes under noise and shuffled placements", "realized overlap"]
+  }
+}
