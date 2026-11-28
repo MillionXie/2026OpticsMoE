@@ -153,6 +153,9 @@ def main():
     plt.rcParams["svg.hashsalt"] = "t24-detector-example"
     fig.savefig(out, dpi=120, metadata={"Date":None})
     plt.close(fig)
+    # Use the same line endings as the Git object before recording its digest.
+    lines = out.read_text(encoding="utf-8").splitlines()
+    out.write_bytes(("\n".join(line.rstrip() for line in lines) + "\n").encode("utf-8"))
     (args.out / "detector_example.json").write_text(json.dumps(dict(
         selection="lowest SHA256 of UTF-8 validation ID within each dataset",
         script_sha256=sha256(Path(__file__)), svg_sha256=sha256(out), examples=examples), indent=2)+"\n",
