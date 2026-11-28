@@ -19,6 +19,8 @@ from .stability import assess_cohort, load_protocol
 
 
 SPLITS = ('train', 'val', 'test')
+TAIL_EPOCHS = 10
+MODE_COLORS = {'fixed': '#495B72', 'continuous': '#BA571C', 'constrained': '#16756A'}
 
 
 def sha(path):
@@ -121,6 +123,49 @@ def joined_series(original, replay, long, dataset, seed, mode):
     return out, history, predictions
 
 
+def endpoint_summary(entries):
+    """Compare all methods at the same epoch, with an a priori ten-epoch TEST diagnostic."""
+    ends = {r['epochs'][-1]['epoch'] for r in entries}
+    require(len(ends) == 1, 'Unmatched epoch in paired endpoint comparison')
+    last = ends.pop()
+    first = last - TAIL_EPOCHS + 1
+    require(first >= 9, 'The ten-epoch diagnostic requires ten measured continuation epochs')
+    by_mode = {}
+    for mode in MODES:
+        by_seed = {}
+        for r in entries:
+            if r['mode'] != mode:
+                continue
+            tail = r['epochs'][-TAIL_EPOCHS:]
+            require([x['epoch'] for x in tail] == list(range(first, last+1))
+                    and all(x['sources']['test'] == 'continuation_end_of_epoch' for x in tail),
+                    'Missing observed TEST metric in the common terminal window')
+            require(r['seed'] not in by_seed, 'Duplicate run at common endpoint')
+            by_seed[r['seed']] = {'final': {s: tail[-1][s] for s in SPLITS},
+                                  'last10_test_mean_percent': float(np.mean([x['test']['accuracy_percent'] for x in tail]))}
+        require(set(by_seed) == set(SEEDS), 'Missing a paired seed at common endpoint')
+        by_mode[mode] = {
+            'seeds': by_seed,
+            'final_mean_percent': {s: float(np.mean([x['final'][s]['accuracy_percent'] for x in by_seed.values()]))
+                                   for s in SPLITS},
+            'last10_test_mean_percent': float(np.mean([x['last10_test_mean_percent'] for x in by_seed.values()]))}
+    deltas = {}
+    for candidate in ('continuous', 'constrained'):
+        records = {}
+        for seed in SEEDS:
+            a, b = (by_mode[m]['seeds'][seed]['final']['test'] for m in ('fixed', candidate))
+            require(a['n'] == b['n'], 'Unequal paired TEST denominators')
+            delta = b['correct'] - a['correct']
+            records[seed] = {'test_n': a['n'], 'net_correct': delta, 'delta_pp': 100*delta/a['n']}
+        deltas[candidate+'_minus_fixed'] = {
+            'seeds': records, 'mean_delta_pp': float(np.mean([d['delta_pp'] for d in records.values()]))}
+    return {'epoch': last, 'last10_epoch_range_inclusive': [first, last], 'by_mode': by_mode,
+            'same_seed_final_test_deltas': deltas,
+            'method': 'Full-split accuracies observed at the final common epoch. Tail TEST averages use all ten '
+                      'observed end-of-epoch accuracies with equal weight; seeds have equal weight. These diagnostics '
+                      'use the same held images repeatedly and do not select the checkpoint or stopping epoch.'}
+
+
 def paired_summary(entries, archives):
     """Summaries retain seeds as distinct runs with repeated use of the same images."""
     pairwise = []
@@ -145,6 +190,8 @@ def paired_summary(entries, archives):
         selected = [r for r in entries if r['mode'] == mode]
         averages[mode] = {s: float(np.mean([r['locked'][s]['accuracy_percent'] for r in selected])) for s in SPLITS}
     return {'within_seed_pairs': pairwise, 'mean_percentage_over_two_seeds': averages,
+            'selected_checkpoint_summary_basis': 'Both fields above use each run’s best VAL checkpoint.',
+            'common_endpoint': endpoint_summary(entries),
             'total_optimizer_updates': sum(r['budget']['optimizer_updates'] for r in entries),
             'total_continuation_updates': sum(r['budget']['continuation_updates'] for r in entries),
             'total_training_image_presentations': sum(r['budget']['training_image_presentations'] for r in entries)}
@@ -208,12 +255,67 @@ def draw(title, runs, decision, out):
     hit = sum(r['plateau']['plateau'] for r in runs)
     fig.text(.08, .023, f'{hit}/6 runs meet the predeclared VAL stability thresholds at E{limit}.  '
              f'All-dataset decision: {decision.replace("_", " ")}.  TEST curves are diagnostic.', fontsize=8)
+    save_figure(fig, out)
+
+
+def save_figure(fig, out):
     svg = out.with_suffix('.svg')
     fig.savefig(svg, metadata={'Date': None})
     lines = svg.read_text(encoding='utf-8').splitlines()
     svg.write_bytes(('\n'.join(line.rstrip() for line in lines) + '\n').encode('utf-8'))
     fig.savefig(out.with_suffix('.png'), dpi=140)
     plt.close(fig)
+
+
+def draw_test_overview(datasets, out):
+    """Display the complete mean trajectory alongside the prespecified endpoint and tail window."""
+    fig = plt.figure(figsize=(11.3, 5.75))
+    fig.subplots_adjust(top=.79, bottom=.30, left=.075, right=.98, wspace=.2)
+    for index, (dataset, data) in enumerate(datasets.items(), 1):
+        ax = fig.add_subplot(1, len(datasets), index)
+        endpoint = data['summary']['common_endpoint']
+        last = endpoint['epoch']
+        first = endpoint['last10_epoch_range_inclusive'][0]
+        ax.axvspan(1, 8, color='#d2d0ca', alpha=.42, zorder=0, lw=0)
+        ax.axvspan(first-.5, last, color='#cfe4ed', alpha=.45, zorder=0, lw=0)
+        for mode in MODES:
+            rows = [r['epochs'] for r in data['runs'] if r['mode'] == mode]
+            replay = np.mean([[r['replay_test']['accuracy_percent'] for r in run[:8]] for run in rows], axis=0)
+            actual = np.mean([[r['test']['accuracy_percent'] for r in run[7:]] for run in rows], axis=0)
+            summary = endpoint['by_mode'][mode]
+            require(np.isclose(actual[-1], summary['final_mean_percent']['test'])
+                    and np.isclose(actual[-TAIL_EPOCHS:].mean(), summary['last10_test_mean_percent']),
+                    'Overview values differ from paired endpoint summary')
+            color = MODE_COLORS[mode]
+            ax.plot(range(1, 9), replay, color=color, lw=1.55, ls=':')
+            ax.plot(range(8, last+1), actual, color=color, lw=1.45, alpha=.94)
+            ax.scatter(8, actual[0], c=color, s=22, marker='o', edgecolor='white', linewidth=.4, zorder=4)
+            ax.scatter(last, actual[-1], c=color, s=30, marker='s', edgecolor='white', linewidth=.5, zorder=4)
+        ax.set_title(DATASETS[dataset][0], loc='left', fontweight='semibold', fontsize=12)
+        ax.set_xlim(1, last+.012*last)
+        ax.set_xlabel('Epoch')
+        if index == 1:
+            ax.set_ylabel('Mean TEST accuracy (%)')
+        ax.spines[['top', 'right']].set_visible(False)
+        ax.grid(axis='y', alpha=.18)
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=7, integer=True))
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=6))
+        ax.tick_params(labelsize=8, length=3)
+        for k, mode in enumerate(MODES):
+            tags = endpoint['by_mode'][mode]
+            x = k/3+.015
+            ax.text(x, -.25, MODES[mode], color=MODE_COLORS[mode], transform=ax.transAxes, fontsize=8.3,
+                    fontweight='semibold')
+            ax.text(x, -.355, f"{tags['final_mean_percent']['test']:.2f}% / {tags['last10_test_mean_percent']:.2f}%",
+                    transform=ax.transAxes, fontsize=9)
+    fig.suptitle('TEST accuracy by routing method', fontsize=17, fontweight='semibold', y=.965)
+    legend = [Line2D([], [], color=MODE_COLORS[k], lw=2, label=v) for k, v in MODES.items()]
+    fig.legend(handles=legend, loc='upper center', bbox_to_anchor=(.5,.918), ncol=3, frameon=False)
+    fig.text(.075, .083, f'Values below each panel: common endpoint E{last} / mean over E{first}–{last} (blue shading). '
+             'Accuracy is averaged equally over seeds 37 and 53.', fontsize=8.5)
+    fig.text(.075, .04, 'Dotted E1–8 segments are replay diagnostics. Dots mark the original E8 checkpoints; '
+             'solid lines show the continuation. Squares mark the common endpoint.', fontsize=8.5)
+    save_figure(fig, out)
 
 
 def main():
@@ -253,7 +355,10 @@ def main():
         path = args.out / f'{dataset}_longrun'
         draw(DATASETS[dataset][0], data['runs'], final['decision'], path)
         data['figure_sha256'] = {ext: sha(path.with_suffix('.'+ext)) for ext in ('svg','png')}
+    overview = args.out / 'mean_test_overview'
+    draw_test_overview(datasets, overview)
     report = {'protocol': protocol, 'decision_history': decisions, 'datasets': datasets,
+              'overview_figure_sha256': {ext: sha(overview.with_suffix('.'+ext)) for ext in ('svg', 'png')},
               'total_optimizer_updates_all_runs': sum(d['summary']['total_optimizer_updates'] for d in datasets.values()),
               'total_continuation_updates_all_runs': sum(d['summary']['total_continuation_updates'] for d in datasets.values()),
               'epoch_evidence': 'VAL and online training loss are from the original trajectory throughout. E1–8 dotted '
