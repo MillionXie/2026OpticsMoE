@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import torch
 
 from LightGenV2.tasks.t24_continuous_spatial_routing.audit_routes import (
@@ -6,6 +7,45 @@ from LightGenV2.tasks.t24_continuous_spatial_routing.audit_routes import (
     shifted_router_input, unordered_distance,
 )
 from LightGenV2.tasks.t24_continuous_spatial_routing.model import SpatialRoutingLG
+
+
+def test_locked_continuation_keeps_saved_budget_and_prior_best(tmp_path, monkeypatch):
+    from LightGenV2.tasks.t24_continuous_spatial_routing import audit_routes as audit
+    monkeypatch.setattr(audit, 'TASK', tmp_path)
+    parent = tmp_path / 'runs/simulation/early/kather_s37_fixed'
+    run = tmp_path / 'runs/simulation/late/kather_s37_fixed'
+    parent.mkdir(parents=True)
+    run.mkdir(parents=True)
+    original_config = {'seed': 37, 'epochs': 2, 'phase_lr': .003}
+    config = {**original_config, 'epochs': 6}
+    truth = {'correct': 2, 'cross_entropy': .5}
+    raw = {'mode': 'fixed', 'config': original_config, 'source_commit': 'early', 'epoch': 2,
+           'validation': truth, 'model': {'weight': torch.tensor([2.])}}
+    torch.save(raw, parent / 'best_checkpoint.pt')
+    audit.write(parent / 'metadata.json', {'mode': 'fixed', 'config': original_config, 'source_commit': 'early'})
+    orig = {p.name: audit.sha256(p) for p in parent.iterdir()}
+    audit.write(parent / 'manifest.json', orig)
+    meta = {'mode': 'fixed', 'config': config, 'parent_config': original_config,
+            'source_commit': 'late', 'target_epoch': 6, 'lineage': {
+                'original_run': parent.relative_to(tmp_path).as_posix(), 'parent_source_commit': 'early',
+                'original_best_sha256': orig['best_checkpoint.pt'], 'original_manifest_sha256': audit.sha256(parent/'manifest.json')}}
+    lock = {'selected_epoch': 2, 'source_commit': 'late', 'target_epoch': 6, 'seed': 37}
+    for selected in (2, 4):
+        payload = raw if selected == 2 else {**raw, 'source_commit': 'late', 'epoch': 4, 'config': {**config, 'epochs': 4}}
+        lock['selected_epoch'] = selected
+        audit.write(run / 'history.json', [{'epoch': i, 'validation': truth if i == selected else {'correct': 1, 'cross_entropy': 1.}}
+                                           for i in range(1, 7)])
+        manifest = {'history.json': audit.sha256(run / 'history.json')}
+        audit.verify_locked_payload(run, manifest, meta, lock, payload)
+        with pytest.raises(ValueError, match='configuration mismatch'):
+            audit.verify_locked_payload(run, manifest, meta, lock, {**payload, 'config': {**payload['config'], 'phase_lr': .001}})
+        with pytest.raises(ValueError, match='validation winner'):
+            audit.verify_locked_payload(run, manifest, meta, lock, {**payload, 'validation': {'correct': 0}})
+        if selected == 2:
+            with pytest.raises(ValueError, match='tensors differ'):
+                audit.verify_locked_payload(run, manifest, meta, lock, {**payload, 'model': {'weight': torch.tensor([3.])}})
+    with pytest.raises(ValueError, match='identity mismatch'):
+        audit.verify_locked_payload(run, {}, {'mode': 'fixed', 'config': config}, lock, payload)
 
 
 def test_unordered_matching_and_null():

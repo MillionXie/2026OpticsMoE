@@ -139,6 +139,58 @@ def outcomes(variant, baseline, y):
             'paired_delta_pp': float(100 * ((pred == y).sum() - (clean == y).sum()) / len(y))}
 
 
+def verify_locked_payload(run, manifest, meta, lock, payload):
+    """A resumed winner retains the budget of the block in which it was saved."""
+    config = meta['config']
+    if payload['epoch'] != lock['selected_epoch'] or payload['mode'] != meta['mode']:
+        raise ValueError('Checkpoint/selection identity mismatch')
+    if 'lineage' not in meta:
+        if payload['config'] != config:
+            raise ValueError('Checkpoint/selection identity mismatch')
+        return
+
+    source = meta['lineage']
+    parent = (TASK / source['original_run']).resolve()
+    if (parent.parent.parent != (TASK / 'runs/simulation').resolve()
+            or parent.name != run.name or parent == run.resolve()
+            or sha256(parent / 'manifest.json') != source['original_manifest_sha256']
+            or sha256(run / 'history.json') != manifest['history.json']):
+        raise ValueError('Continuation history or parent identity mismatch')
+    original = read_json(parent / 'manifest.json')
+    if (sha256(parent / 'metadata.json') != original['metadata.json']
+            or original['best_checkpoint.pt'] != source['original_best_sha256']):
+        raise ValueError('Invalid original metadata or checkpoint identity')
+    parent_meta = read_json(parent / 'metadata.json')
+    previous = parent_meta['config']
+    selected = payload['epoch']
+    saved_target = payload['config']['epochs']
+    target = config['epochs']
+    if (previous != meta['parent_config'] or parent_meta['mode'] != meta['mode']
+            or source['parent_source_commit'] != parent_meta['source_commit']
+            or lock['source_commit'] != meta['source_commit'] or lock['seed'] != config['seed']
+            or lock['target_epoch'] != meta['target_epoch'] or target != meta['target_epoch']
+            or config != {**previous, 'epochs': target}
+            or payload['config'] != {**config, 'epochs': saved_target}
+            or not selected <= saved_target <= target):
+        raise ValueError('Continuation checkpoint configuration mismatch')
+    history = read_json(run / 'history.json')
+    if [r['epoch'] for r in history] != list(range(1, target + 1)):
+        raise ValueError('Incomplete continuation history')
+    winner = max(history, key=lambda r: (r['validation']['correct'], -r['validation']['cross_entropy']))
+    if winner['epoch'] != selected or winner['validation'] != payload['validation']:
+        raise ValueError('Checkpoint differs from locked validation winner')
+    if selected <= previous['epochs']:
+        if (saved_target != previous['epochs'] or payload['source_commit'] != parent_meta['source_commit']
+                or sha256(parent / 'best_checkpoint.pt') != original['best_checkpoint.pt']):
+            raise ValueError('Invalid inherited original winner')
+        inherited = torch.load(parent / 'best_checkpoint.pt', map_location='cpu', weights_only=False)
+        if (inherited['epoch'] != selected or inherited['model'].keys() != payload['model'].keys()
+                or any(not torch.equal(v, payload['model'][k]) for k, v in inherited['model'].items())):
+            raise ValueError('Inherited original model tensors differ')
+    elif saved_target <= previous['epochs'] or payload['source_commit'] != meta['source_commit']:
+        raise ValueError('Invalid continuation winner source or block budget')
+
+
 def audit(run, out, device, photons):
     from .train import build_model
     manifest = read_json(run / 'manifest.json')
@@ -155,8 +207,7 @@ def audit(run, out, device, photons):
     torch.set_num_threads(4)
     model = build_model(mode, config['num_classes']).eval()
     payload = torch.load(run / 'best_checkpoint.pt', map_location='cpu', weights_only=False)
-    if payload['epoch'] != lock['selected_epoch'] or payload['config'] != config or payload['mode'] != mode:
-        raise ValueError('Checkpoint/selection identity mismatch')
+    verify_locked_payload(run, manifest, meta, lock, payload)
     model.load_state_dict(payload['model'], strict=True)
     model.to(device)
     param_hash = state_digest(model)
