@@ -1,0 +1,17 @@
+{
+  "datasets": ["kather", "blood"],
+  "arms": ["diffraction", "mixed", "uniform_half", "fiber"],
+  "seeds": [37, 53],
+  "epochs": 180,
+  "initialization": "Fresh parameters, matched within dataset/seed; original T24 fixed-corner optical geometry",
+  "base_configs": {"kather": "t24_continuous_spatial_routing/configs/kather2016.json", "blood": "t24_continuous_spatial_routing/configs/bloodmnist128.json"},
+  "gpu_uuids": {"37": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d", "53": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"},
+  "training": {"phase_lr": 0.003, "head_lr": 0.001, "batch": 32, "clip_grad_norm": 5, "label_smoothing": 0.02, "augmentation": "none", "optimizer": "Adam"},
+  "fiber_slots_zero_based": {"diffraction": [], "mixed": {"37": [0,3], "53": [1,2]}, "uniform_half": [0,1,2,3], "fiber": [0,1,2,3]},
+  "fiber_channels": {"diffraction": 0, "mixed": 1568, "uniform_half": 1568, "fiber": 3136},
+  "uniform_half_filter": "In each of the four experts project only cells with even row+column; the complementary checkerboard cells transmit the modulated field directly.",
+  "fiber_model": {"location": "immediately following the selected expert phase screen, prior to joint free-space propagation and OEO", "effective_plane_pixel_pitch_um": 17, "cell_side_px": 8, "field_gaussian_radius_px": 2, "cores_per_expert_side": 28, "relative_fiber_phases_rad": 0, "guided_field_transmission": 1, "intercore_crosstalk": 0, "post_projection_renormalize": false},
+  "selection": "Highest full VAL correct count, then lowest VAL cross entropy, then earliest epoch. TEST is diagnostic only.",
+  "primary_comparisons": ["mixed - uniform_half", "mixed - diffraction", "mixed - fiber"],
+  "interpretation": "Matched trainable parameters, examples and updates. Fiber count, effective optical rank, insertion loss and numerical operation count change among the arms. Two training seeds; mixed diagonals are counterbalanced across them. Scalar coherent simulation."
+}
