@@ -1,0 +1,2075 @@
+{
+  "protocol": "Each locked model: first original TEST row per truth class in archived order, using archived fixed encoder and CPU inference. These 8 examples per dataset are a deterministic spot check.",
+  "device": "cpu",
+  "torch": "2.11.0+cu128",
+  "python": "3.11.9",
+  "optimization_steps": 0,
+  "shape": {
+    "first_phase": [
+      478,
+      478
+    ],
+    "global_phase": [
+      478,
+      478
+    ],
+    "router_phase": [
+      224,
+      224
+    ],
+    "shared_head.weight": [
+      8,
+      784
+    ]
+  },
+  "parameter_count": 513416,
+  "source": {
+    "kather": {
+      "local_archive_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+      "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+      "identity": "full original archive and full TEST label/ID order verified locally",
+      "indices": [
+        658,
+        564,
+        94,
+        376,
+        188,
+        470,
+        0,
+        282
+      ],
+      "ids": [
+        "hf_04379",
+        "hf_03772",
+        "hf_00631",
+        "hf_02502",
+        "hf_01254",
+        "hf_03159",
+        "hf_00009",
+        "hf_01877"
+      ],
+      "labels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "image_sha256": [
+        "5e0d260cb73e5b910691e6439e3fea7743982345c0611aa991fe11bf17b3d9be",
+        "284278a41cc887bd708b15e3dc90a16b590fceb712bfb039fd458d537270f0a0",
+        "322991b7b4c42339f058e741e928f247c14c7de9f99e3efdf0759cc0b2018cb7",
+        "3aa73ff97ae336cd510ad7fa870371a881e8a29bdb28b04c22bcc1991077ee0e",
+        "570a6003955a71b6c8ce0fd594fdc04464f5b31432d8b99a83661d1cdb703582",
+        "e19bf3c52ee306eeb5174411cf4718d1f9bfb5d9434c029d98048a1e636d8f3c",
+        "ec53b0f75f1c5fb0bb61792e273b93fa9aadeb57fb1027f69f21172d7ca1c25d",
+        "405588eae67ca75672ac5de0c416b6fc0a9aab9c57aecc1d7e6699871913c75c"
+      ]
+    },
+    "blood": {
+      "local_archive_sha256": "0cde754888577805656e76216d1af07e5ab7be2f1a8ee7321cc901b7859d81a1",
+      "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+      "identity": "8 original rows extracted remotely from the SHA-verified 128px archive (supplied subset checksum verified locally); official TEST row IDs verified",
+      "indices": [
+        1,
+        2,
+        14,
+        0,
+        15,
+        10,
+        8,
+        26
+      ],
+      "ids": [
+        "test_1",
+        "test_2",
+        "test_14",
+        "test_0",
+        "test_15",
+        "test_10",
+        "test_8",
+        "test_26"
+      ],
+      "labels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "image_sha256": [
+        "0d2e8b099f80dc43612584c375c990b77a202714eb60722d808fd622a6c67469",
+        "900c9c4f92abd916f1ee32e99429f62ec76c199169998a87b170ac2ae26c35fb",
+        "536c61e18f8b8d48930bc992de44b943504fbaade0061529841510a1c73d0c25",
+        "9dbfde7726a004f2b08543d11e091db4de1f1f7b9b73036388c88789aeb812e5",
+        "8e9283a3bd7e3451fc8269d2346392b1cf50eacadbc4c65e590f485628ccd8de",
+        "0e1e36425c08de1fc749b73686750a610b9fd47684f1251cca5346a94c5e2adf",
+        "e4fff3c469c6248763178ccc6725c7b5b5fe878fc2ba44a022fbcd06d1254416",
+        "90a604e750c7bda789837973ee0a25bb34f692d256e04501cf06b1e95bac4d78"
+      ]
+    }
+  },
+  "runs": {
+    "kather_s37_diffraction": {
+      "arm": "diffraction",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "4eccd94f6ce8cc9ec79fd07237991588e39993758d3033deb35c9377b2655968",
+      "selected_epoch": 111,
+      "canonical_state_sha256": "6e4b0d8b8d7b08f5deefb8c03749d6736365e322f8311d91e133ae8a84c67a55",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 1.1324882507324219e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 1.1920928955078125e-07,
+        "router_capture": 4.470348358154297e-08,
+        "dense_power": 1.1920928955078125e-07,
+        "router_port_energy": 2.60770320892334e-08,
+        "slot_gate_power": 1.1920928955078125e-07,
+        "pre_fiber_power": 2.4437904357910156e-06,
+        "transmitted_power": 2.4437904357910156e-06
+      },
+      "actual_predictions": [
+        0,
+        1,
+        5,
+        3,
+        4,
+        0,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        5,
+        3,
+        4,
+        0,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    },
+    "kather_s37_mixed": {
+      "arm": "mixed",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "7ef8c054a20e216550e036725c17930fedc209e4848975086c89b67e756cbcd8",
+      "selected_epoch": 119,
+      "canonical_state_sha256": "8d1d5c17f70229a56be2e4fd6a373f7a428960f9f674978d8bf7d556bb428a10",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        784,
+        0,
+        0,
+        784
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 1.8477439880371094e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 7.078051567077637e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 6.332993507385254e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 3.039836883544922e-06,
+        "transmitted_power": 3.039836883544922e-06
+      },
+      "actual_predictions": [
+        5,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        5,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "archived_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ]
+    },
+    "kather_s37_uniform_half": {
+      "arm": "uniform_half",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "b1acf38d4116622b2776bdcd6595af719b1f3f35f90a01aadfb1e232533291e8",
+      "selected_epoch": 140,
+      "canonical_state_sha256": "3437e6ed9ca91cf4240c448302cbe1b55b0fec65fce6ec418d933a94ac69de54",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        392,
+        392,
+        392,
+        392
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 4.32133674621582e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 1.1920928955078125e-07,
+        "router_capture": 8.940696716308594e-08,
+        "dense_power": 1.1920928955078125e-07,
+        "router_port_energy": 5.960464477539063e-08,
+        "slot_gate_power": 1.1920928955078125e-07,
+        "pre_fiber_power": 5.364418029785156e-07,
+        "transmitted_power": 2.980232238769531e-07
+      },
+      "actual_predictions": [
+        0,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    "kather_s37_fiber": {
+      "arm": "fiber",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "e8c9b95eeb0088071427537a248cb615b2c88a9c2e7f2cdcf57d6baa4a38d8d2",
+      "selected_epoch": 40,
+      "canonical_state_sha256": "953168600a6c713d84b78b284b364888b0811362a503b57e72ba23e6ae4a3112",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        784,
+        784,
+        784,
+        784
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 2.115964889526367e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 9.685754776000977e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 5.587935447692871e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 6.318092346191406e-06,
+        "transmitted_power": 2.130866050720215e-06
+      },
+      "actual_predictions": [
+        3,
+        1,
+        5,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        3,
+        1,
+        5,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "archived_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "kather_s53_diffraction": {
+      "arm": "diffraction",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "d875cf17603a87d1035011ef50fcd43f84dc0fcd05bac84359334a733bfc44ec",
+      "selected_epoch": 136,
+      "canonical_state_sha256": "57117cebe89685f1a74102b20c774c64ea7714aa441ad68dbdcc3e716c84bc8b",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 2.562999725341797e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 1.564621925354004e-07,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 1.4156103134155273e-07,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 1.9669532775878906e-06,
+        "transmitted_power": 1.9669532775878906e-06
+      },
+      "actual_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        4,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        4,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    "kather_s53_mixed": {
+      "arm": "mixed",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "679ed2fd6a255c18961ba1d5966da8c4f651c6517e6575a6aea0b418c7e1ab44",
+      "selected_epoch": 57,
+      "canonical_state_sha256": "d7ee7e2c4669c34213d7b25c75bf48eabb9d513521fa73063094273fad176343",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        0,
+        784,
+        784,
+        0
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 2.086162567138672e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 7.82310962677002e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 4.842877388000488e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 2.384185791015625e-06,
+        "transmitted_power": 2.384185791015625e-06
+      },
+      "actual_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "kather_s53_uniform_half": {
+      "arm": "uniform_half",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "370abd6bbad75b956011ec38ff25d85ad969eaf96c636762d56e6cff3aba42a5",
+      "selected_epoch": 76,
+      "canonical_state_sha256": "dc90a4f1d038e3251f1fe6d0a71eec2d0d9f244c8a3c07148321a49cdee44952",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        392,
+        392,
+        392,
+        392
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 8.940696716308594e-07,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 9.685754776000977e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 6.332993507385254e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 1.430511474609375e-06,
+        "transmitted_power": 9.5367431640625e-07
+      },
+      "actual_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        4,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        4,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          1
+        ]
+      ]
+    },
+    "kather_s53_fiber": {
+      "arm": "fiber",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "bcde29d0a36dec67d362e115d01a0dcd8c5aa585089026d3fb89a5cf01376544",
+      "selected_epoch": 67,
+      "canonical_state_sha256": "ec359d4091e0204e1d3935ebdba6ff1b215a98d532d50aa6d14cc6397944098f",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        784,
+        784,
+        784,
+        784
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 1.0132789611816406e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 7.82310962677002e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 5.21540641784668e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 7.808208465576172e-06,
+        "transmitted_power": 2.3692846298217773e-06
+      },
+      "actual_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        0,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        3,
+        1,
+        3,
+        3,
+        4,
+        0,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "archived_slots": [
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ]
+    },
+    "blood_s37_diffraction": {
+      "arm": "diffraction",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "f182973cca1a29868a8f3daee97911a73dcbc02440d4ec5d90fa8bea3bf087a0",
+      "selected_epoch": 88,
+      "canonical_state_sha256": "eb74d1b2979def2f8c7ff5325d48896038a23ba8834be9e4acded5cbfc615803",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 3.814697265625e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 2.60770320892334e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 1.6763806343078613e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 1.0728836059570312e-06,
+        "transmitted_power": 1.0728836059570312e-06
+      },
+      "actual_predictions": [
+        1,
+        1,
+        2,
+        5,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        1,
+        1,
+        2,
+        5,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "blood_s37_mixed": {
+      "arm": "mixed",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "8a910285deae57832356afebf471e0df3fdff3ac0b3f639732e7599a025f903e",
+      "selected_epoch": 102,
+      "canonical_state_sha256": "3cb79cd24688dc219a0ab2f55f8693797750bb0310343d8b877fa557959b00c5",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        784,
+        0,
+        0,
+        784
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 1.4901161193847656e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 2.2351741790771484e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 1.1175870895385742e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 4.76837158203125e-07,
+        "transmitted_power": 2.086162567138672e-07
+      },
+      "actual_predictions": [
+        0,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "blood_s37_uniform_half": {
+      "arm": "uniform_half",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "9a95bfe4fa9b63f75ba3f2873c0316aa561a08866d3e59650e3da8963b02a4f4",
+      "selected_epoch": 170,
+      "canonical_state_sha256": "f067ba75a46106c33e7bf39223e2298a4b1d3ba5a17722d49eb3bb12accd54b1",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        392,
+        392,
+        392,
+        392
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 3.516674041748047e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 8.940696716308594e-08,
+        "router_capture": 1.6763806343078613e-08,
+        "dense_power": 8.940696716308594e-08,
+        "router_port_energy": 1.30385160446167e-08,
+        "slot_gate_power": 8.940696716308594e-08,
+        "pre_fiber_power": 1.3709068298339844e-06,
+        "transmitted_power": 8.344650268554688e-07
+      },
+      "actual_predictions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "blood_s37_fiber": {
+      "arm": "fiber",
+      "seed": 37,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "12e5047f36fdbd50894984e7c5e4dd585b2e0970058cec9a47562fefc0767645",
+      "selected_epoch": 170,
+      "canonical_state_sha256": "64691b69bc6ffd88d98bc937df8adbc388b38651fd6ae856520f315ec83458a4",
+      "archived_initial_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "local_CPU_reinitialization_sha256": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        784,
+        784,
+        784,
+        784
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 3.933906555175781e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 2.60770320892334e-08,
+        "dense_power": 1.1920928955078125e-07,
+        "router_port_energy": 2.421438694000244e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 2.384185791015625e-06,
+        "transmitted_power": 3.427267074584961e-07
+      },
+      "actual_predictions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "blood_s53_diffraction": {
+      "arm": "diffraction",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "e47c81f34be1942b320644347d31c8dc1ae5a7a7ff89f909446bd4910ec48225",
+      "selected_epoch": 152,
+      "canonical_state_sha256": "b6a11403222b82c8e006bfd3a2478dbbde30701913e9d01d9d2e9f0b4e31a8da",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 1.430511474609375e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 3.725290298461914e-08,
+        "dense_power": 1.1920928955078125e-07,
+        "router_port_energy": 2.9802322387695312e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 4.5299530029296875e-06,
+        "transmitted_power": 4.5299530029296875e-06
+      },
+      "actual_predictions": [
+        0,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        3,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "blood_s53_mixed": {
+      "arm": "mixed",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "b61ab835cc5bf8e4bb459075d2399fc635961bfc7775f4311bac843091bc8abc",
+      "selected_epoch": 149,
+      "canonical_state_sha256": "17a5b8e03633607290350f0275e16b6739f91a28e737b4cd284f00240778c531",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        0,
+        784,
+        784,
+        0
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 1.996755599975586e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 1.1920928955078125e-07,
+        "router_capture": 2.60770320892334e-08,
+        "dense_power": 1.1920928955078125e-07,
+        "router_port_energy": 2.2351741790771484e-08,
+        "slot_gate_power": 1.1920928955078125e-07,
+        "pre_fiber_power": 1.2516975402832031e-06,
+        "transmitted_power": 1.2516975402832031e-06
+      },
+      "actual_predictions": [
+        0,
+        1,
+        3,
+        5,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        3,
+        5,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "blood_s53_uniform_half": {
+      "arm": "uniform_half",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "b8a64e8ef56895358cb0ddcecff8a9794d8a9eb39226bb0d2d77b54cd344c0ba",
+      "selected_epoch": 155,
+      "canonical_state_sha256": "7339fb0f546d26fc89ec5f61f51ca15f22641e80914a5cd1bc65d67e22649c11",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        392,
+        392,
+        392,
+        392
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 3.1888484954833984e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 2.60770320892334e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 2.0489096641540527e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 1.3709068298339844e-06,
+        "transmitted_power": 8.344650268554688e-07
+      },
+      "actual_predictions": [
+        0,
+        1,
+        2,
+        5,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        2,
+        5,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    "blood_s53_fiber": {
+      "arm": "fiber",
+      "seed": 53,
+      "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+      "checkpoint_sha256": "fa0e0a9d85f49c3a9b45daab39f286c015ba062d22409b8123ffc79a354fdb69",
+      "selected_epoch": 162,
+      "canonical_state_sha256": "e4168cf6cbf773f1258e49381cdb72658f1d6f99ea08a63efc351e7e3fe51d1c",
+      "archived_initial_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "local_CPU_reinitialization_sha256": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "local_reinitialization_bitwise_equals_archived": false,
+      "strict_loaded": true,
+      "trainable_parameters": 513416,
+      "fiber_core_counts": [
+        784,
+        784,
+        784,
+        784
+      ],
+      "samples": 8,
+      "prediction_matches": 8,
+      "exact_ordered_top2_slot_matches": 8,
+      "positions_exact": true,
+      "probability_max_abs_delta": 3.2186508178710938e-06,
+      "diagnostics_max_abs_delta": {
+        "power": 5.960464477539063e-08,
+        "router_capture": 1.862645149230957e-08,
+        "dense_power": 5.960464477539063e-08,
+        "router_port_energy": 1.4901161193847656e-08,
+        "slot_gate_power": 5.960464477539063e-08,
+        "pre_fiber_power": 5.185604095458984e-06,
+        "transmitted_power": 6.92903995513916e-07
+      },
+      "actual_predictions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "archived_predictions": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "actual_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "archived_slots": [
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          2
+        ]
+      ]
+    }
+  },
+  "total_models": 16,
+  "total_image_model_predictions": 128,
+  "total_prediction_matches": 128,
+  "total_ordered_top2_matches": 128,
+  "all_positions_exact": true,
+  "maximum_probability_discrepancy": 4.32133674621582e-06,
+  "initialization_comparison": "Seeded random initializations were regenerated on local Windows PyTorch and compared separately from strict loading of the actual archived trained weights.",
+  "per_seed_training_initial_identity": {
+    "37": {
+      "archived": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+      "locally_regenerated": "b9889ddb2db720abe4cd25da19710213eabe304be4556f51b209f65dc8d0f780",
+      "all_8_arms_and_datasets_match_within_each_environment": true
+    },
+    "53": {
+      "archived": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+      "locally_regenerated": "86f852cd0712f2526dbd4b85de709dda88788ad24165aa972b4af327561578df",
+      "all_8_arms_and_datasets_match_within_each_environment": true
+    }
+  }
+}

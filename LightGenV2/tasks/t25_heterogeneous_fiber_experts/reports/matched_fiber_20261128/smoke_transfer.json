@@ -1,0 +1,173 @@
+{
+  "cohort": {
+    "stage": "smoke",
+    "pid": 791567,
+    "source_commit": "b16878fd0c75c1a5ea665dd00263590ce696383d",
+    "datasets": [
+      "kather",
+      "blood"
+    ],
+    "arms": [
+      "diffraction",
+      "mixed",
+      "uniform_half",
+      "fiber"
+    ],
+    "seeds": [
+      37,
+      53
+    ],
+    "epochs": 180,
+    "state": "complete"
+  },
+  "remote_archive_sha256": "0a2f70cd3223c8aadccede6d79ab891a0bb9c959cbb7c6e7eab597d5ff4020f6",
+  "matching_local_runs": {
+    "kather_s37_diffraction": {
+      "pid": 829120,
+      "sha256": {
+        "config.json": "3e23aef61e8328e95a6a207c4202dc36ccef41ddfad5534294398ac8571d10e6",
+        "metadata.json": "d3428fa05beece65cda22141f102789bd353e66b3147d97084ae74f81f0e5aa7",
+        "admission.json": "34c9fbbb0da591919b794b5a08d56427d574a4e9e70f7e25bb850824f20acf23"
+      }
+    },
+    "kather_s37_mixed": {
+      "pid": 829405,
+      "sha256": {
+        "config.json": "aa16ee1dffc5df9d2d358aa096628ca061bbd48761fe516e51d3602ba78eb8ef",
+        "metadata.json": "2c8fa3cc2ff25ab73daf2d8341e8a908059d20826fde0760560e073fe98e22da",
+        "admission.json": "cb49cc13254b03a25452d35274068342120ea98ace4dd2da96d4e5a3dcad28d3"
+      }
+    },
+    "kather_s37_uniform_half": {
+      "pid": 829617,
+      "sha256": {
+        "config.json": "3e7474b55409c661e8590a456a7c374fd0561439464de6eadc2363f57ad38045",
+        "metadata.json": "72f9edbe5fb2c950b0c586318e8d4e0056e3c187bb62a825ea55b8b104663f2e",
+        "admission.json": "b20de000511f262e0484a03e000e2fab5d7b4b624a6230ddc20c4bb3a9493e28"
+      }
+    },
+    "kather_s37_fiber": {
+      "pid": 829894,
+      "sha256": {
+        "config.json": "fc6a97667aae13f7e1ef492bc6e46b4b8cf50f7570482519c94441e8891cb6ba",
+        "metadata.json": "eef774a6bdb819d179d4989a51d0a18cb53a4d19774ab00ab4a1bae13c2e8a45",
+        "admission.json": "b0003511081546d58255182e08c245976c5b6154388d32cdfb12ab8c78e2f152"
+      }
+    },
+    "kather_s53_diffraction": {
+      "pid": 795607,
+      "sha256": {
+        "config.json": "ab23b6095bc0358121e439d50f1d1e7a97d3cf955303d6b67fd1e8b354244896",
+        "metadata.json": "de1e59487df6df9dcb623158932485734e554b147d5e7ec9ed5c06d8e9e9e985",
+        "admission.json": "0da35afb86d95db2ec79c7ec5fcd4b8e6bbca08469bf11082629c70f00e5a78f"
+      }
+    },
+    "kather_s53_mixed": {
+      "pid": 795373,
+      "sha256": {
+        "config.json": "6db79365fc1032273859b4c3bd269504f75150d6187ec3ac48e85af79fbc1f69",
+        "metadata.json": "5b3515ee701d142e20d737afa1e44977659c25c030f95de8559b1ecf74d437a7",
+        "admission.json": "172d483bea06322457ae5b68c64e5c798e465008e6ce2f828f015f1ffd61bf2c"
+      }
+    },
+    "kather_s53_uniform_half": {
+      "pid": 795067,
+      "sha256": {
+        "config.json": "a8bb326f155674d4c616f278328ec8495d5849fb470473fbeb8e3fd976d5a867",
+        "metadata.json": "a0a5021933ffeff70de1319b9fbbe32b0aac6154709aac98872b017bc2d69c54",
+        "admission.json": "bbd9673af66e2a36bdc1043112adcf6d1e3d99bd3a47ac307976c352dd697d17"
+      }
+    },
+    "kather_s53_fiber": {
+      "pid": 794733,
+      "sha256": {
+        "config.json": "f55d59d901b1663a7e841619de4f23dabf18ce9abe1a1e5ad9ab48804e32e0d0",
+        "metadata.json": "06bacfc7e4c269620496e90a71de404038bf4d9cdd58eb13e65099c68db2d7eb",
+        "admission.json": "ffcda08ce726827aa396ec0c7660768c36408984f8d549bae27086ffdd517808"
+      }
+    },
+    "blood_s37_diffraction": {
+      "pid": 824792,
+      "sha256": {
+        "config.json": "ac5ff75faaf567711d96fb3cea643a90a82fd30637406c05693c8d0a8daf4dfb",
+        "metadata.json": "45702d983544947ee8b549abe7b3fb33311384e19a0a7ecd075646c4d8e2f42a",
+        "admission.json": "003a127afa74bbf13f1fceaf0e8bf158f8010ef969110acb1852b065fa7c0abe"
+      }
+    },
+    "blood_s37_mixed": {
+      "pid": 825417,
+      "sha256": {
+        "config.json": "fba4f111625078ae7b1b76d9a82eb04cbc022762c1682560882e3749480f5393",
+        "metadata.json": "64cda06e078df83c5e6e6238fa7a57af293910156663dce6011089dae5b3a51d",
+        "admission.json": "3426c860743bc231ff4c19c7865ea729c2eaa219357560f04bee11ffa996dad2"
+      }
+    },
+    "blood_s37_uniform_half": {
+      "pid": 826966,
+      "sha256": {
+        "config.json": "94df9d04dd08161b486cfbb209986de8abc797cd50e25e0b0ed446148b94c7c4",
+        "metadata.json": "2b4e8b0df1cd8d48a107dcc6b7b4164f78100d57580e2493abf7d215bd750a0d",
+        "admission.json": "b6396365658ed4d2f58793d9c79271671ece462eeecdd3ac002dac673ee910c7"
+      }
+    },
+    "blood_s37_fiber": {
+      "pid": 828299,
+      "sha256": {
+        "config.json": "62f6a943eed344ded3877fc0fda32ec5075c20ea2d29da53ee1b1848c85f7215",
+        "metadata.json": "85605ef3a3cc283865b33b42acdc4be8c04ccf8556380dd300151a845bea70ed",
+        "admission.json": "a013bce301c8b2ed92c77bcfc5b30c0b640064e889d7958291d0cf559fa57c78"
+      }
+    },
+    "blood_s53_diffraction": {
+      "pid": 793910,
+      "sha256": {
+        "config.json": "29c87e1bfd0d48a3174a2478ec827dab0b76faffbe23ab540e8d23a5a1698c06",
+        "metadata.json": "f844ea59b73955716d0bd7c7f430cbbec4888cacedfdf3eb503189ce32641955",
+        "admission.json": "21eed01d0f1db3f03d42e52f5e735fc938f3d6420e740407d2519bf7bec5a85a"
+      }
+    },
+    "blood_s53_mixed": {
+      "pid": 793355,
+      "sha256": {
+        "config.json": "9f190e4bdf5a05becaeecfc152e83703eb875a075c0e1b59990d50aea8269f29",
+        "metadata.json": "53e80989df639fb17245850865c809c8cb1810797e80fe104b4719b25b33664c",
+        "admission.json": "3191aae5e1fe686e532c86c332385850c3f631efd7f5df92f7e9e0975ccfa134"
+      }
+    },
+    "blood_s53_uniform_half": {
+      "pid": 792463,
+      "sha256": {
+        "config.json": "9a71b0f558335d0507d931eca33af1c23b4af2c151bc66f85a2b849563e413ba",
+        "metadata.json": "3c600adda97e4fab71320991f7a324a623ce323a6b8864ce7f35c48d8b12f1fe",
+        "admission.json": "65e42f9a7b8f5c28d349bde02ef1b3f81e4d0b9f5204386aa2b0a3efa83e2243"
+      }
+    },
+    "blood_s53_fiber": {
+      "pid": 791574,
+      "sha256": {
+        "config.json": "ebb5dfda302847b3f500e98e2086ea3e90b06263514fa8aed5e8533a316c724e",
+        "metadata.json": "c9d07c0deae7d29974a9f29fac3b41d2fb3e7821bd4c7227ce8fc52a807c661b",
+        "admission.json": "7003f853da06b589e2aa92323f3b1a70bd9cecf2e34fc282c7e7b9c1e465e80e"
+      }
+    }
+  },
+  "verified_exited_pids": [
+    791567,
+    791574,
+    792463,
+    793355,
+    793910,
+    794733,
+    795067,
+    795373,
+    795607,
+    824792,
+    825417,
+    826966,
+    828299,
+    829120,
+    829405,
+    829617,
+    829894
+  ]
+}
