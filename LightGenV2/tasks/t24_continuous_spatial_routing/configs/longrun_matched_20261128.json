@@ -1,0 +1,30 @@
+{
+  "parent_cohort": "matched_20261128",
+  "parent_epoch": 8,
+  "datasets": ["kather", "blood"],
+  "seeds": [37, 53],
+  "modes": ["fixed", "continuous", "constrained"],
+  "min_epochs": 100,
+  "max_epochs": 200,
+  "decision_interval": 20,
+  "adjacent_window_epochs": 10,
+  "gain_window_epochs": 20,
+  "smoothing_epochs": 5,
+  "max_abs_adjacent_mean_delta_pp": 1.0,
+  "max_best_smoothed_gain_pp": 1.0,
+  "max_recent_smoothed_range_pp": 3.0,
+  "training": {
+    "start": "Continue each matched arm's last checkpoint at epoch 8, including Adam state and TRAIN shuffle RNG",
+    "phase_lr": 0.003,
+    "head_lr": 0.001,
+    "schedule": "constant",
+    "batch": 32,
+    "clip_grad_norm": 5.0,
+    "label_smoothing": 0.02,
+    "weight_decay": 0.0,
+    "augmentation": "none"
+  },
+  "stopping": "Use only validation accuracy for stopping. Earliest eligible common epoch with all 12 runs passing all three thresholds; otherwise continue every arm to the next common checkpoint or cap. At the cap identify runs that did not meet the plateau rule. Record tail validation CE for interpretation.",
+  "selection": "Highest original VAL correct count across the actual trajectory including archived epochs 1-8, then lowest VAL CE, then earliest epoch",
+  "interpretation": "Stability of recent validation accuracy within stated tolerances under this optimizer and budget. Test accuracy and training loss do not decide stopping or checkpoint selection."
+}
