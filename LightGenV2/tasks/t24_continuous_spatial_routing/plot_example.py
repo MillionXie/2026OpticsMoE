@@ -47,6 +47,7 @@ def main():
              ha="center", fontsize=9, color="#414a50")
     out = TASK / "reports/kather_pilot/placement_example.png"
     fig.savefig(out, dpi=160, facecolor="white")
+    fig.savefig(out.with_suffix(".svg"), facecolor="white")
     plt.close(fig)
 
 

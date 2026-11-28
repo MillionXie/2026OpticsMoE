@@ -1,0 +1,108 @@
+{
+  "17": {
+    "dataset": "bloodmnist128",
+    "seed": 17,
+    "run": "runs/simulation/blood_s17_continuous",
+    "split": "val",
+    "selected_epoch": 8,
+    "best_checkpoint_sha256": "20fa239f70e49878303f2ae165eea918204ff28d6e5b933fc30a737f8b60d355",
+    "model_sha256": "3246cbca2d4509c7f17b5343e5b4554c9e91bbe76bcef31ba3ec406fc7d3feaa",
+    "audit_source_sha256": "8b55556644ea85ba7ac2e64bb52ba910f1cf3b06180a1132a63679d79c6d77a0",
+    "input_data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+    "original_validation_sha256": "3aa7cd70a2291b1b55b411a1616737a3df1e4af6e8f2b810cae4f765568af294",
+    "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "torch_version": "2.6.0+cu124",
+    "command": [
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t24_continuous_spatial_routing/quantize_positions.py",
+      "--run",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/blood_s17_continuous",
+      "--out",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/smoke/blood_s17_coordinate_probe"
+    ],
+    "source_commit": "9514c2f8dcc39b327164a87ed1a7a8eb73b36052",
+    "optimization_steps": 0,
+    "variants": {
+      "canonical": {
+        "n": 1712,
+        "correct": 1286,
+        "accuracy": 0.7511682242990654,
+        "mean_displacement_per_copy_px": 0.0,
+        "prediction_changes": 0,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0
+      },
+      "pixel": {
+        "n": 1712,
+        "correct": 1245,
+        "accuracy": 0.7272196261682243,
+        "mean_displacement_per_copy_px": 0.38648608326911926,
+        "prediction_changes": 157,
+        "correct_to_wrong": 73,
+        "wrong_to_correct": 32
+      },
+      "grid17": {
+        "n": 1712,
+        "correct": 985,
+        "accuracy": 0.5753504672897196,
+        "mean_displacement_per_copy_px": 1.1068675518035889,
+        "prediction_changes": 495,
+        "correct_to_wrong": 347,
+        "wrong_to_correct": 46
+      }
+    },
+    "canonical_max_abs_score_delta": 0.0
+  },
+  "29": {
+    "dataset": "bloodmnist128",
+    "seed": 29,
+    "run": "runs/simulation/blood_s29_continuous",
+    "split": "val",
+    "selected_epoch": 8,
+    "best_checkpoint_sha256": "3d992d25acae3f6f060840e4f754afd67f8837b7ee4147bfce5ea33022d04ba0",
+    "model_sha256": "3246cbca2d4509c7f17b5343e5b4554c9e91bbe76bcef31ba3ec406fc7d3feaa",
+    "audit_source_sha256": "8b55556644ea85ba7ac2e64bb52ba910f1cf3b06180a1132a63679d79c6d77a0",
+    "input_data_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+    "original_validation_sha256": "2ff7a050b84c2be49ea976a434e757c8032ade127d13cf71fd4212d9d166d031",
+    "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "torch_version": "2.6.0+cu124",
+    "command": [
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t24_continuous_spatial_routing/quantize_positions.py",
+      "--run",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/blood_s29_continuous",
+      "--out",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/smoke/blood_s29_coordinate_probe"
+    ],
+    "source_commit": "9514c2f8dcc39b327164a87ed1a7a8eb73b36052",
+    "optimization_steps": 0,
+    "variants": {
+      "canonical": {
+        "n": 1712,
+        "correct": 1319,
+        "accuracy": 0.7704439252336449,
+        "mean_displacement_per_copy_px": 0.0,
+        "prediction_changes": 0,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0
+      },
+      "pixel": {
+        "n": 1712,
+        "correct": 1264,
+        "accuracy": 0.7383177570093458,
+        "mean_displacement_per_copy_px": 0.3945148289203644,
+        "prediction_changes": 136,
+        "correct_to_wrong": 84,
+        "wrong_to_correct": 29
+      },
+      "grid17": {
+        "n": 1712,
+        "correct": 790,
+        "accuracy": 0.4614485981308411,
+        "mean_displacement_per_copy_px": 1.153672218322754,
+        "prediction_changes": 826,
+        "correct_to_wrong": 635,
+        "wrong_to_correct": 106
+      }
+    },
+    "canonical_max_abs_score_delta": 0.0
+  }
+}

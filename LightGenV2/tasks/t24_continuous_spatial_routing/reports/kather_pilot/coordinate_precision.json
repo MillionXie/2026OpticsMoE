@@ -1,0 +1,108 @@
+{
+  "17": {
+    "dataset": "kather2016",
+    "seed": 17,
+    "run": "runs/simulation/kather_s17_continuous",
+    "split": "val",
+    "selected_epoch": 7,
+    "best_checkpoint_sha256": "6fd9009f1742a862f61b0c9cc14dec4b1b554d8d22e97541910a962ef7f6d8e7",
+    "model_sha256": "3246cbca2d4509c7f17b5343e5b4554c9e91bbe76bcef31ba3ec406fc7d3feaa",
+    "audit_source_sha256": "8b55556644ea85ba7ac2e64bb52ba910f1cf3b06180a1132a63679d79c6d77a0",
+    "input_data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+    "original_validation_sha256": "b5e93972b692ace86fbcf353f39296ab3a5d32cb2bc0c84dbd671d76f2313d7e",
+    "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "torch_version": "2.6.0+cu124",
+    "command": [
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t24_continuous_spatial_routing/quantize_positions.py",
+      "--run",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/kather_s17_continuous",
+      "--out",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/smoke/kather_s17_coordinate_probe"
+    ],
+    "source_commit": "e35d32e8c1ab01377243749207c4decde99fd60c",
+    "optimization_steps": 0,
+    "variants": {
+      "canonical": {
+        "n": 752,
+        "correct": 441,
+        "accuracy": 0.586436170212766,
+        "mean_displacement_per_copy_px": 0.0,
+        "prediction_changes": 0,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0
+      },
+      "pixel": {
+        "n": 752,
+        "correct": 442,
+        "accuracy": 0.5877659574468085,
+        "mean_displacement_per_copy_px": 0.38664233684539795,
+        "prediction_changes": 26,
+        "correct_to_wrong": 9,
+        "wrong_to_correct": 10
+      },
+      "grid17": {
+        "n": 752,
+        "correct": 439,
+        "accuracy": 0.5837765957446809,
+        "mean_displacement_per_copy_px": 1.0205727815628052,
+        "prediction_changes": 54,
+        "correct_to_wrong": 20,
+        "wrong_to_correct": 18
+      }
+    },
+    "canonical_max_abs_score_delta": 0.0
+  },
+  "29": {
+    "dataset": "kather2016",
+    "seed": 29,
+    "run": "runs/simulation/kather_s29_continuous",
+    "split": "val",
+    "selected_epoch": 8,
+    "best_checkpoint_sha256": "f51aa1d370ae6d5620f4986bc3f279c4938cc766b5f3914f6a876051718420f3",
+    "model_sha256": "3246cbca2d4509c7f17b5343e5b4554c9e91bbe76bcef31ba3ec406fc7d3feaa",
+    "audit_source_sha256": "8b55556644ea85ba7ac2e64bb52ba910f1cf3b06180a1132a63679d79c6d77a0",
+    "input_data_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+    "original_validation_sha256": "88a0d6c12ff41d9b246e9ea4e104a6ddcea0d6176982050df0e2e3045a4c1208",
+    "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "torch_version": "2.6.0+cu124",
+    "command": [
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t24_continuous_spatial_routing/quantize_positions.py",
+      "--run",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/kather_s29_continuous",
+      "--out",
+      "LightGenV2/tasks/t24_continuous_spatial_routing/runs/smoke/kather_s29_coordinate_probe"
+    ],
+    "source_commit": "e35d32e8c1ab01377243749207c4decde99fd60c",
+    "optimization_steps": 0,
+    "variants": {
+      "canonical": {
+        "n": 752,
+        "correct": 413,
+        "accuracy": 0.5492021276595744,
+        "mean_displacement_per_copy_px": 0.0,
+        "prediction_changes": 0,
+        "correct_to_wrong": 0,
+        "wrong_to_correct": 0
+      },
+      "pixel": {
+        "n": 752,
+        "correct": 407,
+        "accuracy": 0.5412234042553191,
+        "mean_displacement_per_copy_px": 0.3713417947292328,
+        "prediction_changes": 36,
+        "correct_to_wrong": 19,
+        "wrong_to_correct": 13
+      },
+      "grid17": {
+        "n": 752,
+        "correct": 402,
+        "accuracy": 0.5345744680851063,
+        "mean_displacement_per_copy_px": 0.9942748546600342,
+        "prediction_changes": 54,
+        "correct_to_wrong": 27,
+        "wrong_to_correct": 16
+      }
+    },
+    "canonical_max_abs_score_delta": 0.0
+  }
+}

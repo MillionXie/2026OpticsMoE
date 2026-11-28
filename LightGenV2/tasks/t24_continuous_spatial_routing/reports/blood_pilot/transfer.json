@@ -1,0 +1,66 @@
+{
+  "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/blood_s17_fixed": {
+    "pid": 291358,
+    "sha256": {
+      "best_checkpoint.pt": "66615733d984133d0dc5539bb51be97fe81ebd00fc70f2e65acba823575bb42d",
+      "history.json": "b67602c22191393ee20675b482335df46644ac834360b5af91baa0f8bdaf5587",
+      "last_checkpoint.pt": "b3494073551558095f5d46640cd3fe54e4e7083f14f5ece4dfb58eb045a9f273",
+      "manifest.json": "ea0c701ad0d0eec8c310af81b41c69354c42b42dc0a8387ade92fc38dd9ccbd9",
+      "metadata.json": "78552cced40e3e1a81003c73fc221a8c7121ecfd9face9216cd4bf2f4d910c0c",
+      "predictions_test.npz": "81d37e932fcad0ad53b3bf71cc6511bf99c4b97798c79620c6db63ddb7a680a9",
+      "predictions_train.npz": "46a688d8052aa35eb9b72f6862ed5b2b3b017f16ddd41984ef610e11f20656d5",
+      "predictions_val.npz": "d715d32c45b0a1f6c834c445395e0dbb346c419a7cc05e61cf73a6167a94f633",
+      "result.json": "67b3055bf97c670fe13b1c96406adfdb0d4591e5e963e056ddeb12ecf888bd0a",
+      "selection_lock.json": "22fd435c1fabd4001fcbfe0639ae1963a9b1e05340a86c6897a47654ac4547eb",
+      "status.json": "a8823991ca3e68a496c38c6c7684f1bef06c48f3655ca7bc7c6fdf92364eab1f"
+    }
+  },
+  "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/blood_s17_continuous": {
+    "pid": 291347,
+    "sha256": {
+      "best_checkpoint.pt": "20fa239f70e49878303f2ae165eea918204ff28d6e5b933fc30a737f8b60d355",
+      "history.json": "50160d1ec2e5b60b81f89c77a54aaa8d1fdfc02ca5fd4f6f8bdf9c5c357bcb06",
+      "last_checkpoint.pt": "ad5541297eb34a8361c41727a117e2407ab63144fa2753f0697bdae8f067875e",
+      "manifest.json": "465074757dd088afdd083f41f18a4113fe78c3903dd385ca4af1aed94a33a671",
+      "metadata.json": "bfe306a226d9cd62f8d52112adbb29ac1d4ed60d84874b162205d8d9933027a9",
+      "predictions_test.npz": "8190ef240775e27a5bace5da49e7eb5473efce89e79f894d57b71b55a38e3f47",
+      "predictions_train.npz": "97da731def6f958bd885d10dd2625eaa2494609e72c86473c1131ce4f5ba4f38",
+      "predictions_val.npz": "3aa7cd70a2291b1b55b411a1616737a3df1e4af6e8f2b810cae4f765568af294",
+      "result.json": "e0a862bbfed1160df3982d79ab17419dd214972923ba6dc7cfa5f9839be6e6c7",
+      "selection_lock.json": "b845d19e22e074e0d3e154a414bb0e742fc9591db2a13671fb6f056ac500868c",
+      "status.json": "082bada3fa8d6cf94ebf7ab08ce7b24f57373af27d120f121e00eb473c44c047"
+    }
+  },
+  "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/blood_s29_fixed": {
+    "pid": 291353,
+    "sha256": {
+      "best_checkpoint.pt": "2f25151c1bbddeffcba2a4ea87380a06357a40b2075aff0b15d126095a428f7c",
+      "history.json": "50d6396912256c56aee725384fc363200abaca03717eb1ca4555e7979de320f6",
+      "last_checkpoint.pt": "2e9963a7b0ae507f05e533c1578c773de45f7adefb353134867666b79720964a",
+      "manifest.json": "992a322cef05a85218ccaf1e1b467a86a947fa7c054d0cc460f9219067c114d3",
+      "metadata.json": "5cb2aa93a6340aca8857f64eda674eab1afb808e7d5b9aa21557c3766f1bf8c9",
+      "predictions_test.npz": "a9e6eb1fe82f325ae888ff5ae8787e97724a55b99c26979e40bdcba344a5ee50",
+      "predictions_train.npz": "b2f9425cab5232572e387f2a90c205bb13f9204d491075ef60b872bb69581e6a",
+      "predictions_val.npz": "a2d66d518e6b1181f3081aed0568c7333eb72aa5590442afd9a53fd9ddb1242e",
+      "result.json": "8f474d0d84422c7b151a1153109eed7299b00ea067e852017f92a803a0cdc56e",
+      "selection_lock.json": "5b8530a77439e88bf08187913705780cce28408146e26f8ca40590678f892b13",
+      "status.json": "8ca074661434f01ac2a7d3fffd06aa852198408e7710090220190b1023bc4415"
+    }
+  },
+  "LightGenV2/tasks/t24_continuous_spatial_routing/runs/simulation/blood_s29_continuous": {
+    "pid": 291361,
+    "sha256": {
+      "best_checkpoint.pt": "3d992d25acae3f6f060840e4f754afd67f8837b7ee4147bfce5ea33022d04ba0",
+      "history.json": "b38aadfa0554c1d94ad0c670395af2afe1638ecc035917b0edb6dfb026fab09b",
+      "last_checkpoint.pt": "68cb49eae5389617512c982139aca7081b3692b55038b65b4cd4c4a9dd66d7fc",
+      "manifest.json": "55120ae751185ff649477e73cadfcc0a9b1649dccb88fa524c29f4284285a30d",
+      "metadata.json": "ef1d5e8f89c636787627ea2fd12edfdf1efbe3b737a197b69e916705a7fc810d",
+      "predictions_test.npz": "4816b499055eb6194884603c4986e080e82df555dbf8e085a310c0b91c3e60d5",
+      "predictions_train.npz": "c2194ac01cb3fed14a064fce9ae7c9122fbffc001f409c6411fd891316677acc",
+      "predictions_val.npz": "2ff7a050b84c2be49ea976a434e757c8032ade127d13cf71fd4212d9d166d031",
+      "result.json": "ad0ae626c7d228e9a9e1a951617b88705f47815bec3df94f2b77682c64963500",
+      "selection_lock.json": "3038c292e4092404d83f8f700c062d0c35b4d6888d202b08aec317d80c10075d",
+      "status.json": "417b49b5b62c7146ffb92d665eb5ba6689057c52814bf606f725369b073ad2ae"
+    }
+  }
+}

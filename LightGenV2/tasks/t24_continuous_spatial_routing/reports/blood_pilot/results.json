@@ -1,0 +1,311 @@
+{
+  "dataset": "BloodMNIST128",
+  "protocol": "TRAIN fit, VAL checkpoint, original TEST once per run",
+  "coordinate_convention": "top-left y,x in the 478-pixel active plane",
+  "paired_difference": "continuous minus fixed, same original cases within each seed",
+  "runs": [
+    {
+      "seed": 17,
+      "source_commit": "9514c2f8dcc39b327164a87ed1a7a8eb73b36052",
+      "train_steps_per_mode": 2992,
+      "fixed": {
+        "run": "blood_s17_fixed",
+        "selected_epoch": 8,
+        "best_checkpoint_sha256": "66615733d984133d0dc5539bb51be97fe81ebd00fc70f2e65acba823575bb42d",
+        "initial_state_sha256": "82f6d0a4be0a316eea5d34ceaf66c1c05b51761216e1277714808d35ce7f9c75",
+        "splits": {
+          "train": {
+            "n": 11948,
+            "correct": 9961,
+            "accuracy": 0.8336960160696351,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 3,
+              "distinct_unordered_pairs_at_nearest_pixel": 2,
+              "most_common_pair_image_fraction": 0.9999163039839304,
+              "strict_interior_placement_fraction": 0.0,
+              "mean_distance_from_nearest_fixed_corner_px": 0.0,
+              "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+              "mean_pair_distance_px": 254.0,
+              "any_footprint_overlap_image_fraction": 0.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.0
+            }
+          },
+          "val": {
+            "n": 1712,
+            "correct": 1426,
+            "accuracy": 0.8329439252336449,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 3,
+              "distinct_unordered_pairs_at_nearest_pixel": 2,
+              "most_common_pair_image_fraction": 0.9994158878504673,
+              "strict_interior_placement_fraction": 0.0,
+              "mean_distance_from_nearest_fixed_corner_px": 0.0,
+              "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+              "mean_pair_distance_px": 254.0,
+              "any_footprint_overlap_image_fraction": 0.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.0
+            }
+          },
+          "test": {
+            "n": 3421,
+            "correct": 2791,
+            "accuracy": 0.8158433206664718,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 3,
+              "distinct_unordered_pairs_at_nearest_pixel": 2,
+              "most_common_pair_image_fraction": 0.9994153756211634,
+              "strict_interior_placement_fraction": 0.0,
+              "mean_distance_from_nearest_fixed_corner_px": 0.0,
+              "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+              "mean_pair_distance_px": 254.0,
+              "any_footprint_overlap_image_fraction": 0.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.0
+            }
+          }
+        }
+      },
+      "continuous": {
+        "run": "blood_s17_continuous",
+        "selected_epoch": 8,
+        "best_checkpoint_sha256": "20fa239f70e49878303f2ae165eea918204ff28d6e5b933fc30a737f8b60d355",
+        "initial_state_sha256": "82f6d0a4be0a316eea5d34ceaf66c1c05b51761216e1277714808d35ce7f9c75",
+        "splits": {
+          "train": {
+            "n": 11948,
+            "correct": 9053,
+            "accuracy": 0.7577000334784064,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 157,
+              "distinct_unordered_pairs_at_nearest_pixel": 536,
+              "most_common_pair_image_fraction": 0.0827753598928691,
+              "strict_interior_placement_fraction": 1.0,
+              "mean_distance_from_nearest_fixed_corner_px": 139.9683380126953,
+              "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+              "mean_pair_distance_px": 84.69294738769531,
+              "any_footprint_overlap_image_fraction": 1.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.5581070780754089
+            }
+          },
+          "val": {
+            "n": 1712,
+            "correct": 1286,
+            "accuracy": 0.7511682242990654,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 89,
+              "distinct_unordered_pairs_at_nearest_pixel": 238,
+              "most_common_pair_image_fraction": 0.08761682242990654,
+              "strict_interior_placement_fraction": 1.0,
+              "mean_distance_from_nearest_fixed_corner_px": 140.26858520507812,
+              "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+              "mean_pair_distance_px": 84.51765441894531,
+              "any_footprint_overlap_image_fraction": 1.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.5585747957229614
+            }
+          },
+          "test": {
+            "n": 3421,
+            "correct": 2576,
+            "accuracy": 0.7529961999415375,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 114,
+              "distinct_unordered_pairs_at_nearest_pixel": 351,
+              "most_common_pair_image_fraction": 0.08652440806781643,
+              "strict_interior_placement_fraction": 1.0,
+              "mean_distance_from_nearest_fixed_corner_px": 140.12669372558594,
+              "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+              "mean_pair_distance_px": 84.62481689453125,
+              "any_footprint_overlap_image_fraction": 1.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.5586193799972534
+            }
+          }
+        }
+      },
+      "paired": {
+        "train": {
+          "both_correct": 8700,
+          "both_wrong": 1634,
+          "only_fixed_correct": 1261,
+          "only_continuous_correct": 353,
+          "delta_correct": -908,
+          "delta_pp": -7.599598259122866
+        },
+        "val": {
+          "both_correct": 1237,
+          "both_wrong": 237,
+          "only_fixed_correct": 189,
+          "only_continuous_correct": 49,
+          "delta_correct": -140,
+          "delta_pp": -8.177570093457945
+        },
+        "test": {
+          "both_correct": 2441,
+          "both_wrong": 495,
+          "only_fixed_correct": 350,
+          "only_continuous_correct": 135,
+          "delta_correct": -215,
+          "delta_pp": -6.284712072493423
+        }
+      }
+    },
+    {
+      "seed": 29,
+      "source_commit": "9514c2f8dcc39b327164a87ed1a7a8eb73b36052",
+      "train_steps_per_mode": 2992,
+      "fixed": {
+        "run": "blood_s29_fixed",
+        "selected_epoch": 8,
+        "best_checkpoint_sha256": "2f25151c1bbddeffcba2a4ea87380a06357a40b2075aff0b15d126095a428f7c",
+        "initial_state_sha256": "ec1bdb276c27d4f782f8302aaa72fedb8044d68f0cae621080b7cf236cfa1f66",
+        "splits": {
+          "train": {
+            "n": 11948,
+            "correct": 9555,
+            "accuracy": 0.7997154335453632,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 3,
+              "distinct_unordered_pairs_at_nearest_pixel": 2,
+              "most_common_pair_image_fraction": 0.9999163039839304,
+              "strict_interior_placement_fraction": 0.0,
+              "mean_distance_from_nearest_fixed_corner_px": 0.0,
+              "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+              "mean_pair_distance_px": 254.00880432128906,
+              "any_footprint_overlap_image_fraction": 0.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.0
+            }
+          },
+          "val": {
+            "n": 1712,
+            "correct": 1373,
+            "accuracy": 0.8019859813084113,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 2,
+              "distinct_unordered_pairs_at_nearest_pixel": 1,
+              "most_common_pair_image_fraction": 1.0,
+              "strict_interior_placement_fraction": 0.0,
+              "mean_distance_from_nearest_fixed_corner_px": 0.0,
+              "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+              "mean_pair_distance_px": 254.0,
+              "any_footprint_overlap_image_fraction": 0.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.0
+            }
+          },
+          "test": {
+            "n": 3421,
+            "correct": 2697,
+            "accuracy": 0.7883659748611517,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 3,
+              "distinct_unordered_pairs_at_nearest_pixel": 3,
+              "most_common_pair_image_fraction": 0.9994153756211634,
+              "strict_interior_placement_fraction": 0.0,
+              "mean_distance_from_nearest_fixed_corner_px": 0.0,
+              "placement_fraction_over_16px_from_any_fixed_corner": 0.0,
+              "mean_pair_distance_px": 254.03076171875,
+              "any_footprint_overlap_image_fraction": 0.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.0
+            }
+          }
+        }
+      },
+      "continuous": {
+        "run": "blood_s29_continuous",
+        "selected_epoch": 8,
+        "best_checkpoint_sha256": "3d992d25acae3f6f060840e4f754afd67f8837b7ee4147bfce5ea33022d04ba0",
+        "initial_state_sha256": "ec1bdb276c27d4f782f8302aaa72fedb8044d68f0cae621080b7cf236cfa1f66",
+        "splits": {
+          "train": {
+            "n": 11948,
+            "correct": 9257,
+            "accuracy": 0.774774020756612,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 137,
+              "distinct_unordered_pairs_at_nearest_pixel": 459,
+              "most_common_pair_image_fraction": 0.07775359892869099,
+              "strict_interior_placement_fraction": 1.0,
+              "mean_distance_from_nearest_fixed_corner_px": 142.27745056152344,
+              "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+              "mean_pair_distance_px": 82.5595932006836,
+              "any_footprint_overlap_image_fraction": 1.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.5716550350189209
+            }
+          },
+          "val": {
+            "n": 1712,
+            "correct": 1319,
+            "accuracy": 0.7704439252336449,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 83,
+              "distinct_unordered_pairs_at_nearest_pixel": 209,
+              "most_common_pair_image_fraction": 0.0794392523364486,
+              "strict_interior_placement_fraction": 1.0,
+              "mean_distance_from_nearest_fixed_corner_px": 142.55003356933594,
+              "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+              "mean_pair_distance_px": 82.5216293334961,
+              "any_footprint_overlap_image_fraction": 1.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.571184515953064
+            }
+          },
+          "test": {
+            "n": 3421,
+            "correct": 2629,
+            "accuracy": 0.7684887459807074,
+            "routing": {
+              "distinct_positions_at_nearest_pixel": 106,
+              "distinct_unordered_pairs_at_nearest_pixel": 302,
+              "most_common_pair_image_fraction": 0.07658579362759427,
+              "strict_interior_placement_fraction": 1.0,
+              "mean_distance_from_nearest_fixed_corner_px": 142.2779083251953,
+              "placement_fraction_over_16px_from_any_fixed_corner": 1.0,
+              "mean_pair_distance_px": 82.4571762084961,
+              "any_footprint_overlap_image_fraction": 1.0,
+              "mean_overlapping_area_fraction_of_one_copy": 0.57196044921875
+            }
+          }
+        }
+      },
+      "paired": {
+        "train": {
+          "both_correct": 8842,
+          "both_wrong": 1978,
+          "only_fixed_correct": 713,
+          "only_continuous_correct": 415,
+          "delta_correct": -298,
+          "delta_pp": -2.4941412788751256
+        },
+        "val": {
+          "both_correct": 1262,
+          "both_wrong": 282,
+          "only_fixed_correct": 111,
+          "only_continuous_correct": 57,
+          "delta_correct": -54,
+          "delta_pp": -3.1542056074766354
+        },
+        "test": {
+          "both_correct": 2497,
+          "both_wrong": 592,
+          "only_fixed_correct": 200,
+          "only_continuous_correct": 132,
+          "delta_correct": -68,
+          "delta_pp": -1.9877228880444315
+        }
+      }
+    }
+  ],
+  "mean_over_seeds": {
+    "train": {
+      "fixed_accuracy": 0.8167057248074991,
+      "continuous_accuracy": 0.7662370271175092,
+      "delta_pp": -5.046869768998995
+    },
+    "val": {
+      "fixed_accuracy": 0.8174649532710281,
+      "continuous_accuracy": 0.7608060747663552,
+      "delta_pp": -5.66588785046729
+    },
+    "test": {
+      "fixed_accuracy": 0.8021046477638117,
+      "continuous_accuracy": 0.7607424729611225,
+      "delta_pp": -4.136217480268927
+    }
+  }
+}
