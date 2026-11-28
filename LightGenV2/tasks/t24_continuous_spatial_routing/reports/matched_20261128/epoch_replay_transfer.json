@@ -1,0 +1,101 @@
+{
+  "server_tar_sha256": "56a47f30263779d5c866cc5b9b836aee0c69fbe00d7235a08530532054846c5f",
+  "matching_local_artifacts": {
+    "kather_s37_fixed": {
+      "pid": 397065,
+      "artifacts": {
+        "manifest.json": "5fdc6b815d6da1ecf488daf9a0f1fa0fba137374975de1c738654896915c9cbc",
+        "result.json": "e0b662889add985116550d86f94f8eda845b57184a1161696c57983fe638c8fc",
+        "status.json": "3117f2471a5c9231f395d6c22a0589fd9b0f429ffa35b70cac4fa66c4ec03e9e"
+      }
+    },
+    "kather_s37_continuous": {
+      "pid": 398498,
+      "artifacts": {
+        "manifest.json": "b42e4f82d5f8266b11959717e088a3f07e223155bf5a2afd070123ce81ced2d7",
+        "result.json": "5d678d2b3b612d0fd47d212bc5485d32be8fb54ccbbbf2833079bfbc0cf311c9",
+        "status.json": "3d1768dd74783ba789e1159f48041f789b672a73033f41e610d01fe1b5d16104"
+      }
+    },
+    "kather_s37_constrained": {
+      "pid": 397039,
+      "artifacts": {
+        "manifest.json": "73f975733fb0f40fcdc3237db3b20f14217b62fbf3cf983d63b42054eb4c13a7",
+        "result.json": "55619bb6fca981c1a1578afd4172abbe4d9f565c5a9aa8ea8ea6880a37b5edb6",
+        "status.json": "6f921726d2d50b024302e31c6a24be73d11b1abde2bb9ea5ad643b01d0ad8781"
+      }
+    },
+    "blood_s37_fixed": {
+      "pid": 397063,
+      "artifacts": {
+        "manifest.json": "b1c252b769f1430dbe7d2659dc04f6a51c8a4a50f06213afc73edaf27710a9ed",
+        "result.json": "a16a5e9ed42a57a9316d524878df9604cb6864360cfd9d60a8805880d5542cba",
+        "status.json": "15e5fd5946a5c1afeffdcd536bf51b51278495c0f43e20ce42c803f12f0e670b"
+      }
+    },
+    "blood_s37_continuous": {
+      "pid": 401149,
+      "artifacts": {
+        "manifest.json": "b1d0a69b715afe39bb43b845ea046c559d2133d027dd97a3db38a56935b8f97a",
+        "result.json": "7ca0ed11292907ff4ce5f81728255e08585e2663f7ea3a08f0dd52eeda0f3640",
+        "status.json": "8989e00e672d7d8dc52b704d85fa78e32ecaa9850092ae995285e3d66775ecf7"
+      }
+    },
+    "blood_s37_constrained": {
+      "pid": 397045,
+      "artifacts": {
+        "manifest.json": "95b1d492de5443cd99c101db7304005eb488cad62b85a07e5fc7aab19157b821",
+        "result.json": "96d22b5524a9a032f33116d833375de55da2bfc9d85e2aa7e4ffff7a865aa584",
+        "status.json": "58ab5f8d4fbfffc08a8500821297cbb4021bd0e4c7b210ec062e3fa711bab53f"
+      }
+    },
+    "kather_s53_constrained": {
+      "pid": 397074,
+      "artifacts": {
+        "manifest.json": "9aa6ad8a8cba9d03d98aa35c230aedbee323ba1f3fc8234018502dff2e2dc6ba",
+        "result.json": "c0c66b147ff83350bf1d77913adef4cf372795e022db7c061c6c73eb2dcdba83",
+        "status.json": "518b61d541c5bc722d1eaa3d7d2a7ea8359055eacb9e7865e2f8bb4b95ad2be9"
+      }
+    },
+    "kather_s53_continuous": {
+      "pid": 398770,
+      "artifacts": {
+        "manifest.json": "7576e4143837cce8ed103d2ffabfa778ce945e49958a57127398d97bf88a1305",
+        "result.json": "d16d043547feaf2d43cb1c8fa67daa5f1dc0ef28d19a097e54015635be115bfc",
+        "status.json": "076013785c96620f2359de74260fe8271a585babcee6a1d5d843452993ee9139"
+      }
+    },
+    "kather_s53_fixed": {
+      "pid": 397051,
+      "artifacts": {
+        "manifest.json": "9867cd5990b989b11a9810845fe569dff8b670641de44c475136426bdb58feaf",
+        "result.json": "d2c0b5b5186b5a15b519dbe7678c4a610d9a411a98bcd24726cd4d51974c198d",
+        "status.json": "95e914e441559ff4cd4c1b64f049589a08c373bac3c966f43e1ed0a1d6b4982c"
+      }
+    },
+    "blood_s53_constrained": {
+      "pid": 397080,
+      "artifacts": {
+        "manifest.json": "4aa86877916214b881b0f19fd7bdb7b686dea0dc140b1dc2c830139e613f180c",
+        "result.json": "456767d667a293c501179066b778ac50803c31eaef8559f8caf378089cee4f0d",
+        "status.json": "85c2b308a091daf00365b1480fb9fd5ddb2f00d8813cf85de229e2634e23e40c"
+      }
+    },
+    "blood_s53_continuous": {
+      "pid": 401521,
+      "artifacts": {
+        "manifest.json": "07131123ee7e042a9c8e2204b855ae61e972fb92bf771020bf10ed3cb0c75eb6",
+        "result.json": "a9fbaa8edd46dad9e1887c9cde209cbb1ed9724dd42280def737342463b9eca3",
+        "status.json": "631c622a65cbd44cb98a314f8170152f628fd6e57a4f03c565c966c8264bd09c"
+      }
+    },
+    "blood_s53_fixed": {
+      "pid": 397057,
+      "artifacts": {
+        "manifest.json": "3ca5dc09f8a5cce755908359bef399e7e5cce2b2359f6d5f52352626484d3637",
+        "result.json": "d01be21a684fd8053eb5bc365b159be52c32b5e0515cba0c04590a7fc181286c",
+        "status.json": "39bba389d903f820cda4cf75cbd826c7169736165181e37ac6c93076856e1bb1"
+      }
+    }
+  }
+}

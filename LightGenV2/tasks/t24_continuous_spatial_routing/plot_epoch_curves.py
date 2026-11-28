@@ -15,7 +15,7 @@ from .compare import DATASETS, read_json, require
 
 
 MODES = {'fixed': 'Four fixed corners', 'continuous': 'Two free peaks',
-         'constrained': 'Footprint-constrained pair'}
+         'constrained': 'Constrained pair'}
 SEEDS = (37, 53)
 TRAIN_COLOR, TEST_COLOR = '#247D73', '#AC521F'
 VAL_COLOR, LOSS_COLOR = '#405577', '#575A61'
@@ -147,8 +147,8 @@ def draw(title, runs, out):
         if i == 1:
             loss.set_xlabel('Epoch')
     fig.suptitle(f'{title}   |   Eight-epoch routing comparison', fontsize=16, fontweight='semibold', y=.973)
-    handles = [Line2D([], [], color=TRAIN_COLOR, label='Companion TRAIN'),
-               Line2D([], [], color=TEST_COLOR, ls='--', label='Companion TEST'),
+    handles = [Line2D([], [], color=TRAIN_COLOR, label='Replay TRAIN'),
+               Line2D([], [], color=TEST_COLOR, ls='--', label='Replay TEST'),
                Line2D([], [], color=VAL_COLOR, ls=':', label='Original VAL'),
                Line2D([], [], ls='', marker='*', color='#181818', markersize=10, label='Original locked TEST'),
                Line2D([], [], ls='', marker='D', color='#181818', mfc='none', markersize=6, label='Original final TEST¹'),
@@ -156,10 +156,10 @@ def draw(title, runs, out):
     fig.legend(handles=handles, loc='upper center', bbox_to_anchor=(.5, .94), ncol=6, frameon=False,
                columnspacing=1, handlelength=1.9, fontsize=8)
     verified = sum(r['trajectory_status'] == 'matched_all_observable_checks' for r in runs)
-    fig.text(.095, .032, 'TRAIN and TEST lines use full splits measured after each companion epoch. '
+    fig.text(.095, .032, 'TRAIN and TEST lines use full splits measured after each replay epoch. '
              'Stars show original checkpoints selected by validation.', fontsize=8.5)
     fig.text(.095, .015, f'¹ Final original checkpoint re-evaluated if different from the selected epoch. '
-             f'Companion runs matching all observable checks: {verified}/{len(runs)}.',
+             f'Replays matching all observable checks: {verified}/{len(runs)}.',
              fontsize=8.5)
     svg = out.with_suffix('.svg')
     fig.savefig(svg, metadata={'Date': None})

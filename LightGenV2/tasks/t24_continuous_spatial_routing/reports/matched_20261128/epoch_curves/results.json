@@ -1,0 +1,4104 @@
+{
+  "loss_definition": "Original sample-weighted mean minibatch training objective during updates.",
+  "accuracy_definition": "Each companion point evaluates a whole split at its end-of-epoch weights.",
+  "locked_test_definition": "Original TEST correctness at the original best VAL-selected checkpoint.",
+  "plot_script_sha256": "d7986fea47672a3bf853b923d883f6af5231da8cc0f47cd492f6e9e012e9f639",
+  "datasets": {
+    "kather": [
+      {
+        "mode": "fixed",
+        "seed": 37,
+        "run": "kather_s37_fixed",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "e484377a5c9ded3c4a89415af69f0ac223446e4ed11d3b9d65c6cac9d5dd1ee8",
+          "history.json": "5b19c37358b44a7798d5898a9f4ce690df868020c412898bf265025ac55e5d82",
+          "selection_lock.json": "91d4b72ba8a519dab3705f92ad60249c09ec43127e75b3bd1af1b98bd95b527c",
+          "result.json": "e6b0645861620f160b22ea5516be4923dedea7d660847f867db6876cdafe1f96",
+          "best_checkpoint.pt": "0b179f2738c492085b03049ff7d5ea6ff7225e5c7b0ee367c673d6a6ca5f441f",
+          "last_checkpoint.pt": "0ed0049b0bd6e81018ad982c1b5441c0294144a289f31b489f9162db1218b03d",
+          "predictions_test.npz": "3b1dbadf0fb4420c670d7c640de7fa5841deb8c1ef320756c8f772b913739bc1"
+        },
+        "companion_sha256": {
+          "result.json": "e0b662889add985116550d86f94f8eda845b57184a1161696c57983fe638c8fc"
+        },
+        "original_split_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+        "original_initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+        "selected_epoch": 7,
+        "trajectory_status": "diverged_seeded_replay",
+        "original_locked_test": {
+          "n": 752,
+          "correct": 495,
+          "accuracy_percent": 65.82446808510637
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.7713245941790619,
+            "original_val": {
+              "n": 752,
+              "correct": 313,
+              "accuracy_percent": 41.62234042553192
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1363,
+              "accuracy_percent": 38.98741418764302
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 313,
+              "accuracy_percent": 41.62234042553192
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 279,
+              "accuracy_percent": 37.101063829787236
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1363,
+              "accuracy_percent": 38.98741418764302
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 279,
+              "accuracy_percent": 37.101063829787236
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.506686352483195,
+            "original_val": {
+              "n": 752,
+              "correct": 380,
+              "accuracy_percent": 50.53191489361703
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1796,
+              "accuracy_percent": 51.37299771167048
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 380,
+              "accuracy_percent": 50.53191489361703
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 364,
+              "accuracy_percent": 48.40425531914894
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1796,
+              "accuracy_percent": 51.37299771167048
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 364,
+              "accuracy_percent": 48.40425531914894
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.2803195281214246,
+            "original_val": {
+              "n": 752,
+              "correct": 367,
+              "accuracy_percent": 48.8031914893617
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1772,
+              "accuracy_percent": 50.68649885583524
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 367,
+              "accuracy_percent": 48.8031914893617
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 370,
+              "accuracy_percent": 49.202127659574465
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1772,
+              "accuracy_percent": 50.68649885583524
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 370,
+              "accuracy_percent": 49.202127659574465
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 1.158793364291333,
+            "original_val": {
+              "n": 752,
+              "correct": 385,
+              "accuracy_percent": 51.196808510638306
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1848,
+              "accuracy_percent": 52.8604118993135
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 385,
+              "accuracy_percent": 51.196808510638306
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 377,
+              "accuracy_percent": 50.13297872340425
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1848,
+              "accuracy_percent": 52.8604118993135
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 377,
+              "accuracy_percent": 50.13297872340425
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 1.0814875203357408,
+            "original_val": {
+              "n": 752,
+              "correct": 442,
+              "accuracy_percent": 58.77659574468085
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2134,
+              "accuracy_percent": 61.04118993135012
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 442,
+              "accuracy_percent": 58.77659574468085
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 416,
+              "accuracy_percent": 55.319148936170215
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2134,
+              "accuracy_percent": 61.04118993135012
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 416,
+              "accuracy_percent": 55.319148936170215
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 1.0375221653988487,
+            "original_val": {
+              "n": 752,
+              "correct": 422,
+              "accuracy_percent": 56.11702127659575
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2158,
+              "accuracy_percent": 61.72768878718535
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 422,
+              "accuracy_percent": 56.11702127659575
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 422,
+              "accuracy_percent": 56.11702127659575
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2158,
+              "accuracy_percent": 61.72768878718535
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 422,
+              "accuracy_percent": 56.11702127659575
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 1.0018873411130578,
+            "original_val": {
+              "n": 752,
+              "correct": 479,
+              "accuracy_percent": 63.696808510638306
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2389,
+              "accuracy_percent": 68.33524027459954
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 479,
+              "accuracy_percent": 63.696808510638306
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 495,
+              "accuracy_percent": 65.82446808510637
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2389,
+              "accuracy_percent": 68.33524027459954
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 495,
+              "accuracy_percent": 65.82446808510637
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.9869220655079018,
+            "original_val": {
+              "n": 752,
+              "correct": 435,
+              "accuracy_percent": 57.84574468085106
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2176,
+              "accuracy_percent": 62.24256292906178
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 435,
+              "accuracy_percent": 57.84574468085106
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 433,
+              "accuracy_percent": 57.579787234042556
+            },
+            "direct_or_replay_sources": {
+              "train": "original_last_direct_evaluation",
+              "val": "original_logged_validation",
+              "test": "original_last_direct_evaluation"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2176,
+              "accuracy_percent": 62.24256292906178
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 433,
+              "accuracy_percent": 57.579787234042556
+            }
+          }
+        ]
+      },
+      {
+        "mode": "continuous",
+        "seed": 37,
+        "run": "kather_s37_continuous",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "06bfa3e9aded3f2656f7922ad25a5c4b09c5af5528abaeecb2c4b4c7d13c84f5",
+          "history.json": "8bd1199afb65d2e1a78b73176c8e8c4b8f39888ef0bffb875b565ac64e9ce90e",
+          "selection_lock.json": "f13d9d87fbf27d3ba16226aea8eb81b079fd159f2355a16d94562e4554d72fe5",
+          "result.json": "711537fd66024c00f392c1453669a9e0b205e7f06a8bb67646f885644d3b0ab9",
+          "best_checkpoint.pt": "def286baeaf2898b3d1059d17ad941d6bc7e1275192520c56ef04b1e69772ea8",
+          "last_checkpoint.pt": "9d69ce7bdea7fa22855d1f5b71a6e1b1910853e479e1f672bb6016603a73b0b6",
+          "predictions_test.npz": "6e63c2f083f5d1bc62b89442614bd0fe91cfcc0692e09de3f05ce76bc638ad43"
+        },
+        "companion_sha256": {
+          "result.json": "5d678d2b3b612d0fd47d212bc5485d32be8fb54ccbbbf2833079bfbc0cf311c9"
+        },
+        "original_split_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+        "original_initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+        "selected_epoch": 8,
+        "trajectory_status": "diverged_seeded_replay",
+        "original_locked_test": {
+          "n": 752,
+          "correct": 414,
+          "accuracy_percent": 55.053191489361694
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.5908732468803632,
+            "original_val": {
+              "n": 752,
+              "correct": 331,
+              "accuracy_percent": 44.015957446808514
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1580,
+              "accuracy_percent": 45.19450800915332
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 331,
+              "accuracy_percent": 44.015957446808514
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 312,
+              "accuracy_percent": 41.48936170212766
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1580,
+              "accuracy_percent": 45.19450800915332
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 312,
+              "accuracy_percent": 41.48936170212766
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.3790724555742278,
+            "original_val": {
+              "n": 752,
+              "correct": 371,
+              "accuracy_percent": 49.33510638297872
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1764,
+              "accuracy_percent": 50.45766590389016
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 371,
+              "accuracy_percent": 49.33510638297872
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 354,
+              "accuracy_percent": 47.07446808510639
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1764,
+              "accuracy_percent": 50.45766590389016
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 354,
+              "accuracy_percent": 47.07446808510639
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.3787766375858124,
+            "original_val": {
+              "n": 752,
+              "correct": 361,
+              "accuracy_percent": 48.005319148936174
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1652,
+              "accuracy_percent": 47.254004576659035
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 361,
+              "accuracy_percent": 48.005319148936174
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 332,
+              "accuracy_percent": 44.148936170212764
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1652,
+              "accuracy_percent": 47.254004576659035
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 332,
+              "accuracy_percent": 44.148936170212764
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 1.2759034879147597,
+            "original_val": {
+              "n": 752,
+              "correct": 394,
+              "accuracy_percent": 52.3936170212766
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1838,
+              "accuracy_percent": 52.574370709382144
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 394,
+              "accuracy_percent": 52.3936170212766
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 361,
+              "accuracy_percent": 48.005319148936174
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1838,
+              "accuracy_percent": 52.574370709382144
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 361,
+              "accuracy_percent": 48.005319148936174
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 1.2075793093893021,
+            "original_val": {
+              "n": 752,
+              "correct": 399,
+              "accuracy_percent": 53.058510638297875
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2009,
+              "accuracy_percent": 57.465675057208244
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 399,
+              "accuracy_percent": 53.058510638297875
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 383,
+              "accuracy_percent": 50.930851063829785
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2009,
+              "accuracy_percent": 57.465675057208244
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 383,
+              "accuracy_percent": 50.930851063829785
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 1.1784042253647025,
+            "original_val": {
+              "n": 752,
+              "correct": 398,
+              "accuracy_percent": 52.92553191489362
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1991,
+              "accuracy_percent": 56.95080091533181
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 394,
+              "accuracy_percent": 52.3936170212766
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 396,
+              "accuracy_percent": 52.659574468085104
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1991,
+              "accuracy_percent": 56.95080091533181
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 396,
+              "accuracy_percent": 52.659574468085104
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 1.1198137575756222,
+            "original_val": {
+              "n": 752,
+              "correct": 397,
+              "accuracy_percent": 52.79255319148937
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2069,
+              "accuracy_percent": 59.18192219679634
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 405,
+              "accuracy_percent": 53.8563829787234
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 408,
+              "accuracy_percent": 54.25531914893617
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2069,
+              "accuracy_percent": 59.18192219679634
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 408,
+              "accuracy_percent": 54.25531914893617
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 1.0945883604700015,
+            "original_val": {
+              "n": 752,
+              "correct": 402,
+              "accuracy_percent": 53.45744680851063
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2089,
+              "accuracy_percent": 59.754004576659035
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 407,
+              "accuracy_percent": 54.12234042553191
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 430,
+              "accuracy_percent": 57.180851063829785
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2075,
+              "accuracy_percent": 59.35354691075515
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 414,
+              "accuracy_percent": 55.053191489361694
+            }
+          }
+        ]
+      },
+      {
+        "mode": "constrained",
+        "seed": 37,
+        "run": "kather_s37_constrained",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "770e39222455195e7b5d09537a1684fe4d1bde70f607527031be172596d43a8e",
+          "history.json": "2c5845bd53b92511852f79a4650c275baa06b15746b4a1d7e9220d16e0d5e0f2",
+          "selection_lock.json": "4ca015732f3863a623d3142cd58b5b68386a64604662d1765577cf160d9c573e",
+          "result.json": "2b1114234252581d7930636f92a03cda06eac74eaebe907dc195e23dfd3e56c0",
+          "best_checkpoint.pt": "1d7c064bcce9d09b6253903991582730ecb28d3df99be1b3765f7a3ffead874b",
+          "last_checkpoint.pt": "653979fb6895a9794105d2c32d0462f4c7c1709c9b8adc6d472daa41040eaba7",
+          "predictions_test.npz": "45e331a417a65825e96347742471371751da598c93192a0a7b323be66d6539bc"
+        },
+        "companion_sha256": {
+          "result.json": "55619bb6fca981c1a1578afd4172abbe4d9f565c5a9aa8ea8ea6880a37b5edb6"
+        },
+        "original_split_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+        "original_initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+        "selected_epoch": 8,
+        "trajectory_status": "diverged_seeded_replay",
+        "original_locked_test": {
+          "n": 752,
+          "correct": 416,
+          "accuracy_percent": 55.319148936170215
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.5755852670909611,
+            "original_val": {
+              "n": 752,
+              "correct": 274,
+              "accuracy_percent": 36.43617021276596
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1365,
+              "accuracy_percent": 39.044622425629285
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 274,
+              "accuracy_percent": 36.43617021276596
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 282,
+              "accuracy_percent": 37.5
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1365,
+              "accuracy_percent": 39.044622425629285
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 282,
+              "accuracy_percent": 37.5
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.3600979244136155,
+            "original_val": {
+              "n": 752,
+              "correct": 366,
+              "accuracy_percent": 48.67021276595745
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1795,
+              "accuracy_percent": 51.34439359267735
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 366,
+              "accuracy_percent": 48.67021276595745
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 367,
+              "accuracy_percent": 48.8031914893617
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1795,
+              "accuracy_percent": 51.34439359267735
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 367,
+              "accuracy_percent": 48.8031914893617
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.246270151378361,
+            "original_val": {
+              "n": 752,
+              "correct": 370,
+              "accuracy_percent": 49.202127659574465
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1883,
+              "accuracy_percent": 53.86155606407323
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 370,
+              "accuracy_percent": 49.202127659574465
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 404,
+              "accuracy_percent": 53.72340425531915
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1883,
+              "accuracy_percent": 53.86155606407323
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 404,
+              "accuracy_percent": 53.72340425531915
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 1.1505746383143236,
+            "original_val": {
+              "n": 752,
+              "correct": 408,
+              "accuracy_percent": 54.25531914893617
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2044,
+              "accuracy_percent": 58.46681922196796
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 408,
+              "accuracy_percent": 54.25531914893617
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 431,
+              "accuracy_percent": 57.31382978723404
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2044,
+              "accuracy_percent": 58.46681922196796
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 431,
+              "accuracy_percent": 57.31382978723404
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 1.1252552442747068,
+            "original_val": {
+              "n": 752,
+              "correct": 429,
+              "accuracy_percent": 57.047872340425535
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2170,
+              "accuracy_percent": 62.07093821510298
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 428,
+              "accuracy_percent": 56.91489361702128
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 441,
+              "accuracy_percent": 58.6436170212766
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2170,
+              "accuracy_percent": 62.07093821510298
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 441,
+              "accuracy_percent": 58.6436170212766
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 1.080956430675236,
+            "original_val": {
+              "n": 752,
+              "correct": 420,
+              "accuracy_percent": 55.85106382978723
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2100,
+              "accuracy_percent": 60.068649885583525
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 423,
+              "accuracy_percent": 56.25
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 411,
+              "accuracy_percent": 54.65425531914894
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2100,
+              "accuracy_percent": 60.068649885583525
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 411,
+              "accuracy_percent": 54.65425531914894
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 1.0519472728877646,
+            "original_val": {
+              "n": 752,
+              "correct": 429,
+              "accuracy_percent": 57.047872340425535
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2265,
+              "accuracy_percent": 64.7883295194508
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 434,
+              "accuracy_percent": 57.71276595744681
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 442,
+              "accuracy_percent": 58.77659574468085
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2265,
+              "accuracy_percent": 64.7883295194508
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 442,
+              "accuracy_percent": 58.77659574468085
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 1.0531615512594752,
+            "original_val": {
+              "n": 752,
+              "correct": 457,
+              "accuracy_percent": 60.77127659574468
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2220,
+              "accuracy_percent": 63.50114416475973
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 459,
+              "accuracy_percent": 61.03723404255319
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 419,
+              "accuracy_percent": 55.71808510638297
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2211,
+              "accuracy_percent": 63.24370709382151
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 416,
+              "accuracy_percent": 55.319148936170215
+            }
+          }
+        ]
+      },
+      {
+        "mode": "fixed",
+        "seed": 53,
+        "run": "kather_s53_fixed",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "d900d471275e640686c07d79870413b1309f987e11e44bd3f03ca0b85a189cda",
+          "history.json": "c11ddb9b5800ee10a4c06cdca5d20c18a22763febba33a990a78b3a0ab88478c",
+          "selection_lock.json": "6316c994d3ed0620e04de1393ee9322e9dd1275db0c07a4821afd9a0c490bbc3",
+          "result.json": "bcc1201c6da2716e3930914f1553caddc62319f2b638c0a0b39126610b2cf235",
+          "best_checkpoint.pt": "caf145d2b7432bae401f658cd18ff08042c4fe0dade0ffe8cfadbcb1bccb679b",
+          "last_checkpoint.pt": "9ba6a41f656112ce1d2a4f40356627ca58f2dcf9008078b3e3f76e9b6c7e5556",
+          "predictions_test.npz": "4daff116865416f30f0828041757ffc957822c1891c906dcc57de1dffc52b708"
+        },
+        "companion_sha256": {
+          "result.json": "d2c0b5b5186b5a15b519dbe7678c4a610d9a411a98bcd24726cd4d51974c198d"
+        },
+        "original_split_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+        "original_initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+        "selected_epoch": 7,
+        "trajectory_status": "matched_all_observable_checks",
+        "original_locked_test": {
+          "n": 752,
+          "correct": 456,
+          "accuracy_percent": 60.63829787234043
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.796235318042048,
+            "original_val": {
+              "n": 752,
+              "correct": 302,
+              "accuracy_percent": 40.159574468085104
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1417,
+              "accuracy_percent": 40.53203661327231
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 302,
+              "accuracy_percent": 40.159574468085104
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 297,
+              "accuracy_percent": 39.494680851063826
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1417,
+              "accuracy_percent": 40.53203661327231
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 297,
+              "accuracy_percent": 39.494680851063826
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.4578506853815074,
+            "original_val": {
+              "n": 752,
+              "correct": 324,
+              "accuracy_percent": 43.08510638297872
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1481,
+              "accuracy_percent": 42.36270022883295
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 324,
+              "accuracy_percent": 43.08510638297872
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 297,
+              "accuracy_percent": 39.494680851063826
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1481,
+              "accuracy_percent": 42.36270022883295
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 297,
+              "accuracy_percent": 39.494680851063826
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.2794463203482551,
+            "original_val": {
+              "n": 752,
+              "correct": 372,
+              "accuracy_percent": 49.46808510638298
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1780,
+              "accuracy_percent": 50.91533180778032
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 372,
+              "accuracy_percent": 49.46808510638298
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 363,
+              "accuracy_percent": 48.27127659574468
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1780,
+              "accuracy_percent": 50.91533180778032
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 363,
+              "accuracy_percent": 48.27127659574468
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 1.144777206316147,
+            "original_val": {
+              "n": 752,
+              "correct": 382,
+              "accuracy_percent": 50.797872340425535
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1855,
+              "accuracy_percent": 53.060640732265455
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 382,
+              "accuracy_percent": 50.797872340425535
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 381,
+              "accuracy_percent": 50.66489361702128
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1855,
+              "accuracy_percent": 53.060640732265455
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 381,
+              "accuracy_percent": 50.66489361702128
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 1.0824036761879647,
+            "original_val": {
+              "n": 752,
+              "correct": 383,
+              "accuracy_percent": 50.930851063829785
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1888,
+              "accuracy_percent": 54.004576659038904
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 383,
+              "accuracy_percent": 50.930851063829785
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 388,
+              "accuracy_percent": 51.59574468085106
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1888,
+              "accuracy_percent": 54.004576659038904
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 388,
+              "accuracy_percent": 51.59574468085106
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 1.0370370965254934,
+            "original_val": {
+              "n": 752,
+              "correct": 407,
+              "accuracy_percent": 54.12234042553191
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2044,
+              "accuracy_percent": 58.46681922196796
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 407,
+              "accuracy_percent": 54.12234042553191
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 400,
+              "accuracy_percent": 53.191489361702125
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2044,
+              "accuracy_percent": 58.46681922196796
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 400,
+              "accuracy_percent": 53.191489361702125
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 0.989732057060748,
+            "original_val": {
+              "n": 752,
+              "correct": 466,
+              "accuracy_percent": 61.96808510638297
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2349,
+              "accuracy_percent": 67.19107551487414
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 466,
+              "accuracy_percent": 61.96808510638297
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 456,
+              "accuracy_percent": 60.63829787234043
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2349,
+              "accuracy_percent": 67.19107551487414
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 456,
+              "accuracy_percent": 60.63829787234043
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.952072806980299,
+            "original_val": {
+              "n": 752,
+              "correct": 459,
+              "accuracy_percent": 61.03723404255319
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2278,
+              "accuracy_percent": 65.16018306636155
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 459,
+              "accuracy_percent": 61.03723404255319
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 441,
+              "accuracy_percent": 58.6436170212766
+            },
+            "direct_or_replay_sources": {
+              "train": "original_last_direct_evaluation",
+              "val": "original_logged_validation",
+              "test": "original_last_direct_evaluation"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2278,
+              "accuracy_percent": 65.16018306636155
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 441,
+              "accuracy_percent": 58.6436170212766
+            }
+          }
+        ]
+      },
+      {
+        "mode": "continuous",
+        "seed": 53,
+        "run": "kather_s53_continuous",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "d10f5b9763e290485583a82de568c1f07a60620fbe7d5cc5a87dbf1fda01c85c",
+          "history.json": "4c9c127176d3ae1180841555d14b82e6a3fadf6c1c9c6f25721e3aaab2c764d0",
+          "selection_lock.json": "6a037c44379562beaa3b19df6f9f78d1b9c89629b781c3922c71925bc3dd6dc0",
+          "result.json": "0dcc06cfec8ad26ba209b5885184dcdbefb8570426df845b20925a933a42a8a9",
+          "best_checkpoint.pt": "73f48b7c5f5b71c92b9d4a77e4e4ad3715b2049b1cf9c3a205d1e18871d9ce7a",
+          "last_checkpoint.pt": "7e8faff8d62bd64591e2df83088a21237757db1e5be2367eec1d68e23f55c343",
+          "predictions_test.npz": "522ad428274b1ee3c46a616cc8b4bd46cc67154a095c9fdd772c97cc2581c490"
+        },
+        "companion_sha256": {
+          "result.json": "d16d043547feaf2d43cb1c8fa67daa5f1dc0ef28d19a097e54015635be115bfc"
+        },
+        "original_split_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+        "original_initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+        "selected_epoch": 7,
+        "trajectory_status": "matched_all_observable_checks",
+        "original_locked_test": {
+          "n": 752,
+          "correct": 405,
+          "accuracy_percent": 53.8563829787234
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.6058837052613701,
+            "original_val": {
+              "n": 752,
+              "correct": 332,
+              "accuracy_percent": 44.148936170212764
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1615,
+              "accuracy_percent": 46.19565217391305
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 332,
+              "accuracy_percent": 44.148936170212764
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 334,
+              "accuracy_percent": 44.41489361702128
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1615,
+              "accuracy_percent": 46.19565217391305
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 334,
+              "accuracy_percent": 44.41489361702128
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.3579246817791761,
+            "original_val": {
+              "n": 752,
+              "correct": 352,
+              "accuracy_percent": 46.808510638297875
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1650,
+              "accuracy_percent": 47.19679633867277
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 352,
+              "accuracy_percent": 46.808510638297875
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 348,
+              "accuracy_percent": 46.27659574468085
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1650,
+              "accuracy_percent": 47.19679633867277
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 348,
+              "accuracy_percent": 46.27659574468085
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.378898428561213,
+            "original_val": {
+              "n": 752,
+              "correct": 318,
+              "accuracy_percent": 42.28723404255319
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1528,
+              "accuracy_percent": 43.7070938215103
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 318,
+              "accuracy_percent": 42.28723404255319
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 309,
+              "accuracy_percent": 41.090425531914896
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1528,
+              "accuracy_percent": 43.7070938215103
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 309,
+              "accuracy_percent": 41.090425531914896
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 1.304899237521453,
+            "original_val": {
+              "n": 752,
+              "correct": 363,
+              "accuracy_percent": 48.27127659574468
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1781,
+              "accuracy_percent": 50.943935926773456
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 363,
+              "accuracy_percent": 48.27127659574468
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 361,
+              "accuracy_percent": 48.005319148936174
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1781,
+              "accuracy_percent": 50.943935926773456
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 361,
+              "accuracy_percent": 48.005319148936174
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 1.23803096395881,
+            "original_val": {
+              "n": 752,
+              "correct": 392,
+              "accuracy_percent": 52.12765957446809
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1935,
+              "accuracy_percent": 55.348970251716246
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 392,
+              "accuracy_percent": 52.12765957446809
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 363,
+              "accuracy_percent": 48.27127659574468
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1935,
+              "accuracy_percent": 55.348970251716246
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 363,
+              "accuracy_percent": 48.27127659574468
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 1.186895095510941,
+            "original_val": {
+              "n": 752,
+              "correct": 353,
+              "accuracy_percent": 46.941489361702125
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1680,
+              "accuracy_percent": 48.05491990846682
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 353,
+              "accuracy_percent": 46.941489361702125
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 305,
+              "accuracy_percent": 40.558510638297875
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1680,
+              "accuracy_percent": 48.05491990846682
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 305,
+              "accuracy_percent": 40.558510638297875
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 1.1589515389239489,
+            "original_val": {
+              "n": 752,
+              "correct": 424,
+              "accuracy_percent": 56.38297872340425
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2138,
+              "accuracy_percent": 61.15560640732265
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 424,
+              "accuracy_percent": 56.38297872340425
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 405,
+              "accuracy_percent": 53.8563829787234
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2138,
+              "accuracy_percent": 61.15560640732265
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 405,
+              "accuracy_percent": 53.8563829787234
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 1.0956288213315217,
+            "original_val": {
+              "n": 752,
+              "correct": 400,
+              "accuracy_percent": 53.191489361702125
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2003,
+              "accuracy_percent": 57.294050343249424
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 400,
+              "accuracy_percent": 53.191489361702125
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 388,
+              "accuracy_percent": 51.59574468085106
+            },
+            "direct_or_replay_sources": {
+              "train": "original_last_direct_evaluation",
+              "val": "original_logged_validation",
+              "test": "original_last_direct_evaluation"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2003,
+              "accuracy_percent": 57.294050343249424
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 388,
+              "accuracy_percent": 51.59574468085106
+            }
+          }
+        ]
+      },
+      {
+        "mode": "constrained",
+        "seed": 53,
+        "run": "kather_s53_constrained",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "65606d509be963085ecf308f91016d9e497b87fa128f7e6ce5b256239f710419",
+          "history.json": "6a091e8022bac169574ba94dd9878faeef4dabb52d3446f2bdf53986097ea241",
+          "selection_lock.json": "1fde25a2f7065474b3352f6abe68c41849dadd60253662cb15cbe77c660633a1",
+          "result.json": "6255dca171046ee84bbf76f9012dad4f5bd12b6fab9af86607a4a5d3884e9f7f",
+          "best_checkpoint.pt": "86c68f96b3935425d4fbb50315a6f97cfdca1c2c0500462e2bb6a0774d0e6253",
+          "last_checkpoint.pt": "860fa0f86fafdae3e74c9c52e74d5d08c14708cac38101508b006382b4117fa8",
+          "predictions_test.npz": "0d50322cff34c404d7a1a5ad94ffb5b2d0fa225a667638550173e4ba6fae7835"
+        },
+        "companion_sha256": {
+          "result.json": "c0c66b147ff83350bf1d77913adef4cf372795e022db7c061c6c73eb2dcdba83"
+        },
+        "original_split_manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+        "original_initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+        "selected_epoch": 8,
+        "trajectory_status": "matched_all_observable_checks",
+        "original_locked_test": {
+          "n": 752,
+          "correct": 470,
+          "accuracy_percent": 62.5
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.605916806707666,
+            "original_val": {
+              "n": 752,
+              "correct": 352,
+              "accuracy_percent": 46.808510638297875
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1606,
+              "accuracy_percent": 45.93821510297483
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 352,
+              "accuracy_percent": 46.808510638297875
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 318,
+              "accuracy_percent": 42.28723404255319
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1606,
+              "accuracy_percent": 45.93821510297483
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 318,
+              "accuracy_percent": 42.28723404255319
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.3344450018771452,
+            "original_val": {
+              "n": 752,
+              "correct": 366,
+              "accuracy_percent": 48.67021276595745
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1780,
+              "accuracy_percent": 50.91533180778032
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 366,
+              "accuracy_percent": 48.67021276595745
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 350,
+              "accuracy_percent": 46.54255319148936
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1780,
+              "accuracy_percent": 50.91533180778032
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 350,
+              "accuracy_percent": 46.54255319148936
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.2490175714209095,
+            "original_val": {
+              "n": 752,
+              "correct": 322,
+              "accuracy_percent": 42.819148936170215
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1607,
+              "accuracy_percent": 45.96681922196797
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 322,
+              "accuracy_percent": 42.819148936170215
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 335,
+              "accuracy_percent": 44.547872340425535
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1607,
+              "accuracy_percent": 45.96681922196797
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 335,
+              "accuracy_percent": 44.547872340425535
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 1.1799863906965102,
+            "original_val": {
+              "n": 752,
+              "correct": 405,
+              "accuracy_percent": 53.8563829787234
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1931,
+              "accuracy_percent": 55.23455377574371
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 405,
+              "accuracy_percent": 53.8563829787234
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 386,
+              "accuracy_percent": 51.329787234042556
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1931,
+              "accuracy_percent": 55.23455377574371
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 386,
+              "accuracy_percent": 51.329787234042556
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 1.1268801481827446,
+            "original_val": {
+              "n": 752,
+              "correct": 397,
+              "accuracy_percent": 52.79255319148937
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 1966,
+              "accuracy_percent": 56.235697940503435
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 397,
+              "accuracy_percent": 52.79255319148937
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 388,
+              "accuracy_percent": 51.59574468085106
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 1966,
+              "accuracy_percent": 56.235697940503435
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 388,
+              "accuracy_percent": 51.59574468085106
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 1.1028049914187643,
+            "original_val": {
+              "n": 752,
+              "correct": 394,
+              "accuracy_percent": 52.3936170212766
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2022,
+              "accuracy_percent": 57.837528604118994
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 394,
+              "accuracy_percent": 52.3936170212766
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 387,
+              "accuracy_percent": 51.46276595744681
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2022,
+              "accuracy_percent": 57.837528604118994
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 387,
+              "accuracy_percent": 51.46276595744681
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 1.0409421593428203,
+            "original_val": {
+              "n": 752,
+              "correct": 458,
+              "accuracy_percent": 60.90425531914894
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2357,
+              "accuracy_percent": 67.41990846681922
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 458,
+              "accuracy_percent": 60.90425531914894
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 462,
+              "accuracy_percent": 61.43617021276596
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2357,
+              "accuracy_percent": 67.41990846681922
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 462,
+              "accuracy_percent": 61.43617021276596
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.9948416912855764,
+            "original_val": {
+              "n": 752,
+              "correct": 482,
+              "accuracy_percent": 64.09574468085107
+            },
+            "companion_train": {
+              "n": 3496,
+              "correct": 2334,
+              "accuracy_percent": 66.76201372997713
+            },
+            "companion_val": {
+              "n": 752,
+              "correct": 482,
+              "accuracy_percent": 64.09574468085107
+            },
+            "companion_test": {
+              "n": 752,
+              "correct": 470,
+              "accuracy_percent": 62.5
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 3496,
+              "correct": 2334,
+              "accuracy_percent": 66.76201372997713
+            },
+            "direct_or_replay_test": {
+              "n": 752,
+              "correct": 470,
+              "accuracy_percent": 62.5
+            }
+          }
+        ]
+      }
+    ],
+    "blood": [
+      {
+        "mode": "fixed",
+        "seed": 37,
+        "run": "blood_s37_fixed",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "60757bb1e441d5042df55a446a31bac2289dc50af281dadfb24f6ee0dc22e71e",
+          "history.json": "c34c0efd0046c686ac7eecf1cf821458763b53eed414b78e28d83d7981336f1a",
+          "selection_lock.json": "a614864931bb92aa37769f017d7e001a1c359baa9c44138cd07006733328b8a8",
+          "result.json": "199e72d5e632972f0f663125d8c24ed2d97bcc9f0c8e924ef81809ae11ae4bb9",
+          "best_checkpoint.pt": "935ad85044f1ccc4097fd60b132aea6fab02d519de508b5e4cd9b029ea2927df",
+          "last_checkpoint.pt": "5b62427b7763f39b95d64c0d1f71b70506fdff87bff56dd2f6451ca57b6b085d",
+          "predictions_test.npz": "396d6de849dedd5efcbffe11f0a1532209b549c9da6e857bcf4e30dedb04fa1f"
+        },
+        "companion_sha256": {
+          "result.json": "a16a5e9ed42a57a9316d524878df9604cb6864360cfd9d60a8805880d5542cba"
+        },
+        "original_split_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "original_initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+        "selected_epoch": 7,
+        "trajectory_status": "diverged_seeded_replay",
+        "original_locked_test": {
+          "n": 3421,
+          "correct": 2703,
+          "accuracy_percent": 79.01198479976615
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.431557255921493,
+            "original_val": {
+              "n": 1712,
+              "correct": 1128,
+              "accuracy_percent": 65.88785046728972
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7828,
+              "accuracy_percent": 65.51724137931035
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1128,
+              "accuracy_percent": 65.88785046728972
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2212,
+              "accuracy_percent": 64.65945629932767
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7828,
+              "accuracy_percent": 65.51724137931035
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2212,
+              "accuracy_percent": 64.65945629932767
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.0132418703705641,
+            "original_val": {
+              "n": 1712,
+              "correct": 1144,
+              "accuracy_percent": 66.82242990654206
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7974,
+              "accuracy_percent": 66.73920321392701
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1144,
+              "accuracy_percent": 66.82242990654206
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2273,
+              "accuracy_percent": 66.4425606547793
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7974,
+              "accuracy_percent": 66.73920321392701
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2273,
+              "accuracy_percent": 66.4425606547793
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 0.9035439377929361,
+            "original_val": {
+              "n": 1712,
+              "correct": 1267,
+              "accuracy_percent": 74.0070093457944
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8833,
+              "accuracy_percent": 73.92869099430867
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1267,
+              "accuracy_percent": 74.0070093457944
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2490,
+              "accuracy_percent": 72.78573516515638
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8833,
+              "accuracy_percent": 73.92869099430867
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2490,
+              "accuracy_percent": 72.78573516515638
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 0.8283215712096167,
+            "original_val": {
+              "n": 1712,
+              "correct": 1337,
+              "accuracy_percent": 78.09579439252336
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9338,
+              "accuracy_percent": 78.15533980582524
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1337,
+              "accuracy_percent": 78.09579439252336
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2638,
+              "accuracy_percent": 77.1119555685472
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9338,
+              "accuracy_percent": 78.15533980582524
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2638,
+              "accuracy_percent": 77.1119555685472
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 0.7762221089565199,
+            "original_val": {
+              "n": 1712,
+              "correct": 1300,
+              "accuracy_percent": 75.93457943925233
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9098,
+              "accuracy_percent": 76.146635420154
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1300,
+              "accuracy_percent": 75.93457943925233
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2573,
+              "accuracy_percent": 75.21192633732826
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9098,
+              "accuracy_percent": 76.146635420154
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2573,
+              "accuracy_percent": 75.21192633732826
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 0.7394582252259793,
+            "original_val": {
+              "n": 1712,
+              "correct": 1316,
+              "accuracy_percent": 76.86915887850468
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9064,
+              "accuracy_percent": 75.86206896551724
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1316,
+              "accuracy_percent": 76.86915887850468
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2566,
+              "accuracy_percent": 75.00730780473546
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9064,
+              "accuracy_percent": 75.86206896551724
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2566,
+              "accuracy_percent": 75.00730780473546
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 0.7186139122394961,
+            "original_val": {
+              "n": 1712,
+              "correct": 1360,
+              "accuracy_percent": 79.43925233644859
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9511,
+              "accuracy_percent": 79.60328088382992
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1360,
+              "accuracy_percent": 79.43925233644859
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2703,
+              "accuracy_percent": 79.01198479976615
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9511,
+              "accuracy_percent": 79.60328088382992
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2703,
+              "accuracy_percent": 79.01198479976615
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.6784551497243263,
+            "original_val": {
+              "n": 1712,
+              "correct": 1358,
+              "accuracy_percent": 79.32242990654206
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9522,
+              "accuracy_percent": 79.69534650150652
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1358,
+              "accuracy_percent": 79.32242990654206
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2663,
+              "accuracy_percent": 77.84273604209295
+            },
+            "direct_or_replay_sources": {
+              "train": "original_last_direct_evaluation",
+              "val": "original_logged_validation",
+              "test": "original_last_direct_evaluation"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9522,
+              "accuracy_percent": 79.69534650150652
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2663,
+              "accuracy_percent": 77.84273604209295
+            }
+          }
+        ]
+      },
+      {
+        "mode": "continuous",
+        "seed": 37,
+        "run": "blood_s37_continuous",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "87e1bf8fe4136dd7072076fcdd0db0985f86840e806589831268a6f6337d94c8",
+          "history.json": "513cfbc03dffe683924edfc997319c40cf0c7dcb69a5d848dcf47220770d5337",
+          "selection_lock.json": "6e98779cec3bf258255ab2db004cbfa59ee986418757a13337e1376b6ad88936",
+          "result.json": "b02b94f9729b7f64621fbd26e45470a938e149f48113660cd95cce32195976d0",
+          "best_checkpoint.pt": "1afb1448345ce441c45a0c0e59466b5083ce3772163c889fb61a5db7d629745f",
+          "last_checkpoint.pt": "05f13ff7dde12565cb4e109166a5227fdcbc6e72beb94e84f55f521c5590fa9f",
+          "predictions_test.npz": "f909a2f1a118f51e2f3d293fda37c30108b784e20480a916fedd10c7940259ba"
+        },
+        "companion_sha256": {
+          "result.json": "7ca0ed11292907ff4ce5f81728255e08585e2663f7ea3a08f0dd52eeda0f3640"
+        },
+        "original_split_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "original_initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+        "selected_epoch": 8,
+        "trajectory_status": "diverged_seeded_replay",
+        "original_locked_test": {
+          "n": 3421,
+          "correct": 2575,
+          "accuracy_percent": 75.27038877521193
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.556048214136257,
+            "original_val": {
+              "n": 1712,
+              "correct": 868,
+              "accuracy_percent": 50.70093457943925
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 6224,
+              "accuracy_percent": 52.09240040174088
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 868,
+              "accuracy_percent": 50.70093457943925
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 1756,
+              "accuracy_percent": 51.33002046185325
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 6224,
+              "accuracy_percent": 52.09240040174088
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 1756,
+              "accuracy_percent": 51.33002046185325
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.2515473137502093,
+            "original_val": {
+              "n": 1712,
+              "correct": 1032,
+              "accuracy_percent": 60.280373831775705
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7049,
+              "accuracy_percent": 58.997321727485776
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1032,
+              "accuracy_percent": 60.280373831775705
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2018,
+              "accuracy_percent": 58.988599824612685
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7049,
+              "accuracy_percent": 58.997321727485776
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2018,
+              "accuracy_percent": 58.988599824612685
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.0807973876380985,
+            "original_val": {
+              "n": 1712,
+              "correct": 1179,
+              "accuracy_percent": 68.86682242990653
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8173,
+              "accuracy_percent": 68.40475393371275
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1179,
+              "accuracy_percent": 68.86682242990653
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2310,
+              "accuracy_percent": 67.52411575562701
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8173,
+              "accuracy_percent": 68.40475393371275
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2310,
+              "accuracy_percent": 67.52411575562701
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 0.9688569903174171,
+            "original_val": {
+              "n": 1712,
+              "correct": 1205,
+              "accuracy_percent": 70.38551401869158
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8569,
+              "accuracy_percent": 71.71911617007031
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1205,
+              "accuracy_percent": 70.38551401869158
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2432,
+              "accuracy_percent": 71.09032446653025
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8569,
+              "accuracy_percent": 71.71911617007031
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2432,
+              "accuracy_percent": 71.09032446653025
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 0.8879981384175176,
+            "original_val": {
+              "n": 1712,
+              "correct": 1215,
+              "accuracy_percent": 70.9696261682243
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8491,
+              "accuracy_percent": 71.06628724472715
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1206,
+              "accuracy_percent": 70.44392523364486
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2359,
+              "accuracy_percent": 68.95644548377668
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8491,
+              "accuracy_percent": 71.06628724472715
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2359,
+              "accuracy_percent": 68.95644548377668
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 0.8334999352663626,
+            "original_val": {
+              "n": 1712,
+              "correct": 1219,
+              "accuracy_percent": 71.20327102803739
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8660,
+              "accuracy_percent": 72.48074991630399
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1211,
+              "accuracy_percent": 70.73598130841121
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2448,
+              "accuracy_percent": 71.55802396959953
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8660,
+              "accuracy_percent": 72.48074991630399
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2448,
+              "accuracy_percent": 71.55802396959953
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 0.8018084878222297,
+            "original_val": {
+              "n": 1712,
+              "correct": 1263,
+              "accuracy_percent": 73.7733644859813
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8941,
+              "accuracy_percent": 74.83260796786072
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1263,
+              "accuracy_percent": 73.7733644859813
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2494,
+              "accuracy_percent": 72.9026600409237
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8941,
+              "accuracy_percent": 74.83260796786072
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2494,
+              "accuracy_percent": 72.9026600409237
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.7569486492247657,
+            "original_val": {
+              "n": 1712,
+              "correct": 1306,
+              "accuracy_percent": 76.28504672897196
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9210,
+              "accuracy_percent": 77.08403080013392
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1310,
+              "accuracy_percent": 76.51869158878505
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2573,
+              "accuracy_percent": 75.21192633732826
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9245,
+              "accuracy_percent": 77.37696685637763
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2575,
+              "accuracy_percent": 75.27038877521193
+            }
+          }
+        ]
+      },
+      {
+        "mode": "constrained",
+        "seed": 37,
+        "run": "blood_s37_constrained",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "bd12515c865b1039f7311e13b6951e9c05b61f251cc1a741511fd88e3b7be1d6",
+          "history.json": "4c1bb1ef95098011e4f797c2eb5c11dcab010ccf075d691914acded12b04382a",
+          "selection_lock.json": "6b5174feb433572ba46ef6b894d4f5d1f6a02bae2d4bb7f8e33e54aa4c65c718",
+          "result.json": "4f098105b92a0e43286468444d55ece30eb3b7d47c87afdc4e1c384877da2404",
+          "best_checkpoint.pt": "22cc95cb3bc03f389c01065e0b071a7db3026fffc0f9b2d290513dc443e2be04",
+          "last_checkpoint.pt": "be75ca0d19732cf4d0e4bde50c4d1949ae038ed5bc05d3ffeb88c05ed1cdad23",
+          "predictions_test.npz": "12b8cf22e3d8e0a7773d09f16c6a36e47365b7aca42473b4e8c6bedf8dd01f5a"
+        },
+        "companion_sha256": {
+          "result.json": "96d22b5524a9a032f33116d833375de55da2bfc9d85e2aa7e4ffff7a865aa584"
+        },
+        "original_split_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "original_initial_state_sha256": "69c7d17b2e46130ae52bc9ce2398b20c81e9fce6e50df48a9a58a75ffaac9b6d",
+        "selected_epoch": 8,
+        "trajectory_status": "diverged_seeded_replay",
+        "original_locked_test": {
+          "n": 3421,
+          "correct": 2607,
+          "accuracy_percent": 76.20578778135048
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.5208864061976899,
+            "original_val": {
+              "n": 1712,
+              "correct": 1012,
+              "accuracy_percent": 59.112149532710276
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7178,
+              "accuracy_percent": 60.07700033478407
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1012,
+              "accuracy_percent": 59.112149532710276
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2040,
+              "accuracy_percent": 59.63168664133295
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7178,
+              "accuracy_percent": 60.07700033478407
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2040,
+              "accuracy_percent": 59.63168664133295
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.1374224831038668,
+            "original_val": {
+              "n": 1712,
+              "correct": 1096,
+              "accuracy_percent": 64.01869158878505
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7597,
+              "accuracy_percent": 63.58386340810177
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1097,
+              "accuracy_percent": 64.07710280373831
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2156,
+              "accuracy_percent": 63.022508038585215
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7597,
+              "accuracy_percent": 63.58386340810177
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2156,
+              "accuracy_percent": 63.022508038585215
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 0.9779812455536492,
+            "original_val": {
+              "n": 1712,
+              "correct": 1222,
+              "accuracy_percent": 71.3785046728972
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8621,
+              "accuracy_percent": 72.15433545363241
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1228,
+              "accuracy_percent": 71.72897196261682
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2463,
+              "accuracy_percent": 71.99649225372698
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8621,
+              "accuracy_percent": 72.15433545363241
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2463,
+              "accuracy_percent": 71.99649225372698
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 0.8883125706185135,
+            "original_val": {
+              "n": 1712,
+              "correct": 1294,
+              "accuracy_percent": 75.58411214953271
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9141,
+              "accuracy_percent": 76.50652828925342
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1297,
+              "accuracy_percent": 75.75934579439252
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2601,
+              "accuracy_percent": 76.0304004676995
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9141,
+              "accuracy_percent": 76.50652828925342
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2601,
+              "accuracy_percent": 76.0304004676995
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 0.835461478908604,
+            "original_val": {
+              "n": 1712,
+              "correct": 1289,
+              "accuracy_percent": 75.29205607476635
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8986,
+              "accuracy_percent": 75.20924004017408
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1285,
+              "accuracy_percent": 75.05841121495327
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2512,
+              "accuracy_percent": 73.42882198187665
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8986,
+              "accuracy_percent": 75.20924004017408
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2512,
+              "accuracy_percent": 73.42882198187665
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 0.790876104395087,
+            "original_val": {
+              "n": 1712,
+              "correct": 1276,
+              "accuracy_percent": 74.53271028037383
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8893,
+              "accuracy_percent": 74.43086709072648
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1274,
+              "accuracy_percent": 74.41588785046729
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2509,
+              "accuracy_percent": 73.34112832505116
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8893,
+              "accuracy_percent": 74.43086709072648
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2509,
+              "accuracy_percent": 73.34112832505116
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 0.7646523607507533,
+            "original_val": {
+              "n": 1712,
+              "correct": 1305,
+              "accuracy_percent": 76.2266355140187
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9164,
+              "accuracy_percent": 76.69902912621359
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1302,
+              "accuracy_percent": 76.05140186915888
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2603,
+              "accuracy_percent": 76.08886290558317
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9164,
+              "accuracy_percent": 76.69902912621359
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2603,
+              "accuracy_percent": 76.08886290558317
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.725438161721627,
+            "original_val": {
+              "n": 1712,
+              "correct": 1347,
+              "accuracy_percent": 78.67990654205607
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9335,
+              "accuracy_percent": 78.13023100100436
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1348,
+              "accuracy_percent": 78.73831775700934
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2603,
+              "accuracy_percent": 76.08886290558317
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9352,
+              "accuracy_percent": 78.27251422832273
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2607,
+              "accuracy_percent": 76.20578778135048
+            }
+          }
+        ]
+      },
+      {
+        "mode": "fixed",
+        "seed": 53,
+        "run": "blood_s53_fixed",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "c7b5019204779d532aa3458ec8c11efcc4fbf4a7c99b8667ce799062d30439a5",
+          "history.json": "ff6227db18c32e2e325424b920e07d0d9baa0cc3c7c289dec2ea56c43643b911",
+          "selection_lock.json": "a5472fa21d54f10df05ac186b066f8565bf08d4fa9aab25373843aff2ac2ba8b",
+          "result.json": "c67e227182ae6bd51672315694d2b865a073e1b36a8691935014bb8b62a4e043",
+          "best_checkpoint.pt": "b89da56b386632192b7e25c8259ee1627ba31b50ef55423cc2e216f76cd87ffe",
+          "last_checkpoint.pt": "02b97cf5bb331838b252aad270594ee0952c237ecd3656d6d9531096bbe66e06",
+          "predictions_test.npz": "b022fba7ea77aaf5677b7d0ac0df814662fbd2979cecb3be5243c6afe71c8a88"
+        },
+        "companion_sha256": {
+          "result.json": "d01be21a684fd8053eb5bc365b159be52c32b5e0515cba0c04590a7fc181286c"
+        },
+        "original_split_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "original_initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+        "selected_epoch": 7,
+        "trajectory_status": "matched_all_observable_checks",
+        "original_locked_test": {
+          "n": 3421,
+          "correct": 2690,
+          "accuracy_percent": 78.63197895352236
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.414253104599096,
+            "original_val": {
+              "n": 1712,
+              "correct": 1097,
+              "accuracy_percent": 64.07710280373831
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7609,
+              "accuracy_percent": 63.68429862738534
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1097,
+              "accuracy_percent": 64.07710280373831
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2156,
+              "accuracy_percent": 63.022508038585215
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7609,
+              "accuracy_percent": 63.68429862738534
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2156,
+              "accuracy_percent": 63.022508038585215
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.0025418578161618,
+            "original_val": {
+              "n": 1712,
+              "correct": 1156,
+              "accuracy_percent": 67.5233644859813
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8259,
+              "accuracy_percent": 69.12453967191162
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1156,
+              "accuracy_percent": 67.5233644859813
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2307,
+              "accuracy_percent": 67.43642209880151
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8259,
+              "accuracy_percent": 69.12453967191162
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2307,
+              "accuracy_percent": 67.43642209880151
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 0.8938487678377134,
+            "original_val": {
+              "n": 1712,
+              "correct": 1280,
+              "accuracy_percent": 74.76635514018692
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8886,
+              "accuracy_percent": 74.37227987947773
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1280,
+              "accuracy_percent": 74.76635514018692
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2504,
+              "accuracy_percent": 73.194972230342
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8886,
+              "accuracy_percent": 74.37227987947773
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2504,
+              "accuracy_percent": 73.194972230342
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 0.8205073547874121,
+            "original_val": {
+              "n": 1712,
+              "correct": 1335,
+              "accuracy_percent": 77.97897196261682
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9277,
+              "accuracy_percent": 77.64479410780046
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1335,
+              "accuracy_percent": 77.97897196261682
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2618,
+              "accuracy_percent": 76.52733118971061
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9277,
+              "accuracy_percent": 77.64479410780046
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2618,
+              "accuracy_percent": 76.52733118971061
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 0.7740028567804235,
+            "original_val": {
+              "n": 1712,
+              "correct": 1322,
+              "accuracy_percent": 77.2196261682243
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9144,
+              "accuracy_percent": 76.53163709407433
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1322,
+              "accuracy_percent": 77.2196261682243
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2595,
+              "accuracy_percent": 75.85501315404852
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9144,
+              "accuracy_percent": 76.53163709407433
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2595,
+              "accuracy_percent": 75.85501315404852
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 0.7295055919400737,
+            "original_val": {
+              "n": 1712,
+              "correct": 1321,
+              "accuracy_percent": 77.16121495327103
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9217,
+              "accuracy_percent": 77.14261801138265
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1321,
+              "accuracy_percent": 77.16121495327103
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2607,
+              "accuracy_percent": 76.20578778135048
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9217,
+              "accuracy_percent": 77.14261801138265
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2607,
+              "accuracy_percent": 76.20578778135048
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 0.700343088278373,
+            "original_val": {
+              "n": 1712,
+              "correct": 1383,
+              "accuracy_percent": 80.78271028037383
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9643,
+              "accuracy_percent": 80.7080682959491
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1383,
+              "accuracy_percent": 80.78271028037383
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2690,
+              "accuracy_percent": 78.63197895352236
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9643,
+              "accuracy_percent": 80.7080682959491
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2690,
+              "accuracy_percent": 78.63197895352236
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.6813879431311726,
+            "original_val": {
+              "n": 1712,
+              "correct": 1342,
+              "accuracy_percent": 78.38785046728972
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9399,
+              "accuracy_percent": 78.66588550385002
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1342,
+              "accuracy_percent": 78.38785046728972
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2635,
+              "accuracy_percent": 77.02426191172171
+            },
+            "direct_or_replay_sources": {
+              "train": "original_last_direct_evaluation",
+              "val": "original_logged_validation",
+              "test": "original_last_direct_evaluation"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9399,
+              "accuracy_percent": 78.66588550385002
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2635,
+              "accuracy_percent": 77.02426191172171
+            }
+          }
+        ]
+      },
+      {
+        "mode": "continuous",
+        "seed": 53,
+        "run": "blood_s53_continuous",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "a7f1e103594cdf858e624519727e19260ae890c786e9d18eb4529f08d95aed65",
+          "history.json": "7841527390a098a9d60cb5d8a23e026f25265d95596cdf5e030a3ab5c1908a6c",
+          "selection_lock.json": "0414c06e06d8cac70b7a4e13dd44b4951131f0215d391f97f4dc4a0ff0e534db",
+          "result.json": "e7fa8c0fa0986959d5c45150761d06bce7cd6dd301e57365a960103d09a86e31",
+          "best_checkpoint.pt": "1e4ba1c1da68a062952885856fc8a6e8b37615a3c63e6ef29e4d5514a118f8e3",
+          "last_checkpoint.pt": "8f7354c636623e525a1537b1f33bc6d8cc1be42d1f0c359848c52400343ba0d4",
+          "predictions_test.npz": "ae6f9e2479d752dc4034241eda4e9646f46e42f5134c1481b8f0cb2d3e99eaec"
+        },
+        "companion_sha256": {
+          "result.json": "a9fbaa8edd46dad9e1887c9cde209cbb1ed9724dd42280def737342463b9eca3"
+        },
+        "original_split_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "original_initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+        "selected_epoch": 8,
+        "trajectory_status": "matched_all_observable_checks",
+        "original_locked_test": {
+          "n": 3421,
+          "correct": 2543,
+          "accuracy_percent": 74.33498976907337
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.5438282688525276,
+            "original_val": {
+              "n": 1712,
+              "correct": 808,
+              "accuracy_percent": 47.19626168224299
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 5724,
+              "accuracy_percent": 47.90759959825912
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 808,
+              "accuracy_percent": 47.19626168224299
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 1631,
+              "accuracy_percent": 47.676118094124526
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 5724,
+              "accuracy_percent": 47.90759959825912
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 1631,
+              "accuracy_percent": 47.676118094124526
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.2403934301242885,
+            "original_val": {
+              "n": 1712,
+              "correct": 1075,
+              "accuracy_percent": 62.79205607476636
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7545,
+              "accuracy_percent": 63.14864412453968
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1075,
+              "accuracy_percent": 62.79205607476636
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2140,
+              "accuracy_percent": 62.554808535515924
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7545,
+              "accuracy_percent": 63.14864412453968
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2140,
+              "accuracy_percent": 62.554808535515924
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 1.073082478500586,
+            "original_val": {
+              "n": 1712,
+              "correct": 1111,
+              "accuracy_percent": 64.89485981308411
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7819,
+              "accuracy_percent": 65.44191496484767
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1111,
+              "accuracy_percent": 64.89485981308411
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2239,
+              "accuracy_percent": 65.44869921075708
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7819,
+              "accuracy_percent": 65.44191496484767
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2239,
+              "accuracy_percent": 65.44869921075708
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 0.9735022826780633,
+            "original_val": {
+              "n": 1712,
+              "correct": 1179,
+              "accuracy_percent": 68.86682242990653
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8412,
+              "accuracy_percent": 70.40508871777703
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1179,
+              "accuracy_percent": 68.86682242990653
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2381,
+              "accuracy_percent": 69.59953230049693
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8412,
+              "accuracy_percent": 70.40508871777703
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2381,
+              "accuracy_percent": 69.59953230049693
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 0.9050728613052393,
+            "original_val": {
+              "n": 1712,
+              "correct": 1198,
+              "accuracy_percent": 69.9766355140187
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8293,
+              "accuracy_percent": 69.40910612654838
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1198,
+              "accuracy_percent": 69.9766355140187
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2353,
+              "accuracy_percent": 68.7810581701257
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8293,
+              "accuracy_percent": 69.40910612654838
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2353,
+              "accuracy_percent": 68.7810581701257
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 0.8529899911334533,
+            "original_val": {
+              "n": 1712,
+              "correct": 1204,
+              "accuracy_percent": 70.32710280373831
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8477,
+              "accuracy_percent": 70.94911282222967
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1204,
+              "accuracy_percent": 70.32710280373831
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2409,
+              "accuracy_percent": 70.41800643086816
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8477,
+              "accuracy_percent": 70.94911282222967
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2409,
+              "accuracy_percent": 70.41800643086816
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 0.8085147128441998,
+            "original_val": {
+              "n": 1712,
+              "correct": 1251,
+              "accuracy_percent": 73.07242990654206
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8844,
+              "accuracy_percent": 74.02075661198528
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1251,
+              "accuracy_percent": 73.07242990654206
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2493,
+              "accuracy_percent": 72.87342882198188
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8844,
+              "accuracy_percent": 74.02075661198528
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2493,
+              "accuracy_percent": 72.87342882198188
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.7768541609997489,
+            "original_val": {
+              "n": 1712,
+              "correct": 1282,
+              "accuracy_percent": 74.88317757009347
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9143,
+              "accuracy_percent": 76.52326749246737
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1282,
+              "accuracy_percent": 74.88317757009347
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2543,
+              "accuracy_percent": 74.33498976907337
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9143,
+              "accuracy_percent": 76.52326749246737
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2543,
+              "accuracy_percent": 74.33498976907337
+            }
+          }
+        ]
+      },
+      {
+        "mode": "constrained",
+        "seed": 53,
+        "run": "blood_s53_constrained",
+        "original_source_commit": "6626426f7a611edc7486104f46ac2e3cc38abb2c",
+        "original_sha256": {
+          "metadata.json": "22472eaf7af565ff12f4818aa5ada88f950d7c0aafad5c66b2712fcbb094a2cb",
+          "history.json": "e99b86f51b2c7ab08513f1a610ac3530cafa0c4dcc463b28c9aa66ee4363d4a4",
+          "selection_lock.json": "bec6c51692a2f84fc94421930b9a1b48c93b099c50482cd1bc1dd489cc908738",
+          "result.json": "2e6a0c436b6fa4ac182db42d590a125e59c0ff8d38225f2eedecf5327458b100",
+          "best_checkpoint.pt": "caf95ee35416d7c0fff9211acfe1dcf66e86c80582b57db27e124ab9cffde79a",
+          "last_checkpoint.pt": "a4c3871a257d1420c03ed66b3ab39545e126d1d172f5d49c00c6e6313ca6fdf2",
+          "predictions_test.npz": "4e62ff1ea1296124e1b2d87acd5de0ab5c0aafbe7829fb33a5ef79cadeb07a99"
+        },
+        "companion_sha256": {
+          "result.json": "456767d667a293c501179066b778ac50803c31eaef8559f8caf378089cee4f0d"
+        },
+        "original_split_manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "original_initial_state_sha256": "42e2a3b0275f86aa4a1667c077114eb8dc233e8d6a6239f3ccd8f0aa81a8e5de",
+        "selected_epoch": 8,
+        "trajectory_status": "matched_all_observable_checks",
+        "original_locked_test": {
+          "n": 3421,
+          "correct": 2660,
+          "accuracy_percent": 77.75504238526747
+        },
+        "epochs": [
+          {
+            "epoch": 1,
+            "original_online_train_loss": 1.5176737542371108,
+            "original_val": {
+              "n": 1712,
+              "correct": 892,
+              "accuracy_percent": 52.10280373831776
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 6302,
+              "accuracy_percent": 52.74522932708403
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 892,
+              "accuracy_percent": 52.10280373831776
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 1799,
+              "accuracy_percent": 52.58696287635194
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 6302,
+              "accuracy_percent": 52.74522932708403
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 1799,
+              "accuracy_percent": 52.58696287635194
+            }
+          },
+          {
+            "epoch": 2,
+            "original_online_train_loss": 1.1555723401667644,
+            "original_val": {
+              "n": 1712,
+              "correct": 1098,
+              "accuracy_percent": 64.13551401869158
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 7781,
+              "accuracy_percent": 65.12387010378305
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1098,
+              "accuracy_percent": 64.13551401869158
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2197,
+              "accuracy_percent": 64.22098801520023
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 7781,
+              "accuracy_percent": 65.12387010378305
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2197,
+              "accuracy_percent": 64.22098801520023
+            }
+          },
+          {
+            "epoch": 3,
+            "original_online_train_loss": 0.9912246688776364,
+            "original_val": {
+              "n": 1712,
+              "correct": 1184,
+              "accuracy_percent": 69.1588785046729
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8275,
+              "accuracy_percent": 69.25845329762303
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1184,
+              "accuracy_percent": 69.1588785046729
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2336,
+              "accuracy_percent": 68.28412744811459
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8275,
+              "accuracy_percent": 69.25845329762303
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2336,
+              "accuracy_percent": 68.28412744811459
+            }
+          },
+          {
+            "epoch": 4,
+            "original_online_train_loss": 0.9023368843111818,
+            "original_val": {
+              "n": 1712,
+              "correct": 1259,
+              "accuracy_percent": 73.53971962616822
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8923,
+              "accuracy_percent": 74.68195513893538
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1259,
+              "accuracy_percent": 73.53971962616822
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2491,
+              "accuracy_percent": 72.81496638409821
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8923,
+              "accuracy_percent": 74.68195513893538
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2491,
+              "accuracy_percent": 72.81496638409821
+            }
+          },
+          {
+            "epoch": 5,
+            "original_online_train_loss": 0.8522111441245397,
+            "original_val": {
+              "n": 1712,
+              "correct": 1244,
+              "accuracy_percent": 72.66355140186917
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8722,
+              "accuracy_percent": 72.99966521593572
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1244,
+              "accuracy_percent": 72.66355140186917
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2454,
+              "accuracy_percent": 71.73341128325052
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8722,
+              "accuracy_percent": 72.99966521593572
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2454,
+              "accuracy_percent": 71.73341128325052
+            }
+          },
+          {
+            "epoch": 6,
+            "original_online_train_loss": 0.8062623582398728,
+            "original_val": {
+              "n": 1712,
+              "correct": 1273,
+              "accuracy_percent": 74.35747663551402
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 8856,
+              "accuracy_percent": 74.12119183126883
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1273,
+              "accuracy_percent": 74.35747663551402
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2519,
+              "accuracy_percent": 73.63344051446946
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 8856,
+              "accuracy_percent": 74.12119183126883
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2519,
+              "accuracy_percent": 73.63344051446946
+            }
+          },
+          {
+            "epoch": 7,
+            "original_online_train_loss": 0.7667642956718698,
+            "original_val": {
+              "n": 1712,
+              "correct": 1316,
+              "accuracy_percent": 76.86915887850468
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9263,
+              "accuracy_percent": 77.52761968530298
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1316,
+              "accuracy_percent": 76.86915887850468
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2574,
+              "accuracy_percent": 75.2411575562701
+            },
+            "direct_or_replay_sources": {
+              "train": "seeded_replay_diagnostic",
+              "val": "original_logged_validation",
+              "test": "seeded_replay_diagnostic"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9263,
+              "accuracy_percent": 77.52761968530298
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2574,
+              "accuracy_percent": 75.2411575562701
+            }
+          },
+          {
+            "epoch": 8,
+            "original_online_train_loss": 0.7456661974022849,
+            "original_val": {
+              "n": 1712,
+              "correct": 1343,
+              "accuracy_percent": 78.44626168224299
+            },
+            "companion_train": {
+              "n": 11948,
+              "correct": 9406,
+              "accuracy_percent": 78.72447271509876
+            },
+            "companion_val": {
+              "n": 1712,
+              "correct": 1343,
+              "accuracy_percent": 78.44626168224299
+            },
+            "companion_test": {
+              "n": 3421,
+              "correct": 2660,
+              "accuracy_percent": 77.75504238526747
+            },
+            "direct_or_replay_sources": {
+              "train": "original_best_archived_predictions",
+              "val": "original_logged_validation",
+              "test": "original_best_archived_predictions"
+            },
+            "direct_or_replay_train": {
+              "n": 11948,
+              "correct": 9406,
+              "accuracy_percent": 78.72447271509876
+            },
+            "direct_or_replay_test": {
+              "n": 3421,
+              "correct": 2660,
+              "accuracy_percent": 77.75504238526747
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
